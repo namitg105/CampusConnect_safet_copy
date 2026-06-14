@@ -1,10 +1,15 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:noteswap/firebase_options.dart';
 import 'ViewModels/DarkModeViewModels.dart';
 import 'Views/Onboarding/OnboardingScreen.dart';
 import 'Views/SplashScreen.dart';
 
-void main() {
+void main()async  {
+  //firebase setup
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   Get.put(LightModeController());
   runApp(MyApp());
 }

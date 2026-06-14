@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "644272384822",
+    "project_id": "studcom-53705",
+    "storage_bucket": "studcom-53705.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:644272384822:android:f0675f8dfa9771e466e197",
+        "android_client_info": {
+          "package_name": "com.example.noteswap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA4XwFGNincdsqD2-k_ehkcU6A7ES2AX2g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
