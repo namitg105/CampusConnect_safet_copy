@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:noteswap/Views/OnboardingScreen3.dart';
 import 'package:noteswap/firebase_options.dart';
 import 'ViewModels/DarkModeViewModels.dart';
 import 'Views/Onboarding/OnboardingScreen.dart';
@@ -28,7 +29,7 @@ class MyApp extends StatelessWidget {
       themeMode: darkModeController.isLightMode.value ? ThemeMode.dark : ThemeMode.light,
       initialRoute: '/homeScreen',
       getPages: [
-        GetPage(name: '/homeScreen', page: () => SplashScreen()),
+        GetPage(name: '/homeScreen', page: () => Onboardingscreen3()),
         GetPage(name: '/onboardingScreen', page: () => OnboardingScreen()),
       ],
     ));
