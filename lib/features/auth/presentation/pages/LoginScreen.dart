@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 
 class Loginscreen extends StatefulWidget {
-  const Loginscreen({super.key});
+    final void Function()? togglePages;
+
+  const Loginscreen({super.key,required this.togglePages});
 
   @override
   State<Loginscreen> createState() => _LoginscreenState();
@@ -294,6 +296,7 @@ pwController.dispose();
                                 color: Colors.grey.shade600, fontSize: 12),
                           ),
                           GestureDetector(
+                            onTap: widget.togglePages,
                             child: const Text(
                               "Sign Up",
                               style: TextStyle(

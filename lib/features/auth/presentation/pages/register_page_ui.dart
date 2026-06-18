@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:noteswap/features/auth/presentation/components/components.dart';
+import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 
 //------------------------------//
-import './components.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key});
+    final void Function()? togglePages;
+
+  const RegisterPage({super.key, this.togglePages});
 
   @override
   State<RegisterPage> createState() => RegisterPageUi();
@@ -20,8 +24,8 @@ class RegisterPageUi extends State<RegisterPage> {
   final nameTextController = TextEditingController();
   final emailTextController = TextEditingController();
   final passTextController = TextEditingController();
-  late bool hiddenText = false;
   final confirmPassTextController = TextEditingController();
+  late bool hiddenText = false;
   late bool confirmhiddenText = false;
 
   //-------------------image controller----------------------//
@@ -31,6 +35,41 @@ class RegisterPageUi extends State<RegisterPage> {
   //-------------------form controller-----------------------//
   late bool isChecked = false;
 
+//register button pressed
+void register(){
+//prepare info 
+final email = emailTextController.text;
+final name = nameTextController.text;
+final pw = passTextController.text;
+final confirmPw = confirmPassTextController.text;
+
+//auth cubit
+final authCubit=context.read<AuthCubit>();
+
+//ensure fields aren't empty 
+if(email.isNotEmpty&&pw.isNotEmpty&&name.isNotEmpty){
+
+    //register user
+    authCubit.register( name,  email,  pw);
+  
+
+}
+
+//fields are empty-> display error
+else{
+  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:  Text("Please complete all fields")));
+}
+
+
+}
+@override
+  void dispose() {
+passTextController.dispose();
+confirmPassTextController.dispose();
+nameTextController.dispose();
+emailTextController.dispose();
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     width = MediaQuery.of(context).size.width;
@@ -166,7 +205,7 @@ class RegisterPageUi extends State<RegisterPage> {
                 color: Colors.black38,
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: widget.togglePages,
                 child: RichTextFormat(
                   "Log in",
                   fontSize: width * 0.0325,
@@ -312,7 +351,7 @@ class RegisterPageUi extends State<RegisterPage> {
     return SizedBox(
       width: imageWidthAdjustment * 0.85,
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: register,
         style: ElevatedButton.styleFrom(
           backgroundColor: Color.fromRGBO(114, 75, 230, 0.7),
         ),

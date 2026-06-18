@@ -40,7 +40,7 @@ class OnboardingScreen extends StatelessWidget {
             padding: const EdgeInsets.all(35.0),
             child: ButtonWidgets(
               onTap: () {
-                Get.to(LoginScreen());
+               /* Get.to(/*removed login screen for now  */);*/
               },
               buttonText: 'Next',
             ),
