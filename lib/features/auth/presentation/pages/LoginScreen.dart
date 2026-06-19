@@ -4,6 +4,7 @@ import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
 import 'package:get/get.dart';
 import 'package:noteswap/features/home/presentation/pages/home_page.dart';
+import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 
 class Loginscreen extends StatefulWidget {
   final void Function()? togglePages;
@@ -141,8 +142,11 @@ Future<void> _showForgotPasswordDialog() async {
     return BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
-            // This clears the navigation stack and safely lands them on HomePage
-            Get.offAll(() => const HomePage());
+            Get.offAll(
+              () => const MainPage(
+                collegeId: '',
+              ),
+            );
           }
         },
         child: Scaffold(

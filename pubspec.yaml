@@ -44,6 +44,8 @@ dependencies:
   bloc: ^9.2.1
   flutter_bloc: ^9.1.1
   google_sign_in: ^6.0.0
+  cloud_firestore:
+  get_it:
 
 dev_dependencies:
   flutter_test:
