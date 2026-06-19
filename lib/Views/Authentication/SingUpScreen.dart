@@ -12,7 +12,6 @@ import '../../Widgets/DividerWidgets.dart';
 import '../../Widgets/InputWidgets.dart';
 import '../../Widgets/LogingHeadlines.dart';
 import '../../Widgets/Buttons/SocialButton.dart';
-import 'LoginScreen.dart';
 
 class SignUpScreen extends StatelessWidget {
   SignUpScreen({super.key});
@@ -126,7 +125,7 @@ class SignUpScreen extends StatelessWidget {
                       ),
                       BottomButton(
                         onTap: () {
-                          Get.to(LoginScreen());
+                        
                         },
                       ),
                       const SizedBox(height: 20),

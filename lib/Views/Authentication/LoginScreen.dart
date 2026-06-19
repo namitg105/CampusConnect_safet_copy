@@ -13,7 +13,9 @@ import '../../Widgets/Buttons/SocialButton.dart';
 import '../ProfileScreen.dart';
 
 class LoginScreen extends StatelessWidget {
-  LoginScreen({super.key});
+    final void Function()? togglePages;
+
+  LoginScreen({super.key,required this.togglePages});
 
   final TextEditingController passwordController = TextEditingController();
   final LightModeController lightModeController = Get.put(LightModeController());
@@ -25,7 +27,8 @@ class LoginScreen extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: lightModeController.isLightMode.value ? Colors.white : Colors.black,
           leading: BackWidget(
-            onTap: () {},
+            onTap:(){}/* Get.to(/*removed login screen for now  */);*/
+,
             imagePath: AppConstants.backBlackIcon,
           ),
         ),

@@ -1,13 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 
 class Loginscreen extends StatefulWidget {
-  const Loginscreen({super.key});
+    final void Function()? togglePages;
+
+  const Loginscreen({super.key,required this.togglePages});
 
   @override
   State<Loginscreen> createState() => _LoginscreenState();
 }
 
 class _LoginscreenState extends State<Loginscreen> {
+
+  //text controllers
+
+  final emailController = TextEditingController();
+  final pwController = TextEditingController();
+
+
+//login button pressed 
+void login(){
+  final String email=emailController.text;
+  final String pw=pwController.text;
+
+  //authcubit
+  final authCubit=context.read<AuthCubit>();
+
+  //ensure email and pw fields are not empty 
+  if(email.isNotEmpty && pw.isNotEmpty){
+    //login
+    authCubit.login(email, pw);
+  }
+
+   //display error if some fields are empty
+    else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter both email and password")),
+      );
+    }
+}
+
+@override
+  void dispose() {
+emailController.dispose();
+pwController.dispose();
+    super.dispose();
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,6 +136,7 @@ class _LoginscreenState extends State<Loginscreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
+                      
                         "University Email",
                         style: TextStyle(
                           fontSize: 12,
@@ -104,6 +146,7 @@ class _LoginscreenState extends State<Loginscreen> {
                       ),
                       const SizedBox(height: 8),
                       TextField(
+                        controller: emailController,
                         decoration: InputDecoration(
                           hintText: "you@university.edu",
                           hintStyle: TextStyle(
@@ -147,6 +190,7 @@ class _LoginscreenState extends State<Loginscreen> {
                       ),
                       const SizedBox(height: 8),
                       TextField(
+                        controller: pwController,
                         obscureText: true,
                         decoration: InputDecoration(
                           hintText: "Enter your password",
@@ -207,7 +251,7 @@ class _LoginscreenState extends State<Loginscreen> {
                         width: double.infinity,
                         height: 52,
                         child: GestureDetector(
-                          onTap: () {},
+                          onTap: login,
                           child: Image.asset(
                             'assets/Login_button.png',
                             fit: BoxFit.contain,
@@ -252,6 +296,7 @@ class _LoginscreenState extends State<Loginscreen> {
                                 color: Colors.grey.shade600, fontSize: 12),
                           ),
                           GestureDetector(
+                            onTap: widget.togglePages,
                             child: const Text(
                               "Sign Up",
                               style: TextStyle(
