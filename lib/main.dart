@@ -1,18 +1,22 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:noteswap/Views/OnboardingScreen3.dart';
+import 'package:noteswap/features/auth/presentation/pages/SplashScreen.dart';
+import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 import 'package:noteswap/firebase_options.dart';
+
 import 'ViewModels/DarkModeViewModels.dart';
-import 'Views/Onboarding/OnboardingScreen.dart';
-import 'Views/SplashScreen.dart';
 
 void main() async {
-  //firebase setup
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   Get.put(LightModeController());
-  runApp(MyApp());
+
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -21,20 +25,28 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final LightModeController darkModeController =
-        Get.put(LightModeController());
+        Get.find<LightModeController>();
 
-    return Obx(() => GetMaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData.light(),
-          darkTheme: ThemeData.dark(),
-          themeMode: darkModeController.isLightMode.value
-              ? ThemeMode.dark
-              : ThemeMode.light,
-          initialRoute: '/homeScreen',
-          getPages: [
-            GetPage(name: '/homeScreen', page: () => Onboardingscreen3()),
-            GetPage(name: '/onboardingScreen', page: () => OnboardingScreen()),
-          ],
-        ));
+    return Obx(
+      () => GetMaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData.light(),
+        darkTheme: ThemeData.dark(),
+
+        // Fixed theme mode logic
+        themeMode: darkModeController.isLightMode.value
+            ? ThemeMode.light
+            : ThemeMode.dark,
+
+        initialRoute: '/homeScreen',
+
+        getPages: [
+          GetPage(
+            name: '/homeScreen',
+            page: () => SplashScreen(),
+          ),
+        ],
+      ),
+    );
   }
 }
