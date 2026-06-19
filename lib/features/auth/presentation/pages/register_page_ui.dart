@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/components/components.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
+import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
+import 'package:noteswap/features/home/presentation/pages/home_page.dart';
 
 //------------------------------//
 
@@ -75,22 +79,45 @@ class RegisterPageUi extends State<RegisterPage> {
     imageWidthAdjustment = width / 1.1; //width / 1.2
     _splashAppWidget = Splash_Widget_Components(width: width, height: height);
 
-    return Scaffold(
-      appBar: _splashAppWidget.AppBarDesign(),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            SizedBox(height: height * 0.025),
-            Container(
-              width: width,
-              alignment: Alignment.center,
-              child: Image.asset(imagePath, width: imageWidthAdjustment),
+    return BlocListener<AuthCubit, AuthState>(
+        listener: (context, state) {
+          if (state is Authenticated) {
+            // This clears the navigation stack and safely lands them on HomePage
+            Get.offAll(() => const HomePage());
+          }
+        },
+        child: Scaffold(
+          appBar: _splashAppWidget.AppBarDesign(),
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                SizedBox(height: height * 0.025),
+                Container(
+                  width: width,
+                  alignment: Alignment.center,
+                  child: Image.asset(imagePath, width: imageWidthAdjustment),
+                ),
+                RegisterBoxDecoration(),
+              ],
             ),
-            RegisterBoxDecoration(),
-          ],
-        ),
-      ),
-    );
+          ),
+        ));
+    // return Scaffold(
+    //   appBar: _splashAppWidget.AppBarDesign(),
+    //   body: SingleChildScrollView(
+    //     child: Column(
+    //       children: [
+    //         SizedBox(height: height * 0.025),
+    //         Container(
+    //           width: width,
+    //           alignment: Alignment.center,
+    //           child: Image.asset(imagePath, width: imageWidthAdjustment),
+    //         ),
+    //         RegisterBoxDecoration(),
+    //       ],
+    //     ),
+    //   ),
+    // );
   }
 
   TextSpan _TextStyleWidget(
