@@ -20,6 +20,93 @@ class _LoginscreenState extends State<Loginscreen> {
   final emailController = TextEditingController();
   final pwController = TextEditingController();
 
+//forgot password button pressed
+Future<void> _showForgotPasswordDialog() async {
+    final resetEmailController = TextEditingController(text: emailController.text);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text(
+            "Reset Password",
+            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Enter your university email to receive a password reset link.",
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: resetEmailController,
+                decoration: InputDecoration(
+                  hintText: "you@university.edu",
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFFBDB2FA), width: 1.5),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFF6139ED), width: 2),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6139ED)),
+              onPressed: () async {
+                final email = resetEmailController.text.trim();
+                if (email.isEmpty) return;
+
+                // Show loading circle
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const Center(child: CircularProgressIndicator()),
+                );
+
+                try {
+                  // Call the Cubit method instead of Firebase directly
+                  await context.read<AuthCubit>().sendPasswordResetEmail(email);
+
+                  if (context.mounted) {
+                    Navigator.pop(context); // pop loading
+                    Navigator.pop(context); // pop dialog
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Reset link sent! Check your email."), backgroundColor: Colors.green),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    Navigator.pop(context); // pop loading
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+                    );
+                  }
+                }
+              },
+              child: const Text("Send Link", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+
 //login button pressed
   void login() {
     final String email = emailController.text;
@@ -243,7 +330,7 @@ class _LoginscreenState extends State<Loginscreen> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
-                              onPressed: () {},
+                              onPressed:_showForgotPasswordDialog,
                               child: const Text(
                                 "Forget Password?",
                                 style: TextStyle(

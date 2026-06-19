@@ -28,7 +28,7 @@ class RegisterPageUi extends State<RegisterPage> {
   final nameTextController = TextEditingController();
   final emailTextController = TextEditingController();
   final passTextController = TextEditingController();
-  final confirmPassTextController = TextEditingController();
+  //removed unused Confirm Password controller
   late bool hiddenText = false;
   late bool confirmhiddenText = false;
 
@@ -45,7 +45,6 @@ class RegisterPageUi extends State<RegisterPage> {
     final email = emailTextController.text;
     final name = nameTextController.text;
     final pw = passTextController.text;
-    final confirmPw = confirmPassTextController.text;
 
 //auth cubit
     final authCubit = context.read<AuthCubit>();
@@ -66,7 +65,6 @@ class RegisterPageUi extends State<RegisterPage> {
   @override
   void dispose() {
     passTextController.dispose();
-    confirmPassTextController.dispose();
     nameTextController.dispose();
     emailTextController.dispose();
     super.dispose();

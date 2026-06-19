@@ -108,4 +108,15 @@ class FirebaseAuthRepo implements AuthRepo {
 
     return null;
   }
+
+
+
+  @override
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await firebaseAuth.sendPasswordResetEmail(email: email);
+    } catch (e) {
+      throw Exception('Failed to send password reset email: $e');
+    }
+  }
 }
