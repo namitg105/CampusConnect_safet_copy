@@ -1,8 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/auth/domain/repos/auth_repo.dart';
+import './google_auth_service.dart';
+
 class FirebaseAuthRepo implements AuthRepo {
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+  final GoogleAuthService _googleAuthService = GoogleAuthService();
+
   @override
   Future<AppUser?> loginWithEmailPassword(String email, String password) async {
     try {
@@ -12,18 +16,16 @@ class FirebaseAuthRepo implements AuthRepo {
           .signInWithEmailAndPassword(email: email, password: password);
       print("Firebase login successful");
 
-//before when we created our AppUsser ,we only had userid and email , but now we have the profile info for the user , 
-//so we fetch that aslo 
-
+//before when we created our AppUsser ,we only had userid and email , but now we have the profile info for the user ,
+//so we fetch that aslo
 
       //once we are signed in , create our user
       AppUser user = AppUser(
         uid: userCredential.user!.uid,
         email: email,
-        name:'',
+        name: '',
       );
 
-     
       //return Appuser
       return user;
     }
@@ -51,8 +53,6 @@ class FirebaseAuthRepo implements AuthRepo {
         name: name,
       );
 
-       
-
       //return Appuser
       return user;
     } catch (e) {
@@ -64,6 +64,7 @@ class FirebaseAuthRepo implements AuthRepo {
   Future<void> logout() async {
     try {
       await firebaseAuth.signOut();
+      await _googleAuthService.signOut();
     } catch (e) {
       throw Exception('Logout failed: $e');
     }
@@ -77,13 +78,10 @@ class FirebaseAuthRepo implements AuthRepo {
       //get currently logged in user from firebase
       final currentFirebaseUser = firebaseAuth.currentUser;
 
-
       //no user logged in
       if (currentFirebaseUser == null) {
         return null;
       }
-
-   
 
       // user exists
       return AppUser(
@@ -94,5 +92,20 @@ class FirebaseAuthRepo implements AuthRepo {
     } catch (e) {
       throw Exception('Get current user failed: $e');
     }
+  }
+
+  @override
+  Future<AppUser?> loginWithGoogle() async {
+    final firebaseUser = await _googleAuthService.signInWithGoogle();
+
+    if (firebaseUser != null) {
+      return AppUser(
+        uid: firebaseUser.uid,
+        email: firebaseUser.email ?? '',
+        name: firebaseUser.displayName ?? 'Google User',
+      );
+    }
+
+    return null;
   }
 }

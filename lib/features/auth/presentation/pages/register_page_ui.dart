@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/components/components.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
+import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
+import 'package:noteswap/features/home/presentation/pages/home_page.dart';
 
 //------------------------------//
 
 class RegisterPage extends StatefulWidget {
-    final void Function()? togglePages;
+  final void Function()? togglePages;
 
   const RegisterPage({super.key, this.togglePages});
 
@@ -36,40 +40,38 @@ class RegisterPageUi extends State<RegisterPage> {
   late bool isChecked = false;
 
 //register button pressed
-void register(){
-//prepare info 
-final email = emailTextController.text;
-final name = nameTextController.text;
-final pw = passTextController.text;
-final confirmPw = confirmPassTextController.text;
+  void register() {
+//prepare info
+    final email = emailTextController.text;
+    final name = nameTextController.text;
+    final pw = passTextController.text;
+    final confirmPw = confirmPassTextController.text;
 
 //auth cubit
-final authCubit=context.read<AuthCubit>();
+    final authCubit = context.read<AuthCubit>();
 
-//ensure fields aren't empty 
-if(email.isNotEmpty&&pw.isNotEmpty&&name.isNotEmpty){
-
-    //register user
-    authCubit.register( name,  email,  pw);
-  
-
-}
+//ensure fields aren't empty
+    if (email.isNotEmpty && pw.isNotEmpty && name.isNotEmpty) {
+      //register user
+      authCubit.register(name, email, pw);
+    }
 
 //fields are empty-> display error
-else{
-  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:  Text("Please complete all fields")));
-}
+    else {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please complete all fields")));
+    }
+  }
 
-
-}
-@override
+  @override
   void dispose() {
-passTextController.dispose();
-confirmPassTextController.dispose();
-nameTextController.dispose();
-emailTextController.dispose();
+    passTextController.dispose();
+    confirmPassTextController.dispose();
+    nameTextController.dispose();
+    emailTextController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     width = MediaQuery.of(context).size.width;
@@ -77,22 +79,45 @@ emailTextController.dispose();
     imageWidthAdjustment = width / 1.1; //width / 1.2
     _splashAppWidget = Splash_Widget_Components(width: width, height: height);
 
-    return Scaffold(
-      appBar: _splashAppWidget.AppBarDesign(),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            SizedBox(height: height * 0.025),
-            Container(
-              width: width,
-              alignment: Alignment.center,
-              child: Image.asset(imagePath, width: imageWidthAdjustment),
+    return BlocListener<AuthCubit, AuthState>(
+        listener: (context, state) {
+          if (state is Authenticated) {
+            // This clears the navigation stack and safely lands them on HomePage
+            Get.offAll(() => const HomePage());
+          }
+        },
+        child: Scaffold(
+          appBar: _splashAppWidget.AppBarDesign(),
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                SizedBox(height: height * 0.025),
+                Container(
+                  width: width,
+                  alignment: Alignment.center,
+                  child: Image.asset(imagePath, width: imageWidthAdjustment),
+                ),
+                RegisterBoxDecoration(),
+              ],
             ),
-            RegisterBoxDecoration(),
-          ],
-        ),
-      ),
-    );
+          ),
+        ));
+    // return Scaffold(
+    //   appBar: _splashAppWidget.AppBarDesign(),
+    //   body: SingleChildScrollView(
+    //     child: Column(
+    //       children: [
+    //         SizedBox(height: height * 0.025),
+    //         Container(
+    //           width: width,
+    //           alignment: Alignment.center,
+    //           child: Image.asset(imagePath, width: imageWidthAdjustment),
+    //         ),
+    //         RegisterBoxDecoration(),
+    //       ],
+    //     ),
+    //   ),
+    // );
   }
 
   TextSpan _TextStyleWidget(
@@ -192,7 +217,9 @@ emailTextController.dispose();
           Container(
             alignment: Alignment.center,
             child: IconButton(
-              onPressed: () {},
+              onPressed: () {
+                context.read<AuthCubit>().loginWithGoogle();
+              },
               icon: Image.asset("assets/images_register/Google_icon.png"),
             ),
           ),
