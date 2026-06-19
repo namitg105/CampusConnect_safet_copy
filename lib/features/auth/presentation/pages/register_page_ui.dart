@@ -6,7 +6,7 @@ import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 //------------------------------//
 
 class RegisterPage extends StatefulWidget {
-    final void Function()? togglePages;
+  final void Function()? togglePages;
 
   const RegisterPage({super.key, this.togglePages});
 
@@ -36,40 +36,38 @@ class RegisterPageUi extends State<RegisterPage> {
   late bool isChecked = false;
 
 //register button pressed
-void register(){
-//prepare info 
-final email = emailTextController.text;
-final name = nameTextController.text;
-final pw = passTextController.text;
-final confirmPw = confirmPassTextController.text;
+  void register() {
+//prepare info
+    final email = emailTextController.text;
+    final name = nameTextController.text;
+    final pw = passTextController.text;
+    final confirmPw = confirmPassTextController.text;
 
 //auth cubit
-final authCubit=context.read<AuthCubit>();
+    final authCubit = context.read<AuthCubit>();
 
-//ensure fields aren't empty 
-if(email.isNotEmpty&&pw.isNotEmpty&&name.isNotEmpty){
-
-    //register user
-    authCubit.register( name,  email,  pw);
-  
-
-}
+//ensure fields aren't empty
+    if (email.isNotEmpty && pw.isNotEmpty && name.isNotEmpty) {
+      //register user
+      authCubit.register(name, email, pw);
+    }
 
 //fields are empty-> display error
-else{
-  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:  Text("Please complete all fields")));
-}
+    else {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please complete all fields")));
+    }
+  }
 
-
-}
-@override
+  @override
   void dispose() {
-passTextController.dispose();
-confirmPassTextController.dispose();
-nameTextController.dispose();
-emailTextController.dispose();
+    passTextController.dispose();
+    confirmPassTextController.dispose();
+    nameTextController.dispose();
+    emailTextController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     width = MediaQuery.of(context).size.width;
@@ -192,7 +190,9 @@ emailTextController.dispose();
           Container(
             alignment: Alignment.center,
             child: IconButton(
-              onPressed: () {},
+              onPressed: () {
+                context.read<AuthCubit>().loginWithGoogle();
+              },
               icon: Image.asset("assets/images_register/Google_icon.png"),
             ),
           ),

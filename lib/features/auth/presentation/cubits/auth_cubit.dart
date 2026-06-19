@@ -7,7 +7,6 @@ import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/auth/domain/repos/auth_repo.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
 
-
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepo authRepo;
   AppUser? _currentUser;
@@ -40,11 +39,11 @@ class AuthCubit extends Cubit<AuthState> {
         _currentUser = user;
         emit(Authenticated(user));
       } else {
-         print("USER IS NULL");
+        print("USER IS NULL");
         emit(Unauthenticated());
       }
     } catch (e) {
-       print("LOGIN ERROR: $e");
+      print("LOGIN ERROR: $e");
       emit(AuthError(e.toString()));
       emit(Unauthenticated());
     }
@@ -70,7 +69,30 @@ class AuthCubit extends Cubit<AuthState> {
   //logout
 
   Future<void> logout() async {
-    authRepo.logout();
+    await authRepo.logout();
+    _currentUser = null;
     emit(Unauthenticated());
+  }
+
+  // Add this method inside your AuthCubit class
+
+  Future<void> loginWithGoogle() async {
+    try {
+      emit(AuthLoading());
+
+      final user = await authRepo.loginWithGoogle();
+
+      if (user != null) {
+        _currentUser = user;
+        emit(Authenticated(user));
+      } else {
+        emit(Unauthenticated());
+      }
+    } catch (e) {
+      emit(AuthError(e.toString()));
+      emit(Unauthenticated());
+      print("LOGIN ERROR: $e");
+      emit(AuthError(e.toString()));
+    }
   }
 }

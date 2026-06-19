@@ -3,51 +3,48 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 
 class Loginscreen extends StatefulWidget {
-    final void Function()? togglePages;
+  final void Function()? togglePages;
 
-  const Loginscreen({super.key,required this.togglePages});
+  const Loginscreen({super.key, required this.togglePages});
 
   @override
   State<Loginscreen> createState() => _LoginscreenState();
 }
 
 class _LoginscreenState extends State<Loginscreen> {
-
   //text controllers
 
   final emailController = TextEditingController();
   final pwController = TextEditingController();
 
+//login button pressed
+  void login() {
+    final String email = emailController.text;
+    final String pw = pwController.text;
 
-//login button pressed 
-void login(){
-  final String email=emailController.text;
-  final String pw=pwController.text;
+    //authcubit
+    final authCubit = context.read<AuthCubit>();
 
-  //authcubit
-  final authCubit=context.read<AuthCubit>();
+    //ensure email and pw fields are not empty
+    if (email.isNotEmpty && pw.isNotEmpty) {
+      //login
+      authCubit.login(email, pw);
+    }
 
-  //ensure email and pw fields are not empty 
-  if(email.isNotEmpty && pw.isNotEmpty){
-    //login
-    authCubit.login(email, pw);
-  }
-
-   //display error if some fields are empty
+    //display error if some fields are empty
     else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please enter both email and password")),
       );
     }
-}
-
-@override
-  void dispose() {
-emailController.dispose();
-pwController.dispose();
-    super.dispose();
   }
 
+  @override
+  void dispose() {
+    emailController.dispose();
+    pwController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -136,7 +133,6 @@ pwController.dispose();
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                      
                         "University Email",
                         style: TextStyle(
                           fontSize: 12,
@@ -279,9 +275,14 @@ pwController.dispose();
                               ),
                               border: Border.all(color: Colors.grey.shade200),
                             ),
-                            child: Image.asset(
-                              "assets/google1.png",
-                              width: 30,
+                            child: IconButton(
+                              onPressed: () {
+                                context.read<AuthCubit>().loginWithGoogle();
+                              },
+                              icon: Image.asset(
+                                "assets/google1.png",
+                                width: 30,
+                              ),
                             ),
                           ),
                         ),
