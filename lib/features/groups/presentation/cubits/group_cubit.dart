@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:bloc/bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../domain/repos/group_repo.dart';
 import 'group_states.dart';
@@ -13,27 +13,51 @@ class GroupCubit extends Cubit<GroupState> {
 
   GroupCubit(this.repo) : super(GroupInitial());
 
-  Future<void> joinGroup(
-    String groupId,
-  ) async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-
-    await repo.joinGroup(
-      groupId,
-      uid,
-    );
-  }
-
-  void loadGroups(
-    String collegeId,
-  ) {
+  void loadGroups() {
     emit(GroupLoading());
 
     _sub?.cancel();
 
-    _sub = repo.getGroups(collegeId).listen((groups) {
-      emit(GroupLoaded(groups));
-    });
+    _sub = repo.getGroups().listen(
+      (groups) {
+        emit(
+          GroupLoaded(groups),
+        );
+      },
+      onError: (e) {
+        emit(
+          GroupError(
+            e.toString(),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> joinGroup(
+    String groupId,
+  ) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    await repo.joinGroup(
+      groupId,
+      user.uid,
+    );
+  }
+
+  Future<void> leaveGroup(
+    String groupId,
+  ) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    await repo.leaveGroup(
+      groupId,
+      user.uid,
+    );
   }
 
   @override

@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/components/components.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
+import 'package:noteswap/features/auth/presentation/pages/LoginScreen.dart';
 import 'package:noteswap/features/home/presentation/pages/home_page.dart';
 
 //------------------------------//
@@ -230,15 +231,19 @@ class RegisterPageUi extends State<RegisterPage> {
                 color: Colors.black38,
               ),
               TextButton(
-                onPressed: widget.togglePages,
+                onPressed: () {
+                  Get.to(() => Loginscreen(
+                        togglePages: () {},
+                      ));
+                },
                 child: RichTextFormat(
                   "Log in",
                   fontSize: width * 0.0325,
-                  color: Color.fromRGBO(114, 75, 230, 1),
+                  color: const Color.fromRGBO(114, 75, 230, 1),
                 ),
               ),
             ],
-          ),
+          )
         ],
       ),
     );

@@ -1,26 +1,63 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:noteswap/features/chat/presentation/pages/chat_page.dart';
 
+import '../../Widgets/group_widgets.dart';
 import '../cubits/group_cubit.dart';
 import '../cubits/group_states.dart';
-import '../../domain/entities/group.dart';
+import 'create_group_page.dart';
 
-class GroupsPage extends StatelessWidget {
-  final String collegeId;
+class GroupsPage extends StatefulWidget {
+  const GroupsPage({super.key});
 
-  const GroupsPage({
-    super.key,
-    required this.collegeId,
-  });
+  @override
+  State<GroupsPage> createState() => _GroupsPageState();
+}
+
+class _GroupsPageState extends State<GroupsPage> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(
+      () => context.read<GroupCubit>().loadGroups(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    context.read<GroupCubit>().loadGroups(collegeId);
-
     return Scaffold(
+      backgroundColor: const Color(0xffF5F7FA),
       appBar: AppBar(
-        title: const Text('Groups'),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        centerTitle: true,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Communities",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              "Join and chat with students",
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              context.read<GroupCubit>().loadGroups();
+            },
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
       ),
       body: BlocBuilder<GroupCubit, GroupState>(
         builder: (context, state) {
@@ -31,53 +68,48 @@ class GroupsPage extends StatelessWidget {
           }
 
           if (state is GroupLoaded) {
-            return ListView.builder(
-              itemCount: state.groups.length,
-              itemBuilder: (context, index) {
-                final Group group = state.groups[index];
+            if (state.groups.isEmpty) {
+              return const EmptyGroupsWidget();
+            }
 
-                return Card(
-                  child: ListTile(
-                    title: Text(group.name),
-                    subtitle: Text(group.description),
-                    trailing: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('${group.memberCount}'),
-                        const SizedBox(height: 4),
-                        ElevatedButton(
-                          onPressed: () async {
-                            await context
-                                .read<GroupCubit>()
-                                .joinGroup(group.id);
-                          },
-                          child: const Text('Join'),
-                        ),
-                      ],
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ChatPage(
-                            groupId: group.id,
-                            groupName: group.name,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                );
+            return RefreshIndicator(
+              onRefresh: () async {
+                context.read<GroupCubit>().loadGroups();
               },
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: state.groups.length,
+                itemBuilder: (_, index) {
+                  return GroupCard(
+                    group: state.groups[index],
+                  );
+                },
+              ),
+            );
+          }
+
+          if (state is GroupError) {
+            return ErrorStateWidget(
+              message: state.message,
             );
           }
 
           return const SizedBox();
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () {},
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CreateGroupPage(
+                collegeId: "",
+              ),
+            ),
+          );
+        },
+        icon: const Icon(Icons.add),
+        label: const Text("Create"),
       ),
     );
   }

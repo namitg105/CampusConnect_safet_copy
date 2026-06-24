@@ -23,6 +23,11 @@ Future<void> init() async {
   sl.registerLazySingleton<ChatRepo>(
     () => FirebaseChatRepo(sl()),
   );
+  sl.registerLazySingleton<FirebaseGroupRepo>(
+    () => FirebaseGroupRepo(
+      FirebaseFirestore.instance,
+    ),
+  );
 
   sl.registerFactory<GroupCubit>(
     () => GroupCubit(sl()),

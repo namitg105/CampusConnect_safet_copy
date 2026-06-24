@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart' show Get;
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
+
+import '../../../auth/presentation/pages/SplashScreen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,9 +14,12 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  void logout() {
-    final authCubit = context.read<AuthCubit>();
-    authCubit.logout();
+  void logout() async {
+    await context.read<AuthCubit>().logout();
+
+    Get.offAll(
+      () => SplashScreen(),
+    );
   }
 
   @override

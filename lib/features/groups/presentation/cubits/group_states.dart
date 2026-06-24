@@ -17,3 +17,9 @@ class GroupError extends GroupState {
 
   GroupError(this.message);
 }
+
+class GroupFull extends GroupState {
+  final String message;
+
+  GroupFull(this.message);
+}

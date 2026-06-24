@@ -7,11 +7,8 @@ import '../../../groups/presentation/pages/groups_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 
 class MainPage extends StatefulWidget {
-  final String collegeId;
-
   const MainPage({
     super.key,
-    required this.collegeId,
   });
 
   @override
@@ -29,9 +26,7 @@ class _MainPageState extends State<MainPage> {
         body: IndexedStack(
           index: currentIndex,
           children: [
-            GroupsPage(
-              collegeId: widget.collegeId,
-            ),
+            GroupsPage(),
             const ProfilePage(),
           ],
         ),

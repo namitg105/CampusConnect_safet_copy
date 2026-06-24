@@ -85,9 +85,7 @@ class AuthWrapper extends StatelessWidget {
       },
       builder: (context, authState) {
         if (authState is Authenticated) {
-          return const MainPage(
-            collegeId: '',
-          );
+          return const MainPage();
         }
 
         if (authState is Unauthenticated) {
