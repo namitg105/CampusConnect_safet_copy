@@ -3,7 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
-import 'package:noteswap/features/auth/presentation/pages/auth_page.dart'; // Adjust import if needed
+import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
+import 'package:noteswap/features/posts/presentation/pages/campus_feed_screen.dart'; // Adjust import if needed
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -31,6 +32,7 @@ class _HomePageState extends State<HomePage> {
       },
       child: Scaffold(
         appBar: AppBar(
+          
           title: const Text("Home Page"),
           centerTitle: true,
           actions: [
@@ -40,6 +42,12 @@ class _HomePageState extends State<HomePage> {
             )
           ],
         ),
+body: Center(
+  child: ElevatedButton(
+    onPressed: () => Get.to(() => const CampusFeedScreen()),
+    child: const Text('Open Campus Feed'),
+  ),
+),
       ),
     );
   }

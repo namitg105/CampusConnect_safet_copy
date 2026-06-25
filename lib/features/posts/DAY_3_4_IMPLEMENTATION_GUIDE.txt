@@ -1,0 +1,287 @@
+/*
+  ╔════════════════════════════════════════════════════════════════════════════╗
+  ║                    DAY 3-4 IMPLEMENTATION GUIDE                            ║
+  ║              COLLEGE REDDIT-STYLE POSTS FEATURE                            ║
+  ║                    (Clean 3-Layer Architecture)                            ║
+  ╚════════════════════════════════════════════════════════════════════════════╝
+
+  PROJECT STRUCTURE:
+  lib/features/posts/
+    ├── data/
+    │   └── post_repo_impl.dart          ← Enhanced queries, vote logic
+    │
+    ├── domain/
+    │   ├── entities/
+    │   │   ├── post_entity.dart         ← Post model (already done)
+    │   │   └── vote_entity.dart         ← Vote model (NEW for Day 3-6)
+    │   ├── repos/
+    │   │   └── post_repo.dart           ← Abstract repository interface
+    │   └── usecases/
+    │       ├── create_post_usecase.dart
+    │       ├── get_feed_usecase.dart
+    │       ├── get_feed_by_tag_usecase.dart    ← NEW for Day 3
+    │       ├── get_top_voted_usecase.dart      ← NEW for Day 3
+    │       └── upvote_post_usecase.dart        ← NEW for Day 6
+    │
+    └── presentation/
+        ├── controllers/
+        │   └── post_controller.dart      ← GetX controller (updated with Day 3-4 logic)
+        ├── pages/
+        │   └── campus_feed_screen.dart   ← Main Feed UI (NEW for Day 4)
+        └── widgets/
+            └── post_card.dart            ← Individual post card (NEW for Day 4)
+
+  ═══════════════════════════════════════════════════════════════════════════════
+
+  📌 DAY 3: DATA LAYER ENHANCEMENTS
+  
+  ✅ WHAT WAS ADDED:
+  
+  1. New Query Methods in PostRepoImpl:
+     • getCollegeFeedByTag(collegeId, tag)
+       - Filters posts by college AND tag (#Badminton, #Seniors, etc.)
+       - Query: collection('posts')
+               .where('collegeId', ==, collegeId)
+               .where('tag', ==, tag)
+               .orderBy('createdAt', descending: true)
+     
+     • getTopVotedPosts(collegeId)
+       - Sorts by upvotes instead of creation date (for "Top Voted" tab)
+       - Query: collection('posts')
+               .where('collegeId', ==, collegeId)
+               .orderBy('upvotes', descending: true)
+  
+  2. Vote Management (Firestore Transactions):
+     • upvotePost(postId, userId)
+       - Stores user vote in subcollection: /posts/{postId}/votes/{userId}
+       - Atomically increments/decrements post upvotes
+       - Prevents double voting via transaction
+       - Data structure:
+         posts/
+           └── {postId}/
+               ├── votes/
+               │   └── {userId}: { voteValue: 1, votedAt: timestamp }
+               └── upvotes: 42
+     
+     • downvotePost(postId, userId)
+       - Similar to upvote but stores voteValue: -1
+     
+     • removeVote(postId, userId)
+       - Deletes user's vote and reverts upvote count
+
+  3. VoteEntity Model:
+     - Holds userId and voteValue (1, -1, or 0)
+     - Tracks when vote was cast
+
+  KEY SECURITY CONCEPT:
+  ⚠️  Firestore Transaction ensures atomicity:
+      If 2 users vote simultaneously, both operations complete correctly.
+      Without transactions, race conditions could cause vote count inconsistency.
+
+  ═══════════════════════════════════════════════════════════════════════════════
+
+  📌 DAY 4: PRESENTATION LAYER - FEED UI
+
+  ✅ WHAT WAS ADDED:
+
+  1. PostCard Widget (post_card.dart):
+     - Displays individual post in a compact card format (like Reddit)
+     - Shows:
+       • Author name
+       • Post title (bold, truncated at 2 lines)
+       • Post body preview (truncated at 3 lines)
+       • Tag chip (#Badminton, etc.)
+       • Vote count with up/down arrows
+       • Comment count
+     - Reactive vote buttons (change color when clicked)
+     - Fully themeable (light/dark mode support)
+
+  2. CampusFeedScreen (campus_feed_screen.dart):
+     - Main feed page for viewing all college posts
+     - TABS:
+       • "Newest" - Shows latest posts first
+       • "Top Voted" - Shows highest voted posts first
+     
+     - TAG FILTERS:
+       • Horizontal chip list with all available tags
+       • Click to filter posts by tag
+       • "All" shows all posts regardless of tag
+       • Tags: All, Badminton, Seniors, ExamHelp, General, Events, Study
+     
+     - STATES:
+       • Loading: Shows spinner while fetching
+       • Error: Displays error message if fetch fails
+       • Empty: Shows "No posts yet" if feed is empty
+       • Success: Lists all posts using ListView.builder
+
+  3. PostController Updates (GetX state management):
+     - New reactive properties:
+       • selectedTab (RxString): tracks "Newest" or "Top Voted"
+       • selectedTag (RxString): tracks currently selected tag filter
+       • userVotes (RxMap): stores user's vote on each post (1, -1, 0)
+     
+     - New methods:
+       • changeTab(tabName, user): Switch between sorting modes
+       • filterByTag(tag, user): Filter posts by tag
+       • toggleUpvote(postId, userId, author): Handle upvote action
+
+  ═══════════════════════════════════════════════════════════════════════════════
+
+  🔧 HOW TO INTEGRATE INTO YOUR APP:
+
+  Step 1: Wire PostController in main.dart or HomePage
+  ────────────────────────────────────────────────────
+  
+  In your HomePage or main app widget:
+  
+  final PostController postController = Get.put(
+    PostController(
+      createPostUseCase: CreatePostUseCase(repository: PostRepoImpl()),
+      getFeedUseCase: GetFeedUseCase(repository: PostRepoImpl()),
+      getFeedByTagUseCase: GetFeedByTagUseCase(repository: PostRepoImpl()),
+      getTopVotedPostsUseCase: GetTopVotedPostsUseCase(repository: PostRepoImpl()),
+      upvotePostUseCase: UpvotePostUseCase(repository: PostRepoImpl()),
+    ),
+  );
+
+  Step 2: Add Navigation
+  ──────────────────────
+  In your BottomNavBar or navigation controller:
+  
+  Get.to(() => const CampusFeedScreen());
+
+  Step 3: Test Data (Create sample posts in Firebase Console)
+  ────────────────────────────────────────────────────────────
+  In Firebase Console > Firestore > Create Collection "posts":
+  
+  {
+    "title": "Badminton match tomorrow evening!",
+    "body": "Anyone interested in playing badminton at 5pm near the gym?",
+    "authorId": "user123",
+    "authorName": "John Doe",
+    "collegeId": "vitstudent.ac.in",
+    "tag": "Badminton",
+    "upvotes": 5,
+    "commentCount": 2,
+    "createdAt": "2026-06-23T10:30:00Z"
+  }
+
+  ═══════════════════════════════════════════════════════════════════════════════
+
+  📊 FIRESTORE DATA STRUCTURE AFTER DAY 3-4:
+
+  Firestore Database:
+  ──────────────────
+  
+  posts/
+    ├── {postId1}: {
+    │   title: "Badminton match tomorrow...",
+    │   body: "Anyone interested...",
+    │   authorId: "uid123",
+    │   authorName: "John Doe",
+    │   collegeId: "vitstudent.ac.in",
+    │   tag: "Badminton",
+    │   upvotes: 5,
+    │   commentCount: 0,
+    │   createdAt: timestamp,
+    │   votes/
+    │     ├── uid1: { voteValue: 1, votedAt: timestamp }
+    │     ├── uid2: { voteValue: 1, votedAt: timestamp }
+    │     └── uid3: { voteValue: -1, votedAt: timestamp }
+    │ }
+    │
+    └── {postId2}: { ... similar structure ... }
+
+  users/
+    └── {uid}: {
+        uid: "...",
+        email: "student@vitstudent.ac.in",
+        name: "John Doe",
+        collegeId: "vitstudent.ac.in"  ← SEGREGATION KEY
+    }
+
+  ═══════════════════════════════════════════════════════════════════════════════
+
+  🔐 SECURITY RULES CHECKLIST (Day 10):
+
+  ⚠️  Add these Firestore Security Rules to prevent data leaks:
+
+  match /posts/{document=**} {
+    allow read: if request.auth.token.email.endsWith(resource.data.collegeId);
+    allow create: if request.auth.token.email.endsWith(request.resource.data.collegeId);
+    allow update: if request.auth.uid == resource.data.authorId;
+    allow delete: if request.auth.uid == resource.data.authorId;
+  }
+
+  This ensures:
+  ✓ Users only see posts from their college
+  ✓ Users can only post if their email matches college domain
+  ✓ Only post author can edit/delete their post
+
+  ═══════════════════════════════════════════════════════════════════════════════
+
+  📝 COMMON ISSUES & FIXES:
+
+  Issue 1: "Posts not loading"
+  → Check Firestore collection name is exactly "posts" (lowercase)
+  → Check user's collegeId is set correctly (should match domain part of email)
+
+  Issue 2: "Vote count not updating"
+  → Verify Firestore rules allow writing to votes subcollection
+  → Check that transaction is not throwing errors (see console logs)
+
+  Issue 3: "Tag filter not working"
+  → Ensure posts have "tag" field in Firestore
+  → Check that selected tag matches exactly (case-sensitive)
+
+  Issue 4: "Dark mode not applying"
+  → Check that LightModeController is properly initialized
+  → Make sure Get.find<LightModeController>() is called after Get.put()
+
+  ═══════════════════════════════════════════════════════════════════════════════
+
+  ✅ READY FOR TESTING:
+
+  1. Run: flutter pub get
+  2. Run: flutter run
+  3. Login with college email
+  4. Add test posts in Firebase Console
+  5. Navigate to CampusFeedScreen
+  6. Try sorting by "Top Voted"
+  7. Try filtering by tags
+  8. Try clicking upvote button
+
+  ═══════════════════════════════════════════════════════════════════════════════
+
+  ⏭️  WHAT'S NEXT (Days 5-10):
+
+  Day 5: Create Post Screen UI
+         - Text input for title & body
+         - Tag selection chips
+         - Image picker (if needed)
+         - Submit button wired to PostController.addPost()
+
+  Day 6: Vote UI & Interaction
+         - Implement downvote logic
+         - Add visual feedback for voting
+         - Prevent double voting on UI side
+
+  Day 7: Comments Domain & Data
+         - Create CommentEntity
+         - Add subcollection queries
+         - Implement comment creation
+
+  Day 8: Comments UI Screen
+         - PostDetailScreen showing full post + all comments
+         - Comment input field at bottom
+         - Comment list with author & timestamp
+
+  Day 9: Tag Filtering & Sorting
+         - Already implemented! ✓
+
+  Day 10: Segregation & Edge Case Testing
+          - Test with 2 different college emails
+          - Verify no data leaks between colleges
+          - Test Firestore security rules
+
+*/
