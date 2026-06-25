@@ -12,6 +12,7 @@ import 'package:noteswap/features/posts/domain/usecases/get_feed_by_tag_usecase.
 import 'package:noteswap/features/posts/domain/usecases/get_top_voted_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/toggle_comment_like_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/upvote_post_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/get_user_votes_usecase.dart';
 
 class PostController extends GetxController {
   final CreatePostUseCase createPostUseCase;
@@ -24,6 +25,7 @@ class PostController extends GetxController {
   final GetCommentsUseCase getCommentsUseCase;
   final DeleteCommentUseCase deleteCommentUseCase;
   final ToggleCommentLikeUseCase toggleCommentLikeUseCase;
+  final GetUserVotesUseCase getUserVotesUseCase;
 
   PostController({
     required this.createPostUseCase,
@@ -36,6 +38,7 @@ class PostController extends GetxController {
     required this.getCommentsUseCase,
     required this.deleteCommentUseCase,
     required this.toggleCommentLikeUseCase,
+    required this.getUserVotesUseCase,
   });
 
   final RxList<PostEntity> posts = <PostEntity>[].obs;
@@ -73,6 +76,13 @@ class PostController extends GetxController {
       }
 
       posts.value = collegeFeed;
+
+      // Fetch user's votes for these posts to keep client state in sync
+      if (user.uid.isNotEmpty && collegeFeed.isNotEmpty) {
+        final postIds = collegeFeed.map((post) => post.id).toList();
+        final votes = await getUserVotesUseCase.call(user.uid, postIds);
+        userVotes.addAll(votes);
+      }
     } catch (e) {
       errorMessage.value = 'Failed to load feed: $e';
     } finally {
@@ -95,30 +105,43 @@ class PostController extends GetxController {
     required String body,
     required AppUser author,
     required String tag,
+    String? imagePath,
+    String? imageName,
   }) async {
     if (title.trim().isEmpty || body.trim().isEmpty) {
       errorMessage.value = 'Title and body cannot be empty.';
       return;
     }
 
-    final newPost = PostEntity(
-      id: '',
-      title: title.trim(),
-      body: body.trim(),
-      authorId: author.uid,
-      authorName: author.name.isNotEmpty ? author.name : author.email,
-      collegeId: author.collegeId,
-      upvotes: 0,
-      commentCount: 0,
-      tag: tag,
-      createdAt: DateTime.now(),
-    );
+    isLoading.value = true;
+    errorMessage.value = '';
 
     try {
+      String? imageUrl;
+      if (imagePath != null && imageName != null) {
+        imageUrl = await createPostUseCase.repository.uploadPostImage(imagePath, imageName);
+      }
+
+      final newPost = PostEntity(
+        id: '',
+        title: title.trim(),
+        body: body.trim(),
+        authorId: author.uid,
+        authorName: author.name.isNotEmpty ? author.name : author.email,
+        collegeId: author.collegeId,
+        upvotes: 0,
+        commentCount: 0,
+        tag: tag,
+        createdAt: DateTime.now(),
+        imageUrl: imageUrl,
+      );
+
       await createPostUseCase.call(newPost);
       await loadFeed(author);
     } catch (e) {
       errorMessage.value = 'Unable to create post: $e';
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -132,18 +155,20 @@ class PostController extends GetxController {
       return;
     }
 
+    errorMessage.value = '';
+
     final previousVote = userVotes[postId] ?? 0;
     final nextVote = previousVote == 1 ? 0 : 1;
+    print("[PostController] toggleUpvote: postId=$postId, previousVote=$previousVote, nextVote=$nextVote");
 
     votingPostIds.add(postId);
 
     try {
       await upvotePostUseCase.call(postId, userId);
       userVotes[postId] = nextVote;
-      if (author != null) {
-        await loadFeed(author);
-      }
-    } catch (e) {
+      _updatePostVoteCount(postId, calculateVoteDelta(previousVote: previousVote, isUpvote: true));
+    } catch (e, stack) {
+      print("Error in toggleUpvote: $e\n$stack");
       errorMessage.value = 'Error voting: $e';
     } finally {
       votingPostIds.remove(postId);
@@ -160,8 +185,11 @@ class PostController extends GetxController {
       return;
     }
 
+    errorMessage.value = '';
+
     final previousVote = userVotes[postId] ?? 0;
     final nextVote = previousVote == -1 ? 0 : -1;
+    print("[PostController] toggleDownvote: postId=$postId, previousVote=$previousVote, nextVote=$nextVote");
 
     votingPostIds.add(postId);
 
@@ -169,10 +197,8 @@ class PostController extends GetxController {
       await downvotePostUseCase.call(postId, userId);
       userVotes[postId] = nextVote;
       _updatePostVoteCount(postId, calculateVoteDelta(previousVote: previousVote, isUpvote: false));
-      if (author != null) {
-        await loadFeed(author);
-      }
-    } catch (e) {
+    } catch (e, stack) {
+      print("Error in toggleDownvote: $e\n$stack");
       errorMessage.value = 'Error voting: $e';
     } finally {
       votingPostIds.remove(postId);
@@ -191,7 +217,7 @@ class PostController extends GetxController {
     }
 
     final currentPost = posts[index];
-    final updatedCount = (currentPost.upvotes + delta).clamp(0, double.infinity).toInt();
+    final updatedCount = (currentPost.upvotes + delta).toInt();
     posts[index] = currentPost.copyWith(upvotes: updatedCount);
   }
 

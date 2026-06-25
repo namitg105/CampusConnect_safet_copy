@@ -62,11 +62,13 @@ service cloud.firestore {
       // Votes subcollection: each user can write their own vote document
       match /votes/{userId} {
         allow read: if isSignedIn();
-        allow write: if isSignedIn()
+        allow create, update: if isSignedIn()
           && request.auth.uid == userId
           && request.resource.data.voteValue is int
           && request.resource.data.voteValue >= -1
           && request.resource.data.voteValue <= 1;
+        allow delete: if isSignedIn()
+          && request.auth.uid == userId;
       }
 
       // Comments subcollection: allow authenticated users to read and create comments

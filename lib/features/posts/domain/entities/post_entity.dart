@@ -11,6 +11,7 @@ class PostEntity {
   final int commentCount;
   final String tag;
   final DateTime createdAt;
+  final String? imageUrl;
 
   PostEntity({
     required this.id,
@@ -23,6 +24,7 @@ class PostEntity {
     required this.commentCount,
     required this.tag,
     required this.createdAt,
+    this.imageUrl,
   });
 
   Map<String, dynamic> toJson() {
@@ -36,10 +38,11 @@ class PostEntity {
       'commentCount': commentCount,
       'tag': tag,
       'createdAt': Timestamp.fromDate(createdAt),
+      'imageUrl': imageUrl,
     };
   }
 
-  PostEntity copyWith({int? upvotes, int? commentCount}) {
+  PostEntity copyWith({int? upvotes, int? commentCount, String? imageUrl}) {
     return PostEntity(
       id: id,
       title: title,
@@ -51,6 +54,7 @@ class PostEntity {
       commentCount: commentCount ?? this.commentCount,
       tag: tag,
       createdAt: createdAt,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 
@@ -77,6 +81,7 @@ class PostEntity {
       commentCount: (json['commentCount'] ?? 0) as int,
       tag: json['tag'] ?? 'General',
       createdAt: createdAt,
+      imageUrl: json['imageUrl'] as String?,
     );
   }
 }

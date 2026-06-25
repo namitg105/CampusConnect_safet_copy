@@ -21,6 +21,7 @@ import 'package:noteswap/features/posts/domain/usecases/get_feed_by_tag_usecase.
 import 'package:noteswap/features/posts/domain/usecases/get_top_voted_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/toggle_comment_like_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/upvote_post_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/get_user_votes_usecase.dart';
 
 /// Day 4: Campus Feed Screen
 /// Displays all posts from your college sorted by Newest or Top Voted
@@ -67,6 +68,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
       getCommentsUseCase: GetCommentsUseCase(repository: postRepo),
       deleteCommentUseCase: DeleteCommentUseCase(repository: postRepo),
       toggleCommentLikeUseCase: ToggleCommentLikeUseCase(repository: postRepo),
+      getUserVotesUseCase: GetUserVotesUseCase(repository: postRepo),
     );
 
     // Load feed when screen initializes

@@ -12,6 +12,7 @@ import 'package:noteswap/features/posts/domain/usecases/get_feed_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_top_voted_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/toggle_comment_like_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/upvote_post_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/get_user_votes_usecase.dart';
 import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
 
 class FakePostRepo implements PostRepo {
@@ -50,6 +51,12 @@ class FakePostRepo implements PostRepo {
 
   @override
   Future<void> toggleCommentLike(String postId, String commentId, String userId) async {}
+
+  @override
+  Future<Map<String, int>> getUserVotesForPosts(String userId, List<String> postIds) async => {};
+
+  @override
+  Future<String> uploadPostImage(String localPath, String fileName) async => '';
 }
 
 void main() {
@@ -66,6 +73,7 @@ void main() {
         getCommentsUseCase: GetCommentsUseCase(repository: FakePostRepo()),
         deleteCommentUseCase: DeleteCommentUseCase(repository: FakePostRepo()),
         toggleCommentLikeUseCase: ToggleCommentLikeUseCase(repository: FakePostRepo()),
+        getUserVotesUseCase: GetUserVotesUseCase(repository: FakePostRepo()),
       );
 
       await controller.toggleUpvote('post-1', 'user-1', null);
@@ -85,6 +93,7 @@ void main() {
         getCommentsUseCase: GetCommentsUseCase(repository: FakePostRepo()),
         deleteCommentUseCase: DeleteCommentUseCase(repository: FakePostRepo()),
         toggleCommentLikeUseCase: ToggleCommentLikeUseCase(repository: FakePostRepo()),
+        getUserVotesUseCase: GetUserVotesUseCase(repository: FakePostRepo()),
       );
 
       expect(controller.calculateVoteDelta(previousVote: 0, isUpvote: true), 1);
@@ -107,6 +116,7 @@ void main() {
         getCommentsUseCase: GetCommentsUseCase(repository: FakePostRepo()),
         deleteCommentUseCase: DeleteCommentUseCase(repository: FakePostRepo()),
         toggleCommentLikeUseCase: ToggleCommentLikeUseCase(repository: FakePostRepo()),
+        getUserVotesUseCase: GetUserVotesUseCase(repository: FakePostRepo()),
       );
 
       await controller.toggleCommentLike('post-1', 'comment-1', 'user-1');

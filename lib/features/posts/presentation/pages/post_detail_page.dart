@@ -45,6 +45,17 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 Text(widget.post.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 Text(widget.post.body),
+                if (widget.post.imageUrl != null && widget.post.imageUrl!.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      widget.post.imageUrl!,
+                      fit: BoxFit.contain,
+                      width: double.infinity,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 Text('by ${widget.post.authorName} • #${widget.post.tag}'),
                 const SizedBox(height: 20),

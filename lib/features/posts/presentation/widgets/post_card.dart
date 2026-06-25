@@ -110,6 +110,42 @@ class PostCard extends StatelessWidget {
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
+            if (post.imageUrl != null && post.imageUrl!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  constraints: const BoxConstraints(maxHeight: 250),
+                  width: double.infinity,
+                  child: Image.network(
+                    post.imageUrl!,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        height: 150,
+                        color: isLightMode ? Colors.grey[200] : Colors.grey[850],
+                        child: const Center(
+                          child: CircularProgressIndicator(color: Color(0xFF6139ED)),
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      color: isLightMode ? Colors.grey[100] : Colors.grey[900],
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline, color: Colors.grey),
+                          SizedBox(width: 8),
+                          Text('Could not load image', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 10),
 
             // Vote & Comment Row

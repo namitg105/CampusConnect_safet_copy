@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:noteswap/features/posts/domain/entities/comment_entity.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
@@ -97,19 +99,23 @@ class PostRepoImpl implements PostRepo {
       final voteRef = postRef.collection('votes').doc(userId);
       final voteSnapshot = await transaction.get(voteRef);
 
-      int currentUpvotes = (postSnapshot.data()?['upvotes'] ?? 0) as int;
+      int currentUpvotes = ((postSnapshot.data()?['upvotes'] ?? 0) as num).toInt();
+      print(
+          "[Firestore Transaction Upvote] postId=$postId, userId=$userId, currentUpvotes in DB=$currentUpvotes, voteSnapshot exists=${voteSnapshot.exists}");
 
       if (voteSnapshot.exists) {
-        final existingVote = (voteSnapshot.data()?['voteValue'] ?? 0) as int;
+        final existingVote = ((voteSnapshot.data()?['voteValue'] ?? 0) as num).toInt();
+        print("[Firestore Transaction Upvote] existingVote=$existingVote");
 
         if (existingVote == 1) {
           // Already upvoted - remove vote
-          currentUpvotes = (currentUpvotes - 1).clamp(0, double.infinity).toInt();
+          currentUpvotes = currentUpvotes - 1;
           transaction.delete(voteRef);
         } else if (existingVote == -1) {
           // Was downvoted - change to upvote
           currentUpvotes = (currentUpvotes + 2).toInt();
-          transaction.set(voteRef, {'voteValue': 1, 'votedAt': Timestamp.now()});
+          transaction
+              .set(voteRef, {'voteValue': 1, 'votedAt': Timestamp.now()});
         }
       } else {
         // No prior vote - add upvote
@@ -117,6 +123,8 @@ class PostRepoImpl implements PostRepo {
         transaction.set(voteRef, {'voteValue': 1, 'votedAt': Timestamp.now()});
       }
 
+      print(
+          "[Firestore Transaction Upvote] writing new currentUpvotes=$currentUpvotes");
       transaction.update(postRef, {'upvotes': currentUpvotes});
     });
   }
@@ -135,10 +143,13 @@ class PostRepoImpl implements PostRepo {
       final voteRef = postRef.collection('votes').doc(userId);
       final voteSnapshot = await transaction.get(voteRef);
 
-      int currentUpvotes = (postSnapshot.data()?['upvotes'] ?? 0) as int;
+      int currentUpvotes = ((postSnapshot.data()?['upvotes'] ?? 0) as num).toInt();
+      print(
+          "[Firestore Transaction Downvote] postId=$postId, userId=$userId, currentUpvotes in DB=$currentUpvotes, voteSnapshot exists=${voteSnapshot.exists}");
 
       if (voteSnapshot.exists) {
-        final existingVote = (voteSnapshot.data()?['voteValue'] ?? 0) as int;
+        final existingVote = ((voteSnapshot.data()?['voteValue'] ?? 0) as num).toInt();
+        print("[Firestore Transaction Downvote] existingVote=$existingVote");
 
         if (existingVote == -1) {
           // Already downvoted - remove vote
@@ -146,15 +157,18 @@ class PostRepoImpl implements PostRepo {
           transaction.delete(voteRef);
         } else if (existingVote == 1) {
           // Was upvoted - change to downvote
-          currentUpvotes = (currentUpvotes - 2).clamp(0, double.infinity).toInt();
-          transaction.set(voteRef, {'voteValue': -1, 'votedAt': Timestamp.now()});
+          currentUpvotes = currentUpvotes - 2;
+          transaction
+              .set(voteRef, {'voteValue': -1, 'votedAt': Timestamp.now()});
         }
       } else {
         // No prior vote - add downvote
-        currentUpvotes = (currentUpvotes - 1).clamp(0, double.infinity).toInt();
+        currentUpvotes = currentUpvotes - 1;
         transaction.set(voteRef, {'voteValue': -1, 'votedAt': Timestamp.now()});
       }
 
+      print(
+          "[Firestore Transaction Downvote] writing new currentUpvotes=$currentUpvotes");
       transaction.update(postRef, {'upvotes': currentUpvotes});
     });
   }
@@ -178,9 +192,9 @@ class PostRepoImpl implements PostRepo {
         int currentUpvotes = (postSnapshot.data()?['upvotes'] ?? 0) as int;
 
         if (voteValue == 1) {
-          currentUpvotes = (currentUpvotes - 1).clamp(0, double.infinity).toInt();
+          currentUpvotes = currentUpvotes - 1;
         } else if (voteValue == -1) {
-          currentUpvotes = (currentUpvotes + 1).toInt();
+          currentUpvotes = currentUpvotes + 1;
         }
 
         transaction.delete(voteRef);
@@ -192,7 +206,8 @@ class PostRepoImpl implements PostRepo {
   @override
   Future<void> addComment(CommentEntity comment) async {
     final postRef = firestore.collection('posts').doc(comment.postId);
-    final commentRef = await postRef.collection('comments').add(comment.toJson());
+    final commentRef =
+        await postRef.collection('comments').add(comment.toJson());
     await postRef.update({'commentCount': FieldValue.increment(1)});
     await commentRef.update({'id': commentRef.id});
   }
@@ -212,8 +227,13 @@ class PostRepoImpl implements PostRepo {
   }
 
   @override
-  Future<void> deleteComment(String postId, String commentId, String userId) async {
-    final commentRef = firestore.collection('posts').doc(postId).collection('comments').doc(commentId);
+  Future<void> deleteComment(
+      String postId, String commentId, String userId) async {
+    final commentRef = firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('comments')
+        .doc(commentId);
     final snapshot = await commentRef.get();
     if (!snapshot.exists) {
       return;
@@ -225,13 +245,19 @@ class PostRepoImpl implements PostRepo {
 
     final batch = firestore.batch();
     batch.delete(commentRef);
-    batch.update(firestore.collection('posts').doc(postId), {'commentCount': FieldValue.increment(-1)});
+    batch.update(firestore.collection('posts').doc(postId),
+        {'commentCount': FieldValue.increment(-1)});
     await batch.commit();
   }
 
   @override
-  Future<void> toggleCommentLike(String postId, String commentId, String userId) async {
-    final commentRef = firestore.collection('posts').doc(postId).collection('comments').doc(commentId);
+  Future<void> toggleCommentLike(
+      String postId, String commentId, String userId) async {
+    final commentRef = firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('comments')
+        .doc(commentId);
     final likeRef = commentRef.collection('likes').doc(userId);
     final likeSnapshot = await likeRef.get();
 
@@ -242,5 +268,42 @@ class PostRepoImpl implements PostRepo {
 
     await likeRef.set({'userId': userId, 'createdAt': Timestamp.now()});
   }
-}
 
+  @override
+  Future<Map<String, int>> getUserVotesForPosts(
+      String userId, List<String> postIds) async {
+    final Map<String, int> votes = {};
+    if (userId.isEmpty || postIds.isEmpty) return votes;
+
+    final futures = postIds.map((postId) async {
+      try {
+        final voteDoc = await firestore
+            .collection('posts')
+            .doc(postId)
+            .collection('votes')
+            .doc(userId)
+            .get();
+        if (voteDoc.exists) {
+          final val = voteDoc.data()?['voteValue'] ?? 0;
+          votes[postId] = (val as num).toInt();
+        } else {
+          votes[postId] = 0;
+        }
+      } catch (e) {
+        print("Error fetching vote for post $postId: $e");
+        votes[postId] = 0;
+      }
+    });
+
+    await Future.wait(futures);
+    return votes;
+  }
+
+  @override
+  Future<String> uploadPostImage(String localPath, String fileName) async {
+    final storageRef = FirebaseStorage.instance.ref();
+    final imageRef = storageRef.child('posts/images/${DateTime.now().millisecondsSinceEpoch}_$fileName');
+    final uploadTask = await imageRef.putFile(File(localPath));
+    return await uploadTask.ref.getDownloadURL();
+  }
+}
