@@ -5,6 +5,8 @@ class CommentEntity {
   final String authorName;
   final String text;
   final DateTime createdAt;
+  final String? parentId;
+  final int likes;
 
   CommentEntity({
     required this.id,
@@ -13,6 +15,8 @@ class CommentEntity {
     required this.authorName,
     required this.text,
     required this.createdAt,
+    this.parentId,
+    this.likes = 0,
   });
 
   Map<String, dynamic> toJson() {
@@ -22,6 +26,8 @@ class CommentEntity {
       'authorName': authorName,
       'text': text,
       'createdAt': createdAt.toIso8601String(),
+      if (parentId != null) 'parentId': parentId,
+      'likes': likes,
     };
   }
 
@@ -33,6 +39,8 @@ class CommentEntity {
       authorName: json['authorName'] ?? '',
       text: json['text'] ?? '',
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+      parentId: json['parentId'],
+      likes: json['likes'] ?? 0,
     );
   }
 }

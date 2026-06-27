@@ -13,6 +13,8 @@ import 'package:noteswap/features/posts/domain/usecases/get_top_voted_usecase.da
 import 'package:noteswap/features/posts/domain/usecases/toggle_comment_like_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/upvote_post_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_user_votes_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/delete_post_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/get_user_liked_comments_usecase.dart';
 
 class PostController extends GetxController {
   final CreatePostUseCase createPostUseCase;
@@ -26,6 +28,8 @@ class PostController extends GetxController {
   final DeleteCommentUseCase deleteCommentUseCase;
   final ToggleCommentLikeUseCase toggleCommentLikeUseCase;
   final GetUserVotesUseCase getUserVotesUseCase;
+  final DeletePostUseCase deletePostUseCase;
+  final GetUserLikedCommentsUseCase getUserLikedCommentsUseCase;
 
   PostController({
     required this.createPostUseCase,
@@ -39,6 +43,8 @@ class PostController extends GetxController {
     required this.deleteCommentUseCase,
     required this.toggleCommentLikeUseCase,
     required this.getUserVotesUseCase,
+    required this.deletePostUseCase,
+    required this.getUserLikedCommentsUseCase,
   });
 
   final RxList<PostEntity> posts = <PostEntity>[].obs;
@@ -223,10 +229,19 @@ class PostController extends GetxController {
 
   int getUserVote(String postId) => userVotes[postId] ?? 0;
 
-  Future<List<CommentEntity>> loadComments(String postId) async {
+  Future<List<CommentEntity>> loadComments(String postId, String userId) async {
     try {
-      comments.value = await getCommentsUseCase.call(postId);
-      return comments;
+      final fetchedComments = await getCommentsUseCase.call(postId);
+      comments.value = fetchedComments;
+
+      // Load liked states for these comments
+      if (userId.isNotEmpty && fetchedComments.isNotEmpty) {
+        final commentIds = fetchedComments.map((c) => c.id).toList();
+        final likedStates = await getUserLikedCommentsUseCase.call(postId, userId, commentIds);
+        likedComments.addAll(likedStates);
+      }
+
+      return fetchedComments;
     } catch (e) {
       errorMessage.value = 'Unable to load comments: $e';
       return [];
@@ -238,6 +253,7 @@ class PostController extends GetxController {
     required String authorId,
     required String authorName,
     required String text,
+    String? parentId,
     AppUser? author,
   }) async {
     if (text.trim().isEmpty || authorId.isEmpty) {
@@ -252,9 +268,10 @@ class PostController extends GetxController {
         authorName: authorName,
         text: text.trim(),
         createdAt: DateTime.now(),
+        parentId: parentId,
       );
       await addCommentUseCase.call(comment);
-      await loadComments(postId);
+      await loadComments(postId, authorId);
       if (author != null) {
         await loadFeed(author);
       }
@@ -266,7 +283,25 @@ class PostController extends GetxController {
   Future<void> toggleCommentLike(String postId, String commentId, String userId) async {
     try {
       await toggleCommentLikeUseCase.call(postId, commentId, userId);
-      likedComments[commentId] = !(likedComments[commentId] ?? false);
+      final isLiked = !(likedComments[commentId] ?? false);
+      likedComments[commentId] = isLiked;
+
+      // Update comment likes count locally in comments list
+      final index = comments.indexWhere((c) => c.id == commentId);
+      if (index != -1) {
+        final currentComment = comments[index];
+        final currentLikes = currentComment.likes;
+        comments[index] = CommentEntity(
+          id: currentComment.id,
+          postId: currentComment.postId,
+          authorId: currentComment.authorId,
+          authorName: currentComment.authorName,
+          text: currentComment.text,
+          createdAt: currentComment.createdAt,
+          parentId: currentComment.parentId,
+          likes: isLiked ? currentLikes + 1 : (currentLikes - 1 < 0 ? 0 : currentLikes - 1),
+        );
+      }
     } catch (e) {
       errorMessage.value = 'Unable to like comment: $e';
     }
@@ -282,12 +317,25 @@ class PostController extends GetxController {
   }) async {
     try {
       await deleteCommentUseCase.call(postId, commentId, userId);
-      await loadComments(postId);
+      await loadComments(postId, userId);
       if (author != null) {
         await loadFeed(author);
       }
     } catch (e) {
       errorMessage.value = 'Unable to delete comment: $e';
+    }
+  }
+
+  Future<void> removePost(String postId, AppUser author) async {
+    isLoading.value = true;
+    errorMessage.value = '';
+    try {
+      await deletePostUseCase.call(postId);
+      await loadFeed(author);
+    } catch (e) {
+      errorMessage.value = 'Failed to delete post: $e';
+    } finally {
+      isLoading.value = false;
     }
   }
 }

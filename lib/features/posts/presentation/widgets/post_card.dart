@@ -10,6 +10,7 @@ class PostCard extends StatelessWidget {
   final VoidCallback onProfileTap;
   final VoidCallback onUpvote;
   final VoidCallback onDownvote;
+  final VoidCallback? onDelete;
   final bool isUpvoted;
   final bool isDownvoted;
   final bool isLightMode;
@@ -21,6 +22,7 @@ class PostCard extends StatelessWidget {
     required this.onProfileTap,
     required this.onUpvote,
     required this.onDownvote,
+    this.onDelete,
     this.isUpvoted = false,
     this.isDownvoted = false,
     required this.isLightMode,
@@ -68,6 +70,20 @@ class PostCard extends StatelessWidget {
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
+                if (onDelete != null) ...[
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: onDelete,
+                    icon: Icon(
+                      Icons.delete_outline,
+                      size: 20,
+                      color: Colors.red[400],
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(

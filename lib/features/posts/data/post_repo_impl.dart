@@ -259,14 +259,27 @@ class PostRepoImpl implements PostRepo {
         .collection('comments')
         .doc(commentId);
     final likeRef = commentRef.collection('likes').doc(userId);
-    final likeSnapshot = await likeRef.get();
 
-    if (likeSnapshot.exists) {
-      await likeRef.delete();
-      return;
-    }
+    await firestore.runTransaction((transaction) async {
+      final commentSnapshot = await transaction.get(commentRef);
+      if (!commentSnapshot.exists) {
+        throw Exception('Comment not found');
+      }
 
-    await likeRef.set({'userId': userId, 'createdAt': Timestamp.now()});
+      final likeSnapshot = await transaction.get(likeRef);
+      int currentLikes = ((commentSnapshot.data()?['likes'] ?? 0) as num).toInt();
+
+      if (likeSnapshot.exists) {
+        currentLikes = (currentLikes - 1).toInt();
+        if (currentLikes < 0) currentLikes = 0;
+        transaction.delete(likeRef);
+      } else {
+        currentLikes = (currentLikes + 1).toInt();
+        transaction.set(likeRef, {'userId': userId, 'createdAt': Timestamp.now()});
+      }
+
+      transaction.update(commentRef, {'likes': currentLikes});
+    });
   }
 
   @override
@@ -305,5 +318,37 @@ class PostRepoImpl implements PostRepo {
     final imageRef = storageRef.child('posts/images/${DateTime.now().millisecondsSinceEpoch}_$fileName');
     final uploadTask = await imageRef.putFile(File(localPath));
     return await uploadTask.ref.getDownloadURL();
+  }
+
+  @override
+  Future<void> deletePost(String postId) async {
+    await firestore.collection('posts').doc(postId).delete();
+  }
+
+  @override
+  Future<Map<String, bool>> getUserLikedComments(
+      String postId, String userId, List<String> commentIds) async {
+    final Map<String, bool> likedComments = {};
+    if (userId.isEmpty || commentIds.isEmpty) return likedComments;
+
+    final futures = commentIds.map((commentId) async {
+      try {
+        final likeDoc = await firestore
+            .collection('posts')
+            .doc(postId)
+            .collection('comments')
+            .doc(commentId)
+            .collection('likes')
+            .doc(userId)
+            .get();
+        likedComments[commentId] = likeDoc.exists;
+      } catch (e) {
+        print("Error fetching like for comment $commentId: $e");
+        likedComments[commentId] = false;
+      }
+    });
+
+    await Future.wait(futures);
+    return likedComments;
   }
 }

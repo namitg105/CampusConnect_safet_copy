@@ -16,4 +16,6 @@ abstract class PostRepo {
   Future<void> toggleCommentLike(String postId, String commentId, String userId);
   Future<Map<String, int>> getUserVotesForPosts(String userId, List<String> postIds);
   Future<String> uploadPostImage(String localPath, String fileName);
+  Future<void> deletePost(String postId);
+  Future<Map<String, bool>> getUserLikedComments(String postId, String userId, List<String> commentIds);
 }

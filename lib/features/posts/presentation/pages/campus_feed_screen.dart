@@ -22,6 +22,8 @@ import 'package:noteswap/features/posts/domain/usecases/get_top_voted_usecase.da
 import 'package:noteswap/features/posts/domain/usecases/toggle_comment_like_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/upvote_post_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_user_votes_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/delete_post_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/get_user_liked_comments_usecase.dart';
 
 /// Day 4: Campus Feed Screen
 /// Displays all posts from your college sorted by Newest or Top Voted
@@ -69,6 +71,8 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
       deleteCommentUseCase: DeleteCommentUseCase(repository: postRepo),
       toggleCommentLikeUseCase: ToggleCommentLikeUseCase(repository: postRepo),
       getUserVotesUseCase: GetUserVotesUseCase(repository: postRepo),
+      deletePostUseCase: DeletePostUseCase(repository: postRepo),
+      getUserLikedCommentsUseCase: GetUserLikedCommentsUseCase(repository: postRepo),
     );
 
     // Load feed when screen initializes
@@ -279,6 +283,9 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                                         currentUser.uid,
                                         currentUser,
                                       ),
+                                      onDelete: post.authorId == currentUser.uid
+                                          ? () => _confirmDeletePost(post.id, currentUser)
+                                          : null,
                                       isLightMode: lightModeController
                                           .isLightMode.value,
                                       isUpvoted: postController.getUserVote(post.id) == 1,
@@ -304,6 +311,35 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  void _confirmDeletePost(String postId, AppUser currentUser) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Post'),
+          content: const Text('Are you sure you want to delete this post? This action cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                Navigator.pop(context);
+                await postController.removePost(postId, currentUser);
+              },
+              child: const Text('Delete'),
+            ),
+          ],
         );
       },
     );

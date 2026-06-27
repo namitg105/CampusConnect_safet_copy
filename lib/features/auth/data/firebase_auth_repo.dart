@@ -31,10 +31,28 @@ class FirebaseAuthRepo implements AuthRepo {
           .signInWithEmailAndPassword(email: email, password: password);
       print("Firebase login successful");
 
+      final String uid = userCredential.user!.uid;
+      final userDoc = await firestore.collection('users').doc(uid).get();
+      String userName = '';
+      if (userDoc.exists) {
+        final userData = userDoc.data();
+        if (userData != null && userData['name'] != null && (userData['name'] as String).isNotEmpty) {
+          userName = userData['name'] as String;
+        }
+      }
+
+      if (userName.isEmpty) {
+        userName = userCredential.user?.displayName ?? '';
+      }
+
+      if (userName.isEmpty && email.contains('@')) {
+        userName = email.split('@').first;
+      }
+
       final AppUser user = AppUser(
-        uid: userCredential.user!.uid,
+        uid: uid,
         email: email,
-        name: userCredential.user?.displayName ?? '',
+        name: userName,
         collegeId: _extractCollegeId(email),
       );
 
@@ -125,10 +143,23 @@ class FirebaseAuthRepo implements AuthRepo {
 
     if (firebaseUser != null) {
       final email = firebaseUser.email ?? '';
+      final userDoc = await firestore.collection('users').doc(firebaseUser.uid).get();
+      String userName = '';
+      if (userDoc.exists) {
+        final userData = userDoc.data();
+        if (userData != null && userData['name'] != null && (userData['name'] as String).isNotEmpty) {
+          userName = userData['name'] as String;
+        }
+      }
+
+      if (userName.isEmpty) {
+        userName = firebaseUser.displayName ?? 'Google User';
+      }
+
       final AppUser user = AppUser(
         uid: firebaseUser.uid,
         email: email,
-        name: firebaseUser.displayName ?? 'Google User',
+        name: userName,
         collegeId: _extractCollegeId(email),
       );
 
