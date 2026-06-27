@@ -181,8 +181,9 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                     child: Row(
-                      children: tags.map((tag) {
+                      children: postController.availableTags.map((tag) {
                         final isSelected = postController.selectedTag.value == tag;
                         return GestureDetector(
                           onTap: () =>

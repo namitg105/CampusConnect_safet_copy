@@ -10,6 +10,7 @@ import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 import 'package:noteswap/features/home/presentation/pages/home_page.dart';
 import 'package:noteswap/firebase_options.dart';
 import 'ViewModels/DarkModeViewModels.dart'; // Retained member's theme controller
+import 'dart:ui';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +54,7 @@ class MyApp extends StatelessWidget {
             themeMode: darkModeController.isLightMode.value
                 ? ThemeMode.light
                 : ThemeMode.dark,
+            scrollBehavior: MyCustomScrollBehavior(),
 
             // 4. Set the Splash Screen as the absolute first view
             home: SplashScreen(),
@@ -61,6 +63,15 @@ class MyApp extends StatelessWidget {
       ),
     );
   }
+}
+
+class MyCustomScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.trackpad,
+      };
 }
 
 /// A wrapper view that dynamically directs the user based on their login status

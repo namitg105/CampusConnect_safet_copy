@@ -56,6 +56,7 @@ class PostController extends GetxController {
   final RxMap<String, int> userVotes = <String, int>{}.obs;
   final RxMap<String, bool> likedComments = <String, bool>{}.obs;
   final RxSet<String> votingPostIds = <String>{}.obs;
+  final RxList<String> availableTags = <String>['All', 'Badminton', 'Seniors', 'ExamHelp', 'General', 'Events', 'Study'].obs;
 
   Future<void> loadFeed(AppUser? user) async {
     if (user == null || user.collegeId.isEmpty) {
@@ -74,6 +75,15 @@ class PostController extends GetxController {
       } else {
         collegeFeed = await getFeedUseCase.call(user.collegeId);
       }
+
+      // Extract unique tags from unfiltered collegeFeed
+      final List<String> currentTags = ['All', 'Badminton', 'Seniors', 'ExamHelp', 'General', 'Events', 'Study'];
+      for (final post in collegeFeed) {
+        if (post.tag.isNotEmpty && !currentTags.contains(post.tag)) {
+          currentTags.add(post.tag);
+        }
+      }
+      availableTags.assignAll(currentTags);
 
       if (selectedTag.value != 'All') {
         collegeFeed = collegeFeed
@@ -133,7 +143,9 @@ class PostController extends GetxController {
         title: title.trim(),
         body: body.trim(),
         authorId: author.uid,
-        authorName: author.name.isNotEmpty ? author.name : author.email,
+        authorName: author.name.isNotEmpty 
+            ? author.name 
+            : (author.email.contains('@') ? author.email.split('@').first : author.email),
         collegeId: author.collegeId,
         upvotes: 0,
         commentCount: 0,

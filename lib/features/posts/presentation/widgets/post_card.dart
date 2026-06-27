@@ -51,7 +51,7 @@ class PostCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    post.authorName,
+                    post.authorName.contains('@') ? post.authorName.split('@').first : post.authorName,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,

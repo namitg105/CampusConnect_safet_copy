@@ -113,7 +113,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
         return AlertDialog(
           backgroundColor: isLightMode ? Colors.white : const Color(0xFF1E1E1E),
           title: Text(
-            'Reply to ${parentComment.authorName}',
+            'Reply to ${parentComment.authorName.contains('@') ? parentComment.authorName.split('@').first : parentComment.authorName}',
             style: TextStyle(color: isLightMode ? Colors.black : Colors.white),
           ),
           content: TextField(
@@ -145,7 +145,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                     authorId: widget.currentUser.uid,
                     authorName: widget.currentUser.name.isNotEmpty 
                         ? widget.currentUser.name 
-                        : widget.currentUser.email,
+                        : (widget.currentUser.email.contains('@') ? widget.currentUser.email.split('@').first : widget.currentUser.email),
                     text: text,
                     parentId: parentComment.id,
                     author: widget.currentUser,
@@ -257,7 +257,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                   ],
                   const SizedBox(height: 12),
                   Text(
-                    'by ${widget.post.authorName} • #${widget.post.tag}',
+                    'by ${widget.post.authorName.contains('@') ? widget.post.authorName.split('@').first : widget.post.authorName} • #${widget.post.tag}',
                     style: TextStyle(
                       fontSize: 12,
                       color: isLightMode ? Colors.grey[600] : Colors.grey[400],
@@ -324,7 +324,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          comment.authorName,
+                                          comment.authorName.contains('@') ? comment.authorName.split('@').first : comment.authorName,
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 13,
@@ -445,7 +445,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                         authorId: widget.currentUser.uid,
                         authorName: widget.currentUser.name.isNotEmpty 
                             ? widget.currentUser.name 
-                            : widget.currentUser.email,
+                            : (widget.currentUser.email.contains('@') ? widget.currentUser.email.split('@').first : widget.currentUser.email),
                         text: commentController.text,
                         author: widget.currentUser,
                       );

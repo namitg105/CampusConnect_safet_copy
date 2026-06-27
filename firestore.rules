@@ -77,7 +77,12 @@ service cloud.firestore {
         allow create: if isSignedIn()
           && request.resource.data.authorId == request.auth.uid
           && request.resource.data.postId == postId;
-        allow update, delete: if isSignedIn() && request.auth.uid == resource.data.authorId;
+        allow update: if isSignedIn()
+          && (
+            request.auth.uid == resource.data.authorId
+            || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
+          );
+        allow delete: if isSignedIn() && request.auth.uid == resource.data.authorId;
 
         // Likes subcollection for comments
         match /likes/{userId} {
