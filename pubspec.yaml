@@ -36,8 +36,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   carousel_slider: ^5.0.0
   get: ^4.7.2
-  image_picker: ^1.1.2
+  image_picker:
   flutter_svg: ^2.0.17
+  url_launcher: ^6.3.0
+  file_picker: ^10.3.2
   get_storage: ^2.1.1
   firebase_core: ^4.10.0
   firebase_auth: ^6.5.2
@@ -46,6 +48,17 @@ dependencies:
   google_sign_in: ^6.0.0
   cloud_firestore:
   get_it:
+  encrypt:
+  crypto:
+  flutter_image_compress:
+  firebase_storage:
+  uuid:
+  ffmpeg_kit_flutter_new:
+
+
+  video_player:
+  path_provider:
+  video_compress:
 
 dev_dependencies:
   flutter_test:
@@ -74,6 +87,7 @@ flutter:
     - assets/
     - assets/images_intro/
     - assets/images_register/
+    - assets/community/
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

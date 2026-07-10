@@ -9,4 +9,8 @@ abstract class ChatRepo {
     String groupId,
     Message message,
   );
+  Future<void> deleteMessage({
+    required String groupId,
+    required String messageId,
+  });
 }

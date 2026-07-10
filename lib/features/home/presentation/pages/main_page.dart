@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
-import '../../../groups/presentation/cubits/group_cubit.dart';
-import '../../../groups/presentation/pages/groups_page.dart';
+import '../../../community/presentation/cubits/group_cubit.dart';
+
+import '../../../community/presentation/pages/groups_page.dart';
+import '../../../group_chat/presentation/pages/new_group.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 
 class MainPage extends StatefulWidget {
@@ -27,7 +29,7 @@ class _MainPageState extends State<MainPage> {
           index: currentIndex,
           children: [
             GroupsPage(),
-            const ProfilePage(),
+            NewGroupScreen(),
           ],
         ),
         bottomNavigationBar: BottomNavigationBar(
