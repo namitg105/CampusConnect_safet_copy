@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 import '../../../community/Widgets/community_profile.dart';
 
 class GroupDetailsPage extends StatefulWidget {
@@ -34,12 +35,122 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
       print('Navigation: Disappearing messages tile tapped');
   void _handleInviteLink() => print('Action: Invite via link tile tapped');
 
-  // Triggers when tapping the '+' next to the membership label
-  void _handleAddMemberAction() => print('Action: Add new member tapped');
+  /// Displays a dialog listing users who aren't currently in the group
+  void _handleAddMemberAction(List<dynamic> currentMembers) async {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Add Member'),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 300,
+            child: StreamBuilder<QuerySnapshot>(
+              stream:
+                  FirebaseFirestore.instance.collection('users').snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-  // Triggers for context actions on group participants
-  void _handleDeleteUserAction(String memberId) =>
-      print('Action: Remove user $memberId tapped');
+                // Filter out users who are already part of this group chat
+                final prospectiveUsers = snapshot.data!.docs.where((doc) {
+                  return !currentMembers.contains(doc.id);
+                }).toList();
+
+                if (prospectiveUsers.isEmpty) {
+                  return const Center(
+                    child: Text('All platform users are already members.'),
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: prospectiveUsers.length,
+                  itemBuilder: (context, index) {
+                    final userData =
+                        prospectiveUsers[index].data() as Map<String, dynamic>;
+                    final String name = userData['name'] ?? 'Unknown User';
+                    final String userId = prospectiveUsers[index].id;
+
+                    return ListTile(
+                      title: Text(name),
+                      trailing:
+                          const Icon(Icons.person_add, color: Colors.blue),
+                      onTap: () async {
+                        Navigator.pop(context); // Close the dialog immediately
+                        try {
+                          await FirebaseFirestore.instance
+                              .collection('group_chats')
+                              .doc(widget.groupId)
+                              .update({
+                            'members': FieldValue.arrayUnion([userId])
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text('$name added successfully.')),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to add member: $e')),
+                          );
+                        }
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _handleDeleteUserAction(String memberId, String memberName) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Member'),
+        content: Text(
+            'Are you sure you want to remove $memberName from this group?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('group_chats')
+            .doc(widget.groupId)
+            .update({
+          'members': FieldValue.arrayRemove([memberId])
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$memberName has been removed.')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to remove member: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,8 +208,6 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
         final groupData = groupSnapshot.data!.data() ?? {};
         final String creatorUid =
             (groupData["createdBy"] ?? "").toString().trim();
-
-        // Safely extract the structural member ID list straight out of the document profile mapping
         final List<dynamic> memberIds =
             groupData['members'] as List<dynamic>? ?? [];
         final int dynamicCount = memberIds.length;
@@ -111,10 +220,9 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
               child: CircleAvatar(
                 backgroundColor: Colors.grey.shade100,
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new,
-                      size: 16, color: Colors.black87),
-                  onPressed: () => Navigator.maybePop(context),
-                ),
+                    icon: const Icon(Icons.arrow_back_ios_new,
+                        size: 16, color: Colors.black87),
+                    onPressed: () => MainPage()),
               ),
             ),
             title: const Text(
@@ -124,14 +232,6 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                   fontSize: 18,
                   color: Colors.black),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => print('Action: Edit group info tapped'),
-                child: const Text('next',
-                    style: TextStyle(
-                        color: Colors.blue, fontWeight: FontWeight.w600)),
-              ),
-            ],
             backgroundColor: Colors.white,
             surfaceTintColor: Colors.white,
             elevation: 2,
@@ -141,9 +241,8 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Divider(thickness: 4, color: Colors.grey.shade100),
-
                 GroupHeaderWidget1(groupId: widget.groupId),
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -217,8 +316,6 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                   onTap: _handleInviteLink,
                 ),
                 const Divider(height: 1, color: Color(0xffE4E5EF)),
-
-                // Restored active functional membership presentation panel
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -239,7 +336,6 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                               letterSpacing: 1.1,
                             ),
                           ),
-                          // Added Interactive New Participant Creation Invitation Vector back
                           CircleAvatar(
                             radius: 14,
                             backgroundColor: const Color(0xFFEEF2FF),
@@ -247,7 +343,8 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                               padding: EdgeInsets.zero,
                               icon: const Icon(Icons.add,
                                   size: 16, color: Color(0xFF6366F1)),
-                              onPressed: _handleAddMemberAction,
+                              onPressed: () =>
+                                  _handleAddMemberAction(memberIds),
                             ),
                           ),
                         ],
@@ -268,8 +365,6 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                             const Divider(height: 1, color: Color(0xFFF3F4F6)),
                         itemBuilder: (context, index) {
                           final String memberId = memberIds[index].toString();
-                          final String role =
-                              memberId == creatorUid ? 'Admin' : 'Member';
 
                           return StreamBuilder<DocumentSnapshot>(
                             stream: FirebaseFirestore.instance
@@ -288,6 +383,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                                   userData['name'] ?? 'Unknown User';
                               final bool isCurrentUser =
                                   memberId == currentUserId;
+                              final bool isCreator = memberId == creatorUid;
                               final String firebaseImage =
                                   userData['profileImage'] ??
                                       userData['photoUrl'] ??
@@ -325,12 +421,12 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                                         fontSize: 15,
                                         color: Colors.black87)),
                                 subtitle: Text(
-                                    isCurrentUser ? '$role · You' : role,
+                                    isCurrentUser
+                                        ? '${isCreator ? "Admin" : "Member"} · You'
+                                        : (isCreator ? 'Admin' : 'Member'),
                                     style: TextStyle(
                                         color: Colors.grey.shade400,
                                         fontSize: 13)),
-
-                                // Added Context Trailing Action Control items back based on membership relationship profiles
                                 trailing: isCurrentUser
                                     ? Container(
                                         padding: const EdgeInsets.symmetric(
@@ -340,9 +436,9 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                                           borderRadius:
                                               BorderRadius.circular(16),
                                         ),
-                                        child: const Text(
-                                          'Admin',
-                                          style: TextStyle(
+                                        child: Text(
+                                          isCreator ? 'Admin' : 'Member',
+                                          style: const TextStyle(
                                               color: Color(0xFF6366F1),
                                               fontWeight: FontWeight.bold,
                                               fontSize: 12),
@@ -365,14 +461,16 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                                             onPressed: () => print(
                                                 'Action: Personal interaction button tapped'),
                                           ),
-                                          IconButton(
-                                            icon: const Icon(
-                                                Icons.delete_outline,
-                                                color: Color(0xFFEF4444)),
-                                            onPressed: () =>
-                                                _handleDeleteUserAction(
-                                                    memberId),
-                                          ),
+                                          // Only display the deletion vector option if the current app user is the group Admin
+                                          if (currentUserId == creatorUid)
+                                            IconButton(
+                                              icon: const Icon(
+                                                  Icons.delete_outline,
+                                                  color: Color(0xFFEF4444)),
+                                              onPressed: () =>
+                                                  _handleDeleteUserAction(
+                                                      memberId, name),
+                                            ),
                                         ],
                                       ),
                               );
@@ -403,34 +501,27 @@ class GroupHeaderWidget1 extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance
-          .collection('group_chats') // Explicitly pointing to group_chats
+          .collection('group_chats')
           .doc(groupId)
           .snapshots(),
       builder: (context, groupSnapshot) {
         if (groupSnapshot.connectionState == ConnectionState.waiting) {
           return const SizedBox(
             height: 150,
-            child: Center(
-              child: CircularProgressIndicator(),
-            ),
+            child: Center(child: CircularProgressIndicator()),
           );
         }
 
         if (!groupSnapshot.hasData || !groupSnapshot.data!.exists) {
           return const SizedBox(
             height: 150,
-            child: Center(
-              child: Text("Group header information unavailable"),
-            ),
+            child: Center(child: Text("Group header information unavailable")),
           );
         }
 
         final groupData = groupSnapshot.data!.data() ?? {};
-
         final String groupName = groupData["name"] ?? "Group";
         final String groupImage = groupData["imageUrl"] ?? "";
-
-        // Dynamically parse out the structural member metrics straight from the document array
         final List<dynamic> memberIds =
             groupData['members'] as List<dynamic>? ?? [];
         final int memberCount = memberIds.length;
@@ -438,12 +529,8 @@ class GroupHeaderWidget1 extends StatelessWidget {
         return SizedBox(
           height: 150,
           child: Padding(
-            padding: const EdgeInsets.only(
-              top: 20,
-              left: 40,
-              right: 20,
-              bottom: 30,
-            ),
+            padding:
+                const EdgeInsets.only(top: 20, left: 40, right: 20, bottom: 30),
             child: Row(
               children: [
                 CircleAvatar(
@@ -457,10 +544,9 @@ class GroupHeaderWidget1 extends StatelessWidget {
                               ? groupName[0].toUpperCase()
                               : "G",
                           style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold),
                         )
                       : null,
                 ),
@@ -472,9 +558,7 @@ class GroupHeaderWidget1 extends StatelessWidget {
                       Text(
                         groupName,
                         style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
+                            fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 6),
                       Text(
