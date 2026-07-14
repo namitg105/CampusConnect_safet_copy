@@ -105,25 +105,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    // College Section
-                    Row(
-                      children: [
-                        const Icon(Icons.school_outlined, size: 22, color: Color(0xFF6139ED)),
-                        const SizedBox(width: 12),
-                        Text(
-                          'College: ',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: labelColor),
-                        ),
-                        Expanded(
-                          child: Text(
-                            profileData?['collegeId'] ?? widget.user.collegeId,
-                            style: TextStyle(fontSize: 16, color: textColor),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 24),
                     Center(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(

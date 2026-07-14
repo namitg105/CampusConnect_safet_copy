@@ -5,6 +5,7 @@ import 'package:noteswap/features/posts/domain/entities/comment_entity.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
 import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/utils/time_formatter.dart';
 
 class CommentNode {
   final CommentEntity comment;
@@ -252,12 +253,34 @@ class _PostDetailPageState extends State<PostDetailPage> {
                         widget.post.imageUrl!,
                         fit: BoxFit.contain,
                         width: double.infinity,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            height: 150,
+                            color: isLightMode ? Colors.grey[200] : Colors.grey[850],
+                            child: const Center(
+                              child: CircularProgressIndicator(color: Color(0xFF6139ED)),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          color: isLightMode ? Colors.grey[100] : Colors.grey[900],
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.error_outline, color: Colors.grey),
+                              SizedBox(width: 8),
+                              Text('Could not load image', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ],
                   const SizedBox(height: 12),
                   Text(
-                    'by ${widget.post.authorName.contains('@') ? widget.post.authorName.split('@').first : widget.post.authorName} • #${widget.post.tag}',
+                    'by ${widget.post.authorName.contains('@') ? widget.post.authorName.split('@').first : widget.post.authorName} • #${widget.post.tag} • ${formatTimeAgo(widget.post.createdAt)}',
                     style: TextStyle(
                       fontSize: 12,
                       color: isLightMode ? Colors.grey[600] : Colors.grey[400],

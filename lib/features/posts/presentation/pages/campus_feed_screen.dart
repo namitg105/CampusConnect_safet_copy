@@ -10,6 +10,7 @@ import 'package:noteswap/features/posts/presentation/pages/post_detail_page.dart
 import 'package:noteswap/features/posts/presentation/pages/user_profile_screen.dart';
 import 'package:noteswap/features/posts/presentation/widgets/post_card.dart';
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
 import 'package:noteswap/features/posts/data/post_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/add_comment_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/create_post_usecase.dart';
@@ -136,7 +137,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                 ),
               ),
               IconButton(
-                onPressed: () => Get.to(() => UserProfileScreen(user: currentUser)),
+                onPressed: () => Get.to(() => const ProfileSettingsPage()),
                 icon: Icon(
                   Icons.person_outline,
                   color: lightModeController.isLightMode.value

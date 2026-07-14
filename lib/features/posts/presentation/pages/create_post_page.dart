@@ -20,8 +20,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
   final bodyController = TextEditingController();
   final tagController = TextEditingController();
   final formKey = GlobalKey<FormState>();
-  final tags = ['General', 'Study', 'Events', 'ExamHelp', 'Seniors', 'Badminton'];
-  String selectedTag = 'General';
+  final tags = ['Select recommended tag', 'General', 'Study', 'Events', 'ExamHelp', 'Seniors', 'Badminton'];
+  String selectedTag = 'Select recommended tag';
 
   XFile? _selectedImage;
   final ImagePicker _picker = ImagePicker();
@@ -83,7 +83,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   items: tags
                       .map((tag) => DropdownMenuItem(value: tag, child: Text(tag)))
                       .toList(),
-                  onChanged: isLoading ? null : (value) => setState(() => selectedTag = value ?? 'General'),
+                  onChanged: isLoading ? null : (value) => setState(() => selectedTag = value ?? 'Select recommended tag'),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -145,7 +145,32 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   ElevatedButton(
                     onPressed: () async {
                       if (!formKey.currentState!.validate()) return;
-                      final tag = (tagController.text.trim().isEmpty ? selectedTag : tagController.text.trim());
+                      final hasCustom = tagController.text.trim().isNotEmpty;
+                      final hasRecommended = selectedTag != 'Select recommended tag';
+
+                      if (hasCustom && hasRecommended) {
+                        Get.snackbar(
+                          'Tag Warning',
+                          'Please choose only one: select a recommended tag OR enter a custom tag.',
+                          snackPosition: SnackPosition.BOTTOM,
+                          backgroundColor: Colors.orange,
+                          colorText: Colors.white,
+                        );
+                        return;
+                      }
+
+                      if (!hasCustom && !hasRecommended) {
+                        Get.snackbar(
+                          'Tag Warning',
+                          'Please select a recommended tag or enter a custom tag.',
+                          snackPosition: SnackPosition.BOTTOM,
+                          backgroundColor: Colors.orange,
+                          colorText: Colors.white,
+                        );
+                        return;
+                      }
+
+                      final tag = hasCustom ? tagController.text.trim() : selectedTag;
                       await widget.controller.addPost(
                         title: titleController.text,
                         body: bodyController.text,

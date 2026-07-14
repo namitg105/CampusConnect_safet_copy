@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
+import 'package:noteswap/utils/time_formatter.dart';
 
 /// Day 4: Individual Post Card component
 /// Displays a single post's title, body preview, author, tag, and vote count
@@ -47,57 +48,63 @@ class PostCard extends StatelessWidget {
           children: [
             // Author & Tag Row
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: Text(
-                    post.authorName.contains('@') ? post.authorName.split('@').first : post.authorName,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isLightMode ? Colors.black87 : Colors.white,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                GestureDetector(
+                  onTap: onProfileTap,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.account_circle,
+                        size: 32,
+                        color: const Color(0xFF6139ED),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        post.authorName.contains('@') ? post.authorName.split('@').first : post.authorName,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isLightMode ? Colors.black87 : Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                IconButton(
-                  onPressed: onProfileTap,
-                  icon: Icon(
-                    Icons.account_circle_outlined,
-                    size: 20,
-                    color: isLightMode ? Colors.black87 : Colors.white,
-                  ),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                if (onDelete != null) ...[
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: onDelete,
-                    icon: Icon(
-                      Icons.delete_outline,
-                      size: 20,
-                      color: Colors.red[400],
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (onDelete != null) ...[
+                      IconButton(
+                        onPressed: onDelete,
+                        icon: Icon(
+                          Icons.delete_outline,
+                          size: 20,
+                          color: Colors.red[400],
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6139ED).withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '#${post.tag}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF6139ED),
+                        ),
+                      ),
                     ),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6139ED).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '#${post.tag}',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF6139ED),
-                    ),
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -205,6 +212,15 @@ class PostCard extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+
+                // Relative Timestamp
+                Text(
+                  formatTimeAgo(post.createdAt),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isLightMode ? Colors.grey[600] : Colors.grey[400],
+                  ),
                 ),
 
                 // Comment Count

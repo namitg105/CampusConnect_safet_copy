@@ -56,7 +56,15 @@ class PostController extends GetxController {
   final RxMap<String, int> userVotes = <String, int>{}.obs;
   final RxMap<String, bool> likedComments = <String, bool>{}.obs;
   final RxSet<String> votingPostIds = <String>{}.obs;
-  final RxList<String> availableTags = <String>['All', 'Badminton', 'Seniors', 'ExamHelp', 'General', 'Events', 'Study'].obs;
+  final RxList<String> availableTags = <String>[
+    'All',
+    'Badminton',
+    'Seniors',
+    'ExamHelp',
+    'General',
+    'Events',
+    'Study'
+  ].obs;
 
   Future<void> loadFeed(AppUser? user) async {
     if (user == null || user.collegeId.isEmpty) {
@@ -77,7 +85,15 @@ class PostController extends GetxController {
       }
 
       // Extract unique tags from unfiltered collegeFeed
-      final List<String> currentTags = ['All', 'Badminton', 'Seniors', 'ExamHelp', 'General', 'Events', 'Study'];
+      final List<String> currentTags = [
+        'All',
+        'Badminton',
+        'Seniors',
+        'ExamHelp',
+        'General',
+        'Events',
+        'Study'
+      ];
       for (final post in collegeFeed) {
         if (post.tag.isNotEmpty && !currentTags.contains(post.tag)) {
           currentTags.add(post.tag);
@@ -86,9 +102,8 @@ class PostController extends GetxController {
       availableTags.assignAll(currentTags);
 
       if (selectedTag.value != 'All') {
-        collegeFeed = collegeFeed
-            .where((post) => post.tag == selectedTag.value)
-            .toList();
+        collegeFeed =
+            collegeFeed.where((post) => post.tag == selectedTag.value).toList();
       }
 
       posts.value = collegeFeed;
@@ -135,7 +150,8 @@ class PostController extends GetxController {
     try {
       String? imageUrl;
       if (imagePath != null && imageName != null) {
-        imageUrl = await createPostUseCase.repository.uploadPostImage(imagePath, imageName);
+        imageUrl = await createPostUseCase.repository
+            .uploadPostImage(imagePath, imageName);
       }
 
       final newPost = PostEntity(
@@ -143,9 +159,11 @@ class PostController extends GetxController {
         title: title.trim(),
         body: body.trim(),
         authorId: author.uid,
-        authorName: author.name.isNotEmpty 
-            ? author.name 
-            : (author.email.contains('@') ? author.email.split('@').first : author.email),
+        authorName: author.name.isNotEmpty
+            ? author.name
+            : (author.email.contains('@')
+                ? author.email.split('@').first
+                : author.email),
         collegeId: author.collegeId,
         upvotes: 0,
         commentCount: 0,
@@ -163,7 +181,8 @@ class PostController extends GetxController {
     }
   }
 
-  Future<void> toggleUpvote(String postId, String userId, AppUser? author) async {
+  Future<void> toggleUpvote(
+      String postId, String userId, AppUser? author) async {
     if (userId.isEmpty) {
       errorMessage.value = 'You need to be signed in to vote.';
       return;
@@ -177,14 +196,16 @@ class PostController extends GetxController {
 
     final previousVote = userVotes[postId] ?? 0;
     final nextVote = previousVote == 1 ? 0 : 1;
-    print("[PostController] toggleUpvote: postId=$postId, previousVote=$previousVote, nextVote=$nextVote");
+    print(
+        "[PostController] toggleUpvote: postId=$postId, previousVote=$previousVote, nextVote=$nextVote");
 
     votingPostIds.add(postId);
 
     try {
       await upvotePostUseCase.call(postId, userId);
       userVotes[postId] = nextVote;
-      _updatePostVoteCount(postId, calculateVoteDelta(previousVote: previousVote, isUpvote: true));
+      _updatePostVoteCount(postId,
+          calculateVoteDelta(previousVote: previousVote, isUpvote: true));
     } catch (e, stack) {
       print("Error in toggleUpvote: $e\n$stack");
       errorMessage.value = 'Error voting: $e';
@@ -193,7 +214,8 @@ class PostController extends GetxController {
     }
   }
 
-  Future<void> toggleDownvote(String postId, String userId, AppUser? author) async {
+  Future<void> toggleDownvote(
+      String postId, String userId, AppUser? author) async {
     if (userId.isEmpty) {
       errorMessage.value = 'You need to be signed in to vote.';
       return;
@@ -207,14 +229,16 @@ class PostController extends GetxController {
 
     final previousVote = userVotes[postId] ?? 0;
     final nextVote = previousVote == -1 ? 0 : -1;
-    print("[PostController] toggleDownvote: postId=$postId, previousVote=$previousVote, nextVote=$nextVote");
+    print(
+        "[PostController] toggleDownvote: postId=$postId, previousVote=$previousVote, nextVote=$nextVote");
 
     votingPostIds.add(postId);
 
     try {
       await downvotePostUseCase.call(postId, userId);
       userVotes[postId] = nextVote;
-      _updatePostVoteCount(postId, calculateVoteDelta(previousVote: previousVote, isUpvote: false));
+      _updatePostVoteCount(postId,
+          calculateVoteDelta(previousVote: previousVote, isUpvote: false));
     } catch (e, stack) {
       print("Error in toggleDownvote: $e\n$stack");
       errorMessage.value = 'Error voting: $e';
@@ -224,7 +248,8 @@ class PostController extends GetxController {
   }
 
   int calculateVoteDelta({required int previousVote, required bool isUpvote}) {
-    final nextVote = isUpvote ? (previousVote == 1 ? 0 : 1) : (previousVote == -1 ? 0 : -1);
+    final nextVote =
+        isUpvote ? (previousVote == 1 ? 0 : 1) : (previousVote == -1 ? 0 : -1);
     return nextVote - previousVote;
   }
 
@@ -249,7 +274,8 @@ class PostController extends GetxController {
       // Load liked states for these comments
       if (userId.isNotEmpty && fetchedComments.isNotEmpty) {
         final commentIds = fetchedComments.map((c) => c.id).toList();
-        final likedStates = await getUserLikedCommentsUseCase.call(postId, userId, commentIds);
+        final likedStates =
+            await getUserLikedCommentsUseCase.call(postId, userId, commentIds);
         likedComments.addAll(likedStates);
       }
 
@@ -292,7 +318,8 @@ class PostController extends GetxController {
     }
   }
 
-  Future<void> toggleCommentLike(String postId, String commentId, String userId) async {
+  Future<void> toggleCommentLike(
+      String postId, String commentId, String userId) async {
     try {
       await toggleCommentLikeUseCase.call(postId, commentId, userId);
       final isLiked = !(likedComments[commentId] ?? false);
@@ -311,7 +338,9 @@ class PostController extends GetxController {
           text: currentComment.text,
           createdAt: currentComment.createdAt,
           parentId: currentComment.parentId,
-          likes: isLiked ? currentLikes + 1 : (currentLikes - 1 < 0 ? 0 : currentLikes - 1),
+          likes: isLiked
+              ? currentLikes + 1
+              : (currentLikes - 1 < 0 ? 0 : currentLikes - 1),
         );
       }
     } catch (e) {
@@ -319,7 +348,8 @@ class PostController extends GetxController {
     }
   }
 
-  bool getCommentLikeState(String commentId) => likedComments[commentId] ?? false;
+  bool getCommentLikeState(String commentId) =>
+      likedComments[commentId] ?? false;
 
   Future<void> removeComment({
     required String postId,
@@ -351,4 +381,3 @@ class PostController extends GetxController {
     }
   }
 }
-
