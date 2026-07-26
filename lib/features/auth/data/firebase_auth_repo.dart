@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/auth/domain/repos/auth_repo.dart';
+
 import './google_auth_service.dart';
 
 class FirebaseAuthRepo implements AuthRepo {
@@ -16,7 +18,10 @@ class FirebaseAuthRepo implements AuthRepo {
   }
 
   @override
-  Future<AppUser?> loginWithEmailPassword(String email, String password) async {
+  Future<AppUser?> loginWithEmailPassword(
+    String email,
+    String password,
+  ) async {
     try {
       print("Attempting Firebase login...");
       UserCredential userCredential = await firebaseAuth
@@ -120,23 +125,7 @@ class FirebaseAuthRepo implements AuthRepo {
 
       return user;
     } catch (e) {
-      throw Exception('Register failed: $e');
-    }
-  }
-
-  @override
-  Future<void> logout() async {
-    try {
-      final currentUid = firebaseAuth.currentUser?.uid;
-      if (currentUid != null) {
-        await firestore.collection('users').doc(currentUid).update({
-          'isOnline': false,
-        });
-      }
-      await firebaseAuth.signOut();
-      await _googleAuthService.signOut();
-    } catch (e) {
-      throw Exception('Logout failed: $e');
+      throw Exception("Register failed: $e");
     }
   }
 
@@ -243,11 +232,29 @@ class FirebaseAuthRepo implements AuthRepo {
   }
 
   @override
+  Future<void> logout() async {
+    try {
+      final currentUid = firebaseAuth.currentUser?.uid;
+      if (currentUid != null) {
+        await firestore.collection('users').doc(currentUid).update({
+          'isOnline': false,
+        });
+      }
+      await firebaseAuth.signOut();
+      await _googleAuthService.signOut();
+    } catch (e) {
+      throw Exception("Logout failed: $e");
+    }
+  }
+
+  @override
   Future<void> sendPasswordResetEmail(String email) async {
     try {
-      await firebaseAuth.sendPasswordResetEmail(email: email);
+      await firebaseAuth.sendPasswordResetEmail(
+        email: email,
+      );
     } catch (e) {
-      throw Exception('Failed to send password reset email: $e');
+      throw Exception("Failed to send password reset email: $e");
     }
   }
 }

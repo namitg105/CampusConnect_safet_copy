@@ -494,8 +494,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                     onTap: () {
                       final authState = context.read<AuthCubit>().state;
                       if (authState is Authenticated) {
-                        Get.to(
-                          () => const PrivateChatPageController());
+                        Get.to(() => const PrivateChatPageController());
                       }
                     },
                     child: _buildNavItem(Icons.chat_bubble_outline, 'Messages',

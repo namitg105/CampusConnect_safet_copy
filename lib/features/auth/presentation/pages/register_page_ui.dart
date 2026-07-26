@@ -5,8 +5,8 @@ import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/components/components.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
-import 'package:noteswap/features/home/presentation/pages/home_page.dart';
 import 'package:noteswap/features/private_chat/presentation/common_widgets.dart';
+import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 
 //------------------------------//
 
@@ -81,8 +81,8 @@ class RegisterPageUi extends State<RegisterPage> {
     return BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
-            // This clears the navigation stack and safely lands them on HomePage
-            Get.offAll(() => const HomePage());
+            // This clears the navigation stack and safely lands them on MainPage
+            Get.offAll(() => const MainPage());
           } else if (state is AuthError) {
             showErrorSnackbar(state.message);
           }

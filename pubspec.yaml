@@ -36,8 +36,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   carousel_slider: ^5.0.0
   get: ^4.7.2
-  image_picker: ^1.1.2
+  image_picker:
   flutter_svg: ^2.0.17
+  url_launcher: ^6.3.2
+  file_picker: ^10.3.2
   get_storage: ^2.1.1
   firebase_core: ^4.10.0
   firebase_auth: ^6.5.2
@@ -49,12 +51,19 @@ dependencies:
   share_plus: ^12.0.2
   google_nav_bar: ^5.0.7
   http: ^1.2.2
-  file_picker: ^8.1.7
-  url_launcher: ^6.3.2
   curved_labeled_navigation_bar: ^2.0.6
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   path_provider: ^2.1.0
+  get_it:
+  encrypt:
+  crypto:
+  flutter_image_compress:
+  uuid:
+  ffmpeg_kit_flutter_new:
+  video_player:
+  video_compress:
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
@@ -85,6 +94,7 @@ flutter:
     - assets/images_register/
     - assets/chat_assets/
     - assets/models/
+    - assets/community/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

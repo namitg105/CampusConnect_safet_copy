@@ -3,8 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
 import 'package:get/get.dart';
-import 'package:noteswap/features/home/presentation/pages/home_page.dart';
+import 'package:noteswap/features/auth/presentation/pages/register_page_ui.dart';
 import 'package:noteswap/features/private_chat/presentation/common_widgets.dart';
+import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 
 class Loginscreen extends StatefulWidget {
   final void Function()? togglePages;
@@ -19,6 +20,7 @@ class _LoginscreenState extends State<Loginscreen> {
   final emailController = TextEditingController();
   final pwController = TextEditingController();
 
+  //forgot password button pressed
   Future<void> _showForgotPasswordDialog() async {
     final resetEmailController =
         TextEditingController(text: emailController.text);
@@ -113,6 +115,10 @@ class _LoginscreenState extends State<Loginscreen> {
     );
   }
 
+<<<<<<< HEAD
+=======
+//login button pressed
+>>>>>>> origin/feature/community
   void login() {
     final String email = emailController.text;
     final String pw = pwController.text;
@@ -138,7 +144,7 @@ class _LoginscreenState extends State<Loginscreen> {
     return BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
-            Get.offAll(() => const HomePage());
+            Get.offAll(() => const MainPage());
           } else if (state is AuthError) {
             showErrorSnackbar(state.message);
           }
@@ -392,8 +398,10 @@ class _LoginscreenState extends State<Loginscreen> {
                                 style: TextStyle(
                                     color: Colors.grey.shade600, fontSize: 12),
                               ),
-                              GestureDetector(
-                                onTap: widget.togglePages,
+                              TextButton(
+                                onPressed: () {
+                                  Get.to(() => RegisterPage());
+                                },
                                 child: const Text(
                                   "Sign Up",
                                   style: TextStyle(

@@ -1,9 +1,16 @@
-import 'package:noteswap/features/chat/domain/entities/chat_message_entity.dart';
-import 'package:noteswap/features/chat/domain/entities/chat_room_entity.dart';
+import '../entities/message.dart';
 
 abstract class ChatRepo {
-  Stream<List<ChatRoomEntity>> getChatRooms(String collegeId);
-  Future<ChatRoomEntity> createChatRoom(ChatRoomEntity room);
-  Stream<List<ChatMessageEntity>> getMessages(String roomId);
-  Future<void> sendMessage(String roomId, ChatMessageEntity message);
+  Stream<List<Message>> getMessages(
+    String groupId,
+  );
+
+  Future<void> sendMessage(
+    String groupId,
+    Message message,
+  );
+  Future<void> deleteMessage({
+    required String groupId,
+    required String messageId,
+  });
 }

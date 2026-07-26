@@ -13,6 +13,8 @@ import 'package:noteswap/features/private_chat/data/private-chat-services/user_s
 import 'package:noteswap/features/private_chat/page_controller.dart';
 import 'package:noteswap/firebase_options.dart';
 import 'ViewModels/DarkModeViewModels.dart'; // Retained member's theme controller
+import 'core/di/injection.dart'; // DI injection init
+import 'features/home/presentation/pages/main_page.dart'; // MainPage
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +32,9 @@ void main() async {
       rethrow;
     }
   }
+
+  // Initialize service locator
+  await init();
 
   // Initialize controllers
   Get.put(LightModeController());
@@ -100,7 +105,7 @@ class AuthWrapper extends StatelessWidget {
         print("Current UI Auth State: $authState");
         if (authState is Authenticated) {
           Get.find<UserService>().updateUser(authState.user);
-          return const HomePage(); // Land on HomePage as our primary hub!
+          return const MainPage(); // Land on MainPage (includes bottom navigation)
         } else if (authState is Unauthenticated) {
           Get.find<UserService>().clearUser();
           return const AuthPage();

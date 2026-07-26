@@ -1,1 +1,89 @@
 flutter/ephemeral
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+.mypy_cache/
+
+# IntelliJ
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code
+.vscode/
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+.pub-cache/
+build/
+
+# Generated files
+**/generated_plugin_registrant.dart
+
+# Android
+android/.gradle/
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/key.properties
+android/app/upload-keystore.jks
+android/*.keystore
+*.keystore
+*.jks
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/App.framework
+
+# macOS
+macos/Pods/
+
+# Linux
+linux/flutter/ephemeral/
+
+# Windows
+windows/flutter/ephemeral/
+
+# Fuchsia
+.fuchsia/
+
+# Firebase
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Crashlytics
+crashlytics-build.properties
+
+# Coverage
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Secrets
+google-services.json.backup
+GoogleService-Info.plist.backup
