@@ -12,8 +12,8 @@ class AppUser {
     required this.uid, 
     required this.email, 
     required this.name,
-    required this.collegeId, // Require it in the constructor
-    required this.isOnline,
+    this.collegeId = '', // Optional with default to prevent constructor break
+    this.isOnline = false, // Optional with default to prevent constructor break
     this.isImageExists = false,
     this.imageURL = '',
     this.phoneNumber,
