@@ -36,6 +36,37 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(64);
 
+  Widget _buildInitialsAvatar(String name) {
+    final cleanName = name.trim();
+    String initials = "AI";
+    if (cleanName.isNotEmpty) {
+      final parts = cleanName.split(' ').where((s) => s.isNotEmpty).toList();
+      if (parts.length >= 2) {
+        initials = (parts[0][0] + parts[1][0]).toUpperCase();
+      } else if (parts.isNotEmpty) {
+        initials = parts[0][0].toUpperCase();
+      }
+    }
+    return Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        color: ChatTheme.primary,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Center(
+        child: Text(
+          initials,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppBar(
@@ -68,33 +99,19 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
             },
             child: Row(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image(
-                    width: 38,
-                    height: 38,
-                    fit: BoxFit.cover,
-                    image: (groupImage != null && groupImage!.trim().isNotEmpty)
-                        ? NetworkImage(groupImage!.trim())
-                        : const AssetImage("assets/chat_assets/image 60.png")
-                            as ImageProvider,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      width: 38,
-                      height: 38,
-                      color: ChatTheme.primary,
-                      child: const Center(
-                        child: Text(
-                          'AI',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
+                (groupImage != null && groupImage!.trim().isNotEmpty)
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.network(
+                          groupImage!.trim(),
+                          width: 38,
+                          height: 38,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              _buildInitialsAvatar(groupName),
                         ),
-                      ),
-                    ),
-                  ),
-                ),
+                      )
+                    : _buildInitialsAvatar(groupName),
                 const SizedBox(width: 10),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

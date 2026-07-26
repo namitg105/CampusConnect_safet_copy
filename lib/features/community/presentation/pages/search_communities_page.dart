@@ -520,7 +520,7 @@ class _CommunityCardTile extends StatelessWidget {
     final categoryTag = _determineCategoryTag();
 
     return Container(
-      height: 90,
+      constraints: const BoxConstraints(minHeight: 90),
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(

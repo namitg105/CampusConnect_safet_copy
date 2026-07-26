@@ -45,7 +45,7 @@ class MainPage extends StatelessWidget {
             children: [
               const HomePage(),
               const GroupsPage(),
-              const PrivateChatPageController(), // Direct to private chat
+              const GroupsDisplayPage(), // Restore group chat community messages
               UserProfilePage()
             ],
           ),

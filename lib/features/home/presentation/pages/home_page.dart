@@ -8,6 +8,7 @@ import 'package:noteswap/features/posts/presentation/pages/campus_feed_screen.da
 import 'package:noteswap/features/dashboard/presentation/pages/dashboard_page_one.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 import 'package:noteswap/features/auth/presentation/pages/SplashScreen.dart';
+import 'package:noteswap/features/private_chat/page_controller.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -93,6 +94,21 @@ class _HomePageState extends State<HomePage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: brandColor,
                       foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => Get.to(() => const PrivateChatPageController()),
+                    icon: const Icon(Icons.chat_bubble_outline),
+                    label: const Text('Open Private Chat'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: brandColor,
+                      side: BorderSide(color: brandColor),
                       minimumSize: const Size(double.infinity, 50),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
