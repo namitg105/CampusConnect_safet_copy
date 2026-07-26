@@ -167,7 +167,7 @@ class RegisterPageUi extends State<RegisterPage> {
               "Full Name",
               "John Doe",
               nameTextController,
-              "assets/images_register/profile_icon.png",
+              "assets/images_register/User_icon.png",
             ),
             SizedBox(height: height * 0.015),
             InputFieldLabelAndField(
@@ -181,7 +181,7 @@ class RegisterPageUi extends State<RegisterPage> {
               "Password",
               "Enter your password",
               passTextController,
-              "assets/images_register/password_icon.png",
+              "assets/images_register/Password_icon.png",
               isPassword: true,
               isHidden: hiddenText,
               onToggleVisibility: () {
@@ -195,7 +195,7 @@ class RegisterPageUi extends State<RegisterPage> {
               "Confirm Password",
               "Confirm your password",
               confirmPassTextController,
-              "assets/images_register/password_icon.png",
+              "assets/images_register/Password_icon.png",
               isPassword: true,
               isHidden: confirmhiddenText,
               onToggleVisibility: () {
