@@ -31,11 +31,13 @@ class ChatRequest {
   }
 
   String get initials {
-    final parts = fromName.split(' ');
+    final parts = fromName.trim().split(' ').where((p) => p.isNotEmpty).toList();
     if (parts.length >= 2) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
-    if (fromName.isNotEmpty) return fromName[0].toUpperCase();
+    if (parts.isNotEmpty && parts[0].isNotEmpty) {
+      return parts[0][0].toUpperCase();
+    }
     return '?';
   }
 

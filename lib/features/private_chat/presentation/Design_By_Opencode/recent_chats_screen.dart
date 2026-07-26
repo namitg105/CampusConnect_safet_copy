@@ -161,11 +161,13 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
   }
 
   String _initials(String name) {
-    final parts = name.split(' ');
+    final parts = name.trim().split(' ').where((p) => p.isNotEmpty).toList();
     if (parts.length >= 2) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
-    if (name.isNotEmpty) return name[0].toUpperCase();
+    if (parts.isNotEmpty && parts[0].isNotEmpty) {
+      return parts[0][0].toUpperCase();
+    }
     return '?';
   }
 
