@@ -9,7 +9,9 @@ import 'chat_request_model.dart';
 import 'chat_request_components.dart';
 
 class ChatRequestScreen extends StatefulWidget {
-  const ChatRequestScreen({super.key});
+  final String searchQuery;
+
+  const ChatRequestScreen({super.key, this.searchQuery = ''});
 
   @override
   State<ChatRequestScreen> createState() => _ChatRequestScreenState();
@@ -30,8 +32,22 @@ class _ChatRequestScreenState extends State<ChatRequestScreen> {
     }
   }
 
+  @override
+  void didUpdateWidget(covariant ChatRequestScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.searchQuery != widget.searchQuery) {
+      if (mounted) setState(() {});
+    }
+  }
+
   List<ChatRequest> _parseRequests(List<dynamic> docs) {
     return docs.map((doc) => ChatRequest.fromFirestore(doc as DocumentSnapshot)).toList();
+  }
+
+  List<ChatRequest> _filterByName(List<ChatRequest> requests) {
+    final query = widget.searchQuery.toLowerCase();
+    if (query.isEmpty) return requests;
+    return requests.where((r) => r.fromName.toLowerCase().contains(query)).toList();
   }
 
   Future<void> _onAccept(ChatRequest request) async {
@@ -76,8 +92,8 @@ class _ChatRequestScreenState extends State<ChatRequestScreen> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final incoming = _parseRequests(_userController.incomingRequests);
-      final ignored = _userController.ignoredRequests.cast<ChatRequest>().toList();
+      final incoming = _filterByName(_parseRequests(_userController.incomingRequests));
+      final ignored = _filterByName(_userController.ignoredRequests.cast<ChatRequest>().toList());
 
       if (incoming.isEmpty && ignored.isEmpty) {
         return const EmptyRequestsView();

@@ -7,19 +7,24 @@ import 'package:get/get.dart';
 import '../../data/private-chat-services/user_friend_add.dart';
 import '../../domain/repos/chat_controller.dart';
 import '../Design_By_Opencode_2/chat_screen.dart';
-import '../Design_By_Opencode_3/directory_components.dart';
 import 'recent_chats_model.dart';
 import 'recent_chats_components.dart';
 
 class RecentChatsScreen extends StatefulWidget {
-  const RecentChatsScreen({super.key});
+  final String searchQuery;
+  final int selectedTab;
+
+  const RecentChatsScreen({
+    super.key,
+    this.searchQuery = '',
+    this.selectedTab = 0,
+  });
 
   @override
   State<RecentChatsScreen> createState() => _RecentChatsScreenState();
 }
 
 class _RecentChatsScreenState extends State<RecentChatsScreen> {
-  late TextEditingController _searchController;
   late ChatController _chatController;
   late UserController _userController;
 
@@ -28,10 +33,6 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
   List<ConversationData> _blockedConversations = [];
   bool _isLoading = true;
   String? _currentUid;
-  String _searchQuery = '';
-  int _selectedTab = 0;
-
-  final List<String> _tabLabels = ['All', 'Unread', 'Blocklist'];
 
   StreamSubscription? _friendsSub;
   StreamSubscription? _roomsSub;
@@ -41,7 +42,6 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController();
     _chatController = Get.find<ChatController>();
     _userController = Get.find<UserController>();
 
@@ -62,12 +62,20 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
   }
 
   @override
+  void didUpdateWidget(covariant RecentChatsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.searchQuery != widget.searchQuery ||
+        oldWidget.selectedTab != widget.selectedTab) {
+      _rebuild();
+    }
+  }
+
+  @override
   void dispose() {
     _friendsSub?.cancel();
     _roomsSub?.cancel();
     _statusSub?.cancel();
     _blockedSub?.cancel();
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -111,7 +119,7 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
     final unread = <ConversationData>[];
     final blockedList = <ConversationData>[];
 
-    final query = _searchQuery.toLowerCase();
+    final query = widget.searchQuery.toLowerCase();
 
     for (final friend in friends) {
       if (query.isNotEmpty && !friend.name.toLowerCase().contains(query)) {
@@ -182,36 +190,6 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
     return colors[uid.hashCode.abs() % colors.length];
   }
 
-  Color getDeterministicColor(String username) {
-    final List<Color> avatarPalette = [
-      Colors.redAccent,
-      Colors.blueAccent,
-      Colors.greenAccent.shade700,
-      Colors.orangeAccent,
-      Colors.purpleAccent,
-      Colors.pinkAccent,
-      Colors.teal,
-      Colors.indigoAccent,
-      Colors.amber.shade800,
-      Colors.cyan.shade700,
-    ];
-    int hash = 0;
-    for (int i = 0; i < username.length; i++) {
-      hash = username.codeUnitAt(i) + ((hash << 5) - hash);
-    }
-    int index = hash.abs() % avatarPalette.length;
-    return avatarPalette[index].withOpacity(0.8);
-  }
-
-  Color getUniqueRGBColor(String username) {
-    int hash = 0;
-    for (int i = 0; i < username.length; i++) {
-      hash = username.codeUnitAt(i) + ((hash << 5) - hash);
-    }
-    double hue = (hash.abs() % 360).toDouble();
-    return HSVColor.fromAHSV(1.0, hue, 0.65, 0.85).toColor();
-  }
-
   void _onFriendTap(ConversationData data) async {
     if (_currentUid == null) return;
 
@@ -244,148 +222,76 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
     await _userController.unblockUser(data.uid, roomId);
   }
 
-  void _onSearchChanged(String query) {
-    setState(() => _searchQuery = query.trim().toLowerCase());
-    _rebuild();
-  }
-
-  void _onTabSelected(int index) {
-    setState(() => _selectedTab = index);
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return _buildTabContent();
+  }
+
+  Widget _buildTabContent() {
+    switch (widget.selectedTab) {
+      case 0:
+        return _buildFriendsTab();
+      case 1:
+        return _buildBlockedTab();
+      default:
+        return _buildFriendsTab();
+    }
+  }
+
+  Widget _buildFriendsTab() {
+    if (_activeConversations.isEmpty && _unreadConversations.isEmpty) {
+      return _buildEmptyState('No conversations found');
+    }
+
+    return ListView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 24, right: 24, top: 22),
-          child: ChatSearchBar(
-            controller: _searchController,
-            onChanged: _onSearchChanged,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: DirectoryFilterChips(
-            labels: _tabLabels,
-            selectedIndex: _selectedTab,
-            onSelected: _onTabSelected,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Expanded(child: _buildTabContent()),
+        if (_activeConversations.isNotEmpty) ...[
+          ..._activeConversations.map((data) => Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: ChatCard(
+                  data: data,
+                  onTap: () => _onFriendTap(data),
+                ),
+              )),
+        ],
+        if (_unreadConversations.isNotEmpty) ...[
+          const SectionTitle(title: 'UNREAD MESSAGES'),
+          ..._unreadConversations.map((data) => Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: UnreadChatCard(
+                  data: data,
+                  onTap: () => _onFriendTap(data),
+                ),
+              )),
+        ],
       ],
     );
   }
 
-  Widget _buildTabContent() {
-    switch (_selectedTab) {
-      case 0:
-        return _buildAllTab();
-      case 1:
-        return _buildUnreadTab();
-      case 2:
-        return _buildBlocklistTab();
-      default:
-        return _buildAllTab();
-    }
-  }
-
-  Widget _buildAllTab() {
-    final allConversations = [
-      ..._activeConversations,
-      ..._unreadConversations,
-    ];
-
-    if (allConversations.isEmpty) {
-      return _buildEmptyState('No conversations found');
-    }
-
-    return ListView.separated(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 24),
-      itemCount: allConversations.length,
-      itemBuilder: (context, index) {
-        final data = allConversations[index];
-        final isUnread = data.unreadCount > 0;
-        if (isUnread) {
-          return UnreadConversationTile(
-            data: data,
-            onTap: () => _onFriendTap(data),
-          );
-        }
-        return ConversationTile(
-          data: data,
-          onTap: () => _onFriendTap(data),
-        );
-      },
-      separatorBuilder: (context, index) {
-        return const Divider(
-          height: 1,
-          thickness: 1,
-          indent: 76.0,
-          color: Color(0xFFE5E5E5),
-        );
-      },
-    );
-  }
-
-  Widget _buildUnreadTab() {
-    if (_unreadConversations.isEmpty) {
-      return _buildEmptyState('No unread messages');
-    }
-
-    return ListView.separated(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 24),
-      itemCount: _unreadConversations.length,
-      itemBuilder: (context, index) {
-        final data = _unreadConversations[index];
-        return UnreadConversationTile(
-          data: data,
-          onTap: () => _onFriendTap(data),
-        );
-      },
-      separatorBuilder: (context, index) {
-        return const Divider(
-          height: 1,
-          thickness: 1,
-          indent: 76.0,
-          color: Color(0xFFE5E5E5),
-        );
-      },
-    );
-  }
-
-  Widget _buildBlocklistTab() {
+  Widget _buildBlockedTab() {
     if (_blockedConversations.isEmpty) {
       return _buildEmptyState('No blocked users');
     }
 
     return ListView.separated(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       itemCount: _blockedConversations.length,
       itemBuilder: (context, index) {
         final data = _blockedConversations[index];
-        return BlockedConversationTile(
+        return BlockedChatCard(
           data: data,
           onUnblock: () => _onUnblock(data),
         );
       },
       separatorBuilder: (context, index) {
-        return const Divider(
-          height: 1,
-          thickness: 1,
-          indent: 76.0,
-          color: Color(0xFFE5E5E5),
-        );
+        return const SizedBox(height: 14);
       },
     );
   }
