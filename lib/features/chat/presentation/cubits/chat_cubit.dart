@@ -6,6 +6,7 @@ import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
@@ -40,6 +41,71 @@ class ChatCubit extends Cubit<ChatState> {
         emit(ChatError(e.toString()));
       },
     );
+  }
+
+  Future<void> reactToMessage({
+    required String groupId,
+    required String messageId,
+    required String emoji,
+    required String userId,
+  }) async {
+    try {
+      final docRef = FirebaseFirestore.instance
+          .collection('groups')
+          .doc(groupId)
+          .collection('messages')
+          .doc(messageId);
+
+      final snapshot = await docRef.get();
+      if (!snapshot.exists) return;
+
+      Map<String, dynamic> reactions =
+          Map<String, dynamic>.from(snapshot.data()?['reactions'] ?? {});
+
+      // If the user already reacted with the same emoji, toggle it off
+      if (reactions[userId] == emoji) {
+        reactions.remove(userId);
+      } else {
+        reactions[userId] = emoji; // Add or replace reaction
+      }
+
+      await docRef.update({'reactions': reactions});
+    } catch (e) {
+      debugPrint("Error reacting to message: $e");
+    }
+  }
+
+  /// Updates the group metadata to point to a specific message ID as pinned.
+  Future<void> pinMessage({
+    required String groupId,
+    required String messageId,
+  }) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(groupId)
+          .update({
+        'pinnedMessageId': messageId,
+        'pinnedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      emit(ChatError("Failed to pin message: $e"));
+    }
+  }
+
+  /// Removes the pinned message pointer from the group document metadata.
+  Future<void> unpinMessage({required String groupId}) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(groupId)
+          .update({
+        'pinnedMessageId': FieldValue.delete(),
+        'pinnedAt': FieldValue.delete(),
+      });
+    } catch (e) {
+      emit(ChatError("Failed to unpin message: $e"));
+    }
   }
 
   Future<String> _getSenderName(User? user) async {

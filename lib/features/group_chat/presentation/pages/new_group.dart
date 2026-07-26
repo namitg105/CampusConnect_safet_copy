@@ -2,26 +2,26 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:noteswap/features/group_chat/presentation/pages/groups_page.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 
 import '../../../community/presentation/cubits/group_cubit.dart';
 import '../../../community/presentation/pages/groups_page.dart';
 import 'group_profile.dart';
 
-/// Models the domain entity for individual network contacts.
 class Contact {
   final String id;
   final String name;
   final String username;
   final String initials;
-  final Color avatarColor;
+  final String? profileImage;
 
   const Contact({
     required this.id,
     required this.name,
     required this.username,
     required this.initials,
-    required this.avatarColor,
+    this.profileImage,
   });
 
   factory Contact.fromFirestore(DocumentSnapshot doc) {
@@ -43,7 +43,7 @@ class Contact {
       name: name,
       username: data['username'] ?? '',
       initials: initials.isEmpty ? '??' : initials,
-      avatarColor: Colors.indigo.shade100,
+      profileImage: data['profileImage'] ?? data['photoUrl'],
     );
   }
 }
@@ -64,8 +64,11 @@ class _NewGroupScreenState extends State<NewGroupScreen> {
   String _searchQuery = "";
   bool _isLoading = false;
 
-  static const Color primaryPurple = Color(0xff6C63FF);
-  static const Color borderColor = Color(0xffE4E5EF);
+  // Modernized design tokens
+  static const Color primaryAccent = Color(0xFF6366F1); // Modern Indigo
+  static const Color backgroundCard = Color(0xFFF9FAFB);
+  static const Color textDark = Color(0xFF1F2937);
+  static const Color textMuted = Color(0xFF6B7280);
 
   @override
   void dispose() {
@@ -81,17 +84,17 @@ class _NewGroupScreenState extends State<NewGroupScreen> {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
     if (groupName.isEmpty) {
-      _showSnackBar('Please enter a group name');
+      _showSnackBar('Please name your group');
       return;
     }
 
     if (_selectedContactIds.isEmpty) {
-      _showSnackBar('Please select at least one contact');
+      _showSnackBar('Select at least one group member');
       return;
     }
 
     if (currentUserId == null) {
-      _showSnackBar('User not authenticated');
+      _showSnackBar('User session expired');
       return;
     }
 
@@ -126,7 +129,7 @@ class _NewGroupScreenState extends State<NewGroupScreen> {
       await batch.commit();
 
       if (!mounted) return;
-      _showSnackBar('Group chat created successfully!');
+      _showSnackBar('Group created successfully ✨');
 
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
@@ -134,7 +137,7 @@ class _NewGroupScreenState extends State<NewGroupScreen> {
         ),
       );
     } catch (e) {
-      _showSnackBar('Error creating group chat: $e');
+      _showSnackBar('Failed to create group: $e');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -144,8 +147,13 @@ class _NewGroupScreenState extends State<NewGroupScreen> {
 
   void _showSnackBar(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   @override
@@ -155,60 +163,19 @@ class _NewGroupScreenState extends State<NewGroupScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: false,
         leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: CircleAvatar(
-            backgroundColor: Colors.grey.shade100,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new,
-                  size: 16, color: Colors.black),
-              onPressed: () {
-                final groupCubit = BlocProvider.of<GroupCubit>(context);
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => BlocProvider.value(
-                      value: groupCubit,
-                      child: MainPage(),
-                    ),
-                  ),
-                );
-              },
-            ),
+          padding: const EdgeInsets.only(left: 12.0),
+          child: IconButton(
+            icon: const Icon(Icons.close, color: textDark, size: 24),
+            // Cleanly dismisses the overlay/screen to return to the last page
+            onPressed: () => Navigator.pop(context),
           ),
         ),
         title: const Text(
-          'New group',
+          'Create Hub',
           style: TextStyle(
-              color: Colors.black, fontWeight: FontWeight.w600, fontSize: 18),
-        ),
-        actions: [
-          _isLoading
-              ? const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: primaryPurple),
-                    ),
-                  ),
-                )
-              : TextButton(
-                  onPressed: _createGroupInFirebase,
-                  child: const Text(
-                    'Next',
-                    style: TextStyle(
-                        color: primaryPurple,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16),
-                  ),
-                ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(2),
-          child: Container(color: Colors.grey.shade100, height: 2),
+              color: textDark, fontWeight: FontWeight.bold, fontSize: 20),
         ),
       ),
       body: StreamBuilder<QuerySnapshot>(
@@ -216,10 +183,11 @@ class _NewGroupScreenState extends State<NewGroupScreen> {
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return const Center(
-                child: Text('Something went wrong fetching contacts.'));
+                child: Text('Error loading potential members.'));
           }
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: CircularProgressIndicator(color: primaryAccent));
           }
 
           final List<Contact> allContacts = snapshot.data!.docs
@@ -236,99 +204,192 @@ class _NewGroupScreenState extends State<NewGroupScreen> {
                 contact.username.toLowerCase().contains(query);
           }).toList();
 
-          return CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 24),
-                    const _GroupAvatarHeader(),
-                    const SizedBox(height: 24),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                      child: Column(
-                        children: [
-                          _buildCustomTextField(
-                            controller: _nameController,
-                            hintText: 'Group Name',
-                            centerText: true,
+          return Column(
+            children: [
+              Expanded(
+                child: CustomScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.all(20.0),
+                      sliver: SliverToBoxAdapter(
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: backgroundCard,
+                            borderRadius: BorderRadius.circular(24),
                           ),
-                          const SizedBox(height: 12),
-                          _buildCustomTextField(
-                            controller: _descriptionController,
-                            hintText: 'Group Description',
-                            centerText: true,
-                            isLight: true,
-                            verticalPadding: 20,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const _AvatarUploader(),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  children: [
+                                    TextField(
+                                      controller: _nameController,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 16,
+                                          color: textDark),
+                                      decoration: const InputDecoration(
+                                        hintText: 'Name your group...',
+                                        hintStyle:
+                                            TextStyle(color: Colors.black38),
+                                        border: InputBorder.none,
+                                        isDense: true,
+                                      ),
+                                    ),
+                                    const Divider(
+                                        color: Colors.black12, height: 16),
+                                    TextField(
+                                      controller: _descriptionController,
+                                      maxLines: 2,
+                                      style: const TextStyle(
+                                          fontSize: 14, color: textMuted),
+                                      decoration: const InputDecoration(
+                                        hintText:
+                                            'Add an optional description or purpose...',
+                                        hintStyle:
+                                            TextStyle(color: Colors.black26),
+                                        border: InputBorder.none,
+                                        isDense: true,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 15),
-                    const Divider(height: 1, color: borderColor),
-                    _buildSectionHeader(
-                        'SELECTED · ${_selectedContactIds.length}'),
                     if (selectedContacts.isNotEmpty)
-                      _SelectedContactsHorizontalList(
-                        selectedContacts: selectedContacts,
-                        onRemove: (id) =>
-                            setState(() => _selectedContactIds.remove(id)),
+                      SliverToBoxAdapter(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24.0, vertical: 4),
+                              child: Text(
+                                'MEMBERS (${selectedContacts.length})',
+                                style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: textMuted,
+                                    letterSpacing: 1.2),
+                              ),
+                            ),
+                            _SelectedContactsTray(
+                              selectedContacts: selectedContacts,
+                              onRemove: (id) => setState(
+                                  () => _selectedContactIds.remove(id)),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                        ),
                       ),
-                    const Divider(height: 1, color: borderColor),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20.0, vertical: 8),
-                      child: TextField(
+                    SliverAppBar(
+                      pinned: true,
+                      automaticallyImplyLeading: false,
+                      backgroundColor: Colors.white,
+                      elevation: 0,
+                      toolbarHeight: 60,
+                      titleSpacing: 20,
+                      title: TextField(
                         controller: _searchController,
                         onChanged: (val) => setState(() => _searchQuery = val),
                         decoration: InputDecoration(
-                          hintText: 'Search contacts...',
-                          hintStyle: const TextStyle(color: Colors.black26),
+                          hintText: 'Invite teammates...',
+                          hintStyle:
+                              const TextStyle(color: textMuted, fontSize: 14),
                           prefixIcon: const Icon(Icons.search,
-                              color: Colors.black26, size: 20),
+                              color: textMuted, size: 20),
                           filled: true,
-                          fillColor: Colors.grey.shade100,
+                          fillColor: backgroundCard,
                           isDense: true,
                           contentPadding: const EdgeInsets.symmetric(
-                              vertical: 8, horizontal: 12),
+                              vertical: 12, horizontal: 16),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(25),
+                            borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
                           ),
                         ),
                       ),
                     ),
-                    const Divider(height: 1, color: borderColor),
-                    _buildSectionHeader('CONTACTS'),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 8),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final contact = filteredContacts[index];
+                            final isSelected =
+                                _selectedContactIds.contains(contact.id);
+                            return _ContactRowTile(
+                              contact: contact,
+                              isSelected: isSelected,
+                              onTap: () {
+                                setState(() {
+                                  if (isSelected) {
+                                    _selectedContactIds.remove(contact.id);
+                                  } else {
+                                    _selectedContactIds.add(contact.id);
+                                  }
+                                });
+                              },
+                            );
+                          },
+                          childCount: filteredContacts.length,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final contact = filteredContacts[index];
-                    final isSelected = _selectedContactIds.contains(contact.id);
-                    return Column(
-                      children: [
-                        _ContactListTile(
-                          contact: contact,
-                          isSelected: isSelected,
-                          onChanged: (checked) {
-                            setState(() {
-                              if (checked == true) {
-                                _selectedContactIds.add(contact.id);
-                              } else {
-                                _selectedContactIds.remove(contact.id);
-                              }
-                            });
-                          },
-                        ),
-                        if (index < filteredContacts.length - 1)
-                          const Divider(height: 1, indent: 20, endIndent: 20),
-                      ],
-                    );
-                  },
-                  childCount: filteredContacts.length,
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      offset: const Offset(0, -4),
+                      blurRadius: 16,
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _createGroupInFirebase,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryAccent,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2.5),
+                            )
+                          : const Text(
+                              'Launch Group',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -337,143 +398,112 @@ class _NewGroupScreenState extends State<NewGroupScreen> {
       ),
     );
   }
-
-  Widget _buildSectionHeader(String title) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      color: Colors.grey.shade100,
-      child: Text(
-        title,
-        style: const TextStyle(
-          color: Color(0xffA9AABF),
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 1.1,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCustomTextField({
-    required TextEditingController controller,
-    required String hintText,
-    bool centerText = false,
-    bool isLight = false,
-    double verticalPadding = 14,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: TextField(
-        controller: controller,
-        textAlign: centerText ? TextAlign.center : TextAlign.start,
-        style: TextStyle(
-          color: isLight ? Colors.black54 : Colors.black87,
-          fontWeight: isLight ? FontWeight.normal : FontWeight.w500,
-        ),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle:
-              TextStyle(color: isLight ? Colors.black38 : Colors.black26),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          contentPadding:
-              EdgeInsets.symmetric(horizontal: 16, vertical: verticalPadding),
-        ),
-      ),
-    );
-  }
 }
 
-class _GroupAvatarHeader extends StatelessWidget {
-  const _GroupAvatarHeader();
+class _AvatarUploader extends StatelessWidget {
+  const _AvatarUploader();
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Stack(
-        children: [
-          const CircleAvatar(
-            radius: 45,
-            backgroundColor: Color(0xFFE8EAF6),
-            child: Icon(Icons.group, size: 40, color: Colors.indigo),
+    return Stack(
+      children: [
+        Container(
+          width: 70,
+          height: 70,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: const Color(0xffE4E5EF), width: 1.5),
           ),
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: CircleAvatar(
-              radius: 14,
-              backgroundColor: const Color(0xff6C63FF),
-              child:
-                  const Icon(Icons.camera_alt, size: 14, color: Colors.white),
+          child: const Icon(Icons.add_photo_alternate_outlined,
+              size: 28, color: _NewGroupScreenState.primaryAccent),
+        ),
+        Positioned(
+          bottom: 0,
+          right: 0,
+          child: Container(
+            padding: const EdgeInsets.all(4),
+            decoration: const BoxDecoration(
+              color: _NewGroupScreenState.primaryAccent,
+              shape: BoxShape.circle,
             ),
+            child: const Icon(Icons.add, size: 12, color: Colors.white),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-class _SelectedContactsHorizontalList extends StatelessWidget {
+class _SelectedContactsTray extends StatelessWidget {
   final List<Contact> selectedContacts;
   final ValueChanged<String> onRemove;
 
-  const _SelectedContactsHorizontalList({
+  const _SelectedContactsTray({
     required this.selectedContacts,
     required this.onRemove,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 90,
-      padding: const EdgeInsets.symmetric(vertical: 12),
+    return SizedBox(
+      height: 84,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         itemCount: selectedContacts.length,
         itemBuilder: (context, index) {
           final contact = selectedContacts[index];
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Column(
+            padding: const EdgeInsets.symmetric(horizontal: 6.0),
+            child: Stack(
               children: [
-                Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 22,
-                      backgroundColor: contact.avatarColor,
-                      child: Text(
-                        contact.initials,
-                        style: TextStyle(
-                            color: Colors.blueGrey.shade800,
-                            fontWeight: FontWeight.bold),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, right: 4),
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: const Color(0xFFEEF2FF),
+                        backgroundImage: contact.profileImage != null &&
+                                contact.profileImage!.isNotEmpty
+                            ? NetworkImage(contact.profileImage!)
+                            : null,
+                        child: contact.profileImage == null ||
+                                contact.profileImage!.isEmpty
+                            ? Text(
+                                contact.initials,
+                                style: const TextStyle(
+                                    color: _NewGroupScreenState.primaryAccent,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13),
+                              )
+                            : null,
                       ),
-                    ),
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: () => onRemove(contact.id),
-                        child: const CircleAvatar(
-                          radius: 7,
-                          backgroundColor: Colors.blueGrey,
-                          child:
-                              Icon(Icons.close, size: 10, color: Colors.white),
-                        ),
-                      ),
-                    )
-                  ],
+                      const SizedBox(height: 4),
+                      Text(
+                        contact.name.split(' ')[0],
+                        style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: _NewGroupScreenState.textDark),
+                      )
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  contact.name.split(' ')[0],
-                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: () => onRemove(contact.id),
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                          color: Color(0xFFEF4444), shape: BoxShape.circle),
+                      child: const Icon(Icons.close,
+                          size: 10, color: Colors.white),
+                    ),
+                  ),
                 )
               ],
             ),
@@ -484,48 +514,66 @@ class _SelectedContactsHorizontalList extends StatelessWidget {
   }
 }
 
-class _ContactListTile extends StatelessWidget {
+class _ContactRowTile extends StatelessWidget {
   final Contact contact;
   final bool isSelected;
-  final ValueChanged<bool?> onChanged;
+  final VoidCallback onTap;
 
-  const _ContactListTile({
+  const _ContactRowTile({
     required this.contact,
     required this.isSelected,
-    required this.onChanged,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
       leading: CircleAvatar(
-        radius: 24,
-        backgroundColor: contact.avatarColor,
-        child: Text(
-          contact.initials,
-          style: TextStyle(
-              color: Colors.blueGrey.shade800, fontWeight: FontWeight.bold),
-        ),
+        radius: 22,
+        backgroundColor: const Color(0xFFF3F4F6),
+        backgroundImage:
+            contact.profileImage != null && contact.profileImage!.isNotEmpty
+                ? NetworkImage(contact.profileImage!)
+                : null,
+        child: contact.profileImage == null || contact.profileImage!.isEmpty
+            ? Text(
+                contact.initials,
+                style: const TextStyle(
+                    color: _NewGroupScreenState.textMuted,
+                    fontWeight: FontWeight.bold),
+              )
+            : null,
       ),
       title: Text(
         contact.name,
-        style:
-            const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87),
+        style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: _NewGroupScreenState.textDark,
+            fontSize: 15),
       ),
       subtitle: Text(
-        contact.username,
-        style: const TextStyle(color: Colors.black38, fontSize: 13),
+        '@${contact.username}',
+        style: const TextStyle(
+            color: _NewGroupScreenState.textMuted, fontSize: 13),
       ),
-      trailing: Transform.scale(
-        scale: 1.1,
-        child: Checkbox(
-          value: isSelected,
-          activeColor: const Color(0xFF5C6BC0),
-          shape: const CircleBorder(),
-          side: const BorderSide(color: Colors.black12, width: 1.5),
-          onChanged: onChanged,
+      trailing: Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isSelected ? _NewGroupScreenState.primaryAccent : Colors.white,
+          border: Border.all(
+            color: isSelected
+                ? _NewGroupScreenState.primaryAccent
+                : const Color(0xFFD1D5DB),
+            width: 2,
+          ),
         ),
+        child: isSelected
+            ? const Icon(Icons.check, size: 14, color: Colors.white)
+            : null,
       ),
     );
   }

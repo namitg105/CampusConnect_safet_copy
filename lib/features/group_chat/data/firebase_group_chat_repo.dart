@@ -34,4 +34,10 @@ class FirebaseGroupChatRepo implements GroupChatRepo {
   Future<void> deleteMessage(String messageId) async {
     await _firestore.collection('group_chats').doc(messageId).delete();
   }
+
+  @override
+  Stream<List<dynamic>> streamAllGroups() {
+    // TODO: implement streamAllGroups
+    throw UnimplementedError();
+  }
 }

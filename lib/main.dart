@@ -2,6 +2,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
+import 'package:noteswap/features/events/presentation/screens/create_event.dart';
+import 'package:noteswap/features/nith_post/screen2.dart';
 
 import 'ViewModels/DarkModeViewModels.dart';
 import 'core/di/injection.dart';
@@ -23,10 +25,8 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize GetIt
   await init();
 
-  // Initialize Theme Controller
   Get.put(LightModeController());
 
   runApp(const MyApp());

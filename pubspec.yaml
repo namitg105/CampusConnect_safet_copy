@@ -59,6 +59,7 @@ dependencies:
   video_player:
   path_provider:
   video_compress:
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:

@@ -12,6 +12,7 @@ class Message {
   final String? mediaUrl;
   final String? senderImage;
   final Timestamp createdAt;
+  final Map<String, dynamic>? reactions; // Added reactions field
 
   const Message({
     required this.id,
@@ -22,6 +23,7 @@ class Message {
     this.mediaUrl,
     this.senderImage,
     required this.createdAt,
+    this.reactions,
   });
 
   DateTime get timestamp => createdAt.toDate();
@@ -57,6 +59,9 @@ class Message {
       type: data['type'] ?? 'text',
       mediaUrl: decryptedMedia,
       createdAt: (data['createdAt'] as Timestamp?) ?? Timestamp.now(),
+      reactions: data['reactions'] != null
+          ? Map<String, dynamic>.from(data['reactions'])
+          : null,
     );
   }
 
@@ -92,6 +97,9 @@ class Message {
       type: map['type'] ?? 'text',
       mediaUrl: decryptedMedia,
       createdAt: (map['createdAt'] as Timestamp?) ?? Timestamp.now(),
+      reactions: map['reactions'] != null
+          ? Map<String, dynamic>.from(map['reactions'])
+          : null,
     );
   }
 
@@ -106,6 +114,7 @@ class Message {
       'type': type,
       'mediaUrl': mediaUrl == null ? null : aes.encrypt(mediaUrl!),
       'createdAt': createdAt,
+      'reactions': reactions,
     };
   }
 
@@ -118,6 +127,7 @@ class Message {
     String? type,
     String? mediaUrl,
     Timestamp? createdAt,
+    Map<String, dynamic>? reactions,
   }) {
     return Message(
       id: id ?? this.id,
@@ -128,6 +138,7 @@ class Message {
       type: type ?? this.type,
       mediaUrl: mediaUrl ?? this.mediaUrl,
       createdAt: createdAt ?? this.createdAt,
+      reactions: reactions ?? this.reactions,
     );
   }
 

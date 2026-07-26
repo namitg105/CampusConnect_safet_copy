@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Support for Clipboard deep links
+import 'package:noteswap/features/group_chat/presentation/pages/groups_page.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 import '../../../community/Widgets/community_profile.dart';
 
@@ -17,25 +19,255 @@ class GroupDetailsPage extends StatefulWidget {
 }
 
 class _GroupDetailsPageState extends State<GroupDetailsPage> {
-  bool _muteNotifications = false;
+  final String _currentUid = FirebaseAuth.instance.currentUser?.uid ?? "";
 
-  void _handleMessageAction() => print('Action: Message button tapped');
+  void _handleMessageAction() => Navigator.pop(context);
   void _handlePhoneAction() => print('Action: Call button tapped');
-  void _handleMuteAction() => print('Action: Quick Mute button tapped');
-  void _handleMoreAction() => print('Action: More options button tapped');
 
-  void _handleMuteToggle(bool newValue) {
-    setState(() => _muteNotifications = newValue);
-    print('Setting: Mute notifications updated to: $newValue');
+  // --- Mute notification logic tracking per-user in array collection ---
+  void _handleMuteToggle(bool isMuted, List<dynamic> mutedList) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('group_chats')
+          .doc(widget.groupId)
+          .update({
+        'mutedBy': isMuted
+            ? FieldValue.arrayUnion([_currentUid])
+            : FieldValue.arrayRemove([_currentUid])
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text(isMuted ? "Notifications muted" : "Notifications unmuted"),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update notifications: $e')),
+      );
+    }
   }
 
-  void _handlePinnedMessages() =>
-      print('Navigation: Pinned messages tile tapped');
-  void _handleDisappearingMessages() =>
-      print('Navigation: Disappearing messages tile tapped');
-  void _handleInviteLink() => print('Action: Invite via link tile tapped');
+  // --- View Pinned Message Sheet Panel ---
+  void _handlePinnedMessages() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('group_chats')
+                .doc(widget.groupId)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox(
+                  height: 200,
+                  child: Center(
+                      child:
+                          CircularProgressIndicator(color: Color(0xFF6366F1))),
+                );
+              }
 
-  /// Displays a dialog listing users who aren't currently in the group
+              final data = snapshot.data?.data() as Map<String, dynamic>?;
+              final pinned = data?['pinnedMessage'] as Map<String, dynamic>?;
+
+              return Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 38,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE2E8F0),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    const Text(
+                      'Pinned Messages',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A)),
+                    ),
+                    const SizedBox(height: 16),
+                    if (pinned == null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: Center(
+                          child: Text(
+                            "No pinned messages in this space.",
+                            style: TextStyle(
+                                color: Colors.grey.shade500, fontSize: 14),
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                              color: const Color(0xFF6366F1).withOpacity(0.12)),
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          leading: const CircleAvatar(
+                            backgroundColor: Color(0xFFEEF2FF),
+                            child: Icon(Icons.pin_drop_rounded,
+                                color: Color(0xFF6366F1)),
+                          ),
+                          title: Text(
+                            pinned['senderName'] ?? 'Member',
+                            style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF6366F1)),
+                          ),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Text(
+                              pinned['text'] ?? '',
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF0F172A)),
+                            ),
+                          ),
+                          onTap: () => Navigator.pop(context),
+                        ),
+                      ),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // --- Disappearing Messages Manager Options Sheet ---
+  void _handleDisappearingMessages(String currentDuration) {
+    final List<Map<String, dynamic>> options = [
+      {"label": "Off", "value": "off"},
+      {"label": "24 Hours", "value": "24h"},
+      {"label": "7 Days", "value": "7d"},
+      {"label": "90 Days", "value": "90d"},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 38,
+                    height: 4,
+                    decoration: BoxDecoration(
+                        color: const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(2)),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Text(
+                    'Disappearing Messages',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A)),
+                  ),
+                ),
+                ...options.map((opt) {
+                  final bool isSelected = currentDuration == opt['value'];
+                  return ListTile(
+                    title: Text(
+                      opt['label'],
+                      style: TextStyle(
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.w500,
+                        color: isSelected
+                            ? const Color(0xFF6366F1)
+                            : Color(0xFF0F172A),
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? const Icon(Icons.check_circle_rounded,
+                            color: Color(0xFF6366F1))
+                        : null,
+                    onTap: () async {
+                      Navigator.pop(context);
+                      try {
+                        await FirebaseFirestore.instance
+                            .collection('group_chats')
+                            .doc(widget.groupId)
+                            .update({'disappearingDuration': opt['value']});
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text(
+                                  'Failed to update timer configuration: $e')),
+                        );
+                      }
+                    },
+                  );
+                }).toList(),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // --- Invite Deep Link Generator Copied to Clipboard ---
+  void _handleInviteLink() async {
+    final String deepLinkUrl =
+        "https://noteswap.page.link/join?group=${widget.groupId}";
+    await Clipboard.setData(ClipboardData(text: deepLinkUrl));
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.assignment_turned_in_rounded, color: Colors.white),
+              SizedBox(width: 10),
+              Text("Group invite link copied to clipboard!"),
+            ],
+          ),
+          backgroundColor: Color(0xFF10B981),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
   void _handleAddMemberAction(List<dynamic> currentMembers) async {
     showDialog(
       context: context,
@@ -53,15 +285,13 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                // Filter out users who are already part of this group chat
                 final prospectiveUsers = snapshot.data!.docs.where((doc) {
                   return !currentMembers.contains(doc.id);
                 }).toList();
 
                 if (prospectiveUsers.isEmpty) {
                   return const Center(
-                    child: Text('All platform users are already members.'),
-                  );
+                      child: Text('All platform users are already members.'));
                 }
 
                 return ListView.builder(
@@ -77,7 +307,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                       trailing:
                           const Icon(Icons.person_add, color: Colors.blue),
                       onTap: () async {
-                        Navigator.pop(context); // Close the dialog immediately
+                        Navigator.pop(context);
                         try {
                           await FirebaseFirestore.instance
                               .collection('group_chats')
@@ -182,7 +412,29 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
 
         if (!groupSnapshot.hasData || !groupSnapshot.data!.exists) {
           return Scaffold(
-            appBar: AppBar(title: const Text("Error")),
+            appBar: AppBar(
+              leading: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CircleAvatar(
+                  backgroundColor: Colors.grey.shade100,
+                  child: IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new,
+                          size: 16, color: Colors.black87),
+                      onPressed: () => Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => GroupsDisplayPage()))),
+                ),
+              ),
+              title: const Text('Group info',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Colors.black)),
+              backgroundColor: Colors.white,
+              surfaceTintColor: Colors.white,
+              elevation: 2,
+            ),
             body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
@@ -212,6 +464,25 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
             groupData['members'] as List<dynamic>? ?? [];
         final int dynamicCount = memberIds.length;
 
+        // Parse runtime database states dynamically
+        final List<dynamic> mutedByList =
+            groupData['mutedBy'] as List<dynamic>? ?? [];
+        final bool isCurrentlyMuted = mutedByList.contains(_currentUid);
+
+        final String disappearingDuration =
+            groupData['disappearingDuration'] ?? "off";
+        String displayDisappearingSubtitle = "Off";
+        if (disappearingDuration == "24h")
+          displayDisappearingSubtitle = "24 Hours";
+        if (disappearingDuration == "7d")
+          displayDisappearingSubtitle = "7 Days";
+        if (disappearingDuration == "90d")
+          displayDisappearingSubtitle = "90 Days";
+
+        final hasPinned = groupData['pinnedMessage'] != null;
+        final String pinSubtitle =
+            hasPinned ? "1 message pinned" : "No pinned messages";
+
         return Scaffold(
           backgroundColor: Colors.white,
           appBar: AppBar(
@@ -220,18 +491,17 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
               child: CircleAvatar(
                 backgroundColor: Colors.grey.shade100,
                 child: IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new,
-                        size: 16, color: Colors.black87),
-                    onPressed: () => MainPage()),
+                  icon: const Icon(Icons.arrow_back_ios_new,
+                      size: 16, color: Colors.black87),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ),
             ),
-            title: const Text(
-              'Group info',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Colors.black),
-            ),
+            title: const Text('Group info',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.black)),
             backgroundColor: Colors.white,
             surfaceTintColor: Colors.white,
             elevation: 2,
@@ -261,13 +531,14 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                     GroupActionButton(
                       imageAsset: Image.asset("assets/community/mug.png"),
                       label: 'Mute',
-                      onTap: _handleMuteAction,
+                      onTap: () =>
+                          _handleMuteToggle(!isCurrentlyMuted, mutedByList),
                     ),
                     const SizedBox(width: 24),
                     GroupActionButton(
                       imageAsset: Image.asset("assets/community/dots.png"),
                       label: 'More',
-                      onTap: _handleMoreAction,
+                      onTap: () {},
                     ),
                   ],
                 ),
@@ -284,8 +555,8 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                   subtitle: Text('Until you turn it back on',
                       style:
                           TextStyle(color: Colors.grey.shade400, fontSize: 12)),
-                  value: _muteNotifications,
-                  onChanged: _handleMuteToggle,
+                  value: isCurrentlyMuted,
+                  onChanged: (val) => _handleMuteToggle(val, mutedByList),
                   activeColor: const Color(0xFF6366F1),
                 ),
                 const Divider(height: 1, color: Color(0xffE4E5EF)),
@@ -294,7 +565,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                   bgColor: Colors.amber.shade50,
                   iconColor: Colors.amber.shade700,
                   title: 'Pinned messages',
-                  subtitle: '2 messages pinned',
+                  subtitle: pinSubtitle,
                   onTap: _handlePinnedMessages,
                 ),
                 const Divider(height: 1, color: Color(0xffE4E5EF)),
@@ -303,8 +574,9 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                   bgColor: Colors.blue.shade50,
                   iconColor: Colors.blue,
                   title: 'Disappearing messages',
-                  subtitle: 'Off',
-                  onTap: _handleDisappearingMessages,
+                  subtitle: displayDisappearingSubtitle,
+                  onTap: () =>
+                      _handleDisappearingMessages(disappearingDuration),
                 ),
                 const Divider(height: 1, color: Color(0xffE4E5EF)),
                 GroupListTile(
@@ -432,10 +704,9 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 12, vertical: 6),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFEEF2FF),
-                                          borderRadius:
-                                              BorderRadius.circular(16),
-                                        ),
+                                            color: const Color(0xFFEEF2FF),
+                                            borderRadius:
+                                                BorderRadius.circular(16)),
                                         child: Text(
                                           isCreator ? 'Admin' : 'Member',
                                           style: const TextStyle(
@@ -458,10 +729,8 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                                                       color: Colors.grey,
                                                       size: 20),
                                             ),
-                                            onPressed: () => print(
-                                                'Action: Personal interaction button tapped'),
+                                            onPressed: () {},
                                           ),
-                                          // Only display the deletion vector option if the current app user is the group Admin
                                           if (currentUserId == creatorUid)
                                             IconButton(
                                               icon: const Icon(
