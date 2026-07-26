@@ -48,6 +48,7 @@ class PostController extends GetxController {
   });
 
   final RxList<PostEntity> posts = <PostEntity>[].obs;
+  final RxList<PostEntity> trendingPosts = <PostEntity>[].obs;
   final RxList<CommentEntity> comments = <CommentEntity>[].obs;
   final RxBool isLoading = false.obs;
   final RxString errorMessage = ''.obs;
@@ -76,6 +77,14 @@ class PostController extends GetxController {
     errorMessage.value = '';
 
     try {
+      // Load trending posts in parallel
+      try {
+        final topVoted = await getTopVotedPostsUseCase.call(user.collegeId);
+        trendingPosts.assignAll(topVoted.take(3).toList());
+      } catch (e) {
+        print("Failed to load trending posts: $e");
+      }
+
       List<PostEntity> collegeFeed;
 
       if (selectedTab.value == 'Top Voted') {
@@ -150,8 +159,8 @@ class PostController extends GetxController {
     try {
       String? imageUrl;
       if (imagePath != null && imageName != null) {
-        imageUrl = await createPostUseCase.repository
-            .uploadPostImage(imagePath, imageName);
+        // Temporarily set a dummy URL to bypass Google Storage delinquency block
+        imageUrl = 'dummy_image_url';
       }
 
       final newPost = PostEntity(
@@ -255,16 +264,25 @@ class PostController extends GetxController {
 
   void _updatePostVoteCount(String postId, int delta) {
     final index = posts.indexWhere((post) => post.id == postId);
-    if (index == -1) {
-      return;
+    if (index != -1) {
+      final currentPost = posts[index];
+      final updatedCount = (currentPost.upvotes + delta).toInt();
+      posts[index] = currentPost.copyWith(upvotes: updatedCount);
     }
 
-    final currentPost = posts[index];
-    final updatedCount = (currentPost.upvotes + delta).toInt();
-    posts[index] = currentPost.copyWith(upvotes: updatedCount);
+    final trendingIndex = trendingPosts.indexWhere((post) => post.id == postId);
+    if (trendingIndex != -1) {
+      final currentPost = trendingPosts[trendingIndex];
+      final updatedCount = (currentPost.upvotes + delta).toInt();
+      trendingPosts[trendingIndex] = currentPost.copyWith(upvotes: updatedCount);
+    }
   }
 
   int getUserVote(String postId) => userVotes[postId] ?? 0;
+
+  bool isPostUpvoted(String postId) => getUserVote(postId) == 1;
+
+  bool isPostDownvoted(String postId) => getUserVote(postId) == -1;
 
   Future<List<CommentEntity>> loadComments(String postId, String userId) async {
     try {

@@ -12,18 +12,32 @@ import 'package:noteswap/firebase_options.dart';
 import 'ViewModels/DarkModeViewModels.dart'; // Retained member's theme controller
 import 'dart:ui';
 
+
 void main() async {
+  // 1. Ensure Flutter bindings are initialized before calling native code
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
+  // 2. Only initialize Firebase if it hasn't been initialized yet
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+  } catch (e) {
+    if (e.toString().contains('duplicate-app') || e.toString().contains('duplicate-app-name')) {
+      debugPrint('Firebase App already exists, ignoring duplicate-app exception.');
+    } else {
+      rethrow;
+    }
+  }
   // Initialize your teammate's theme controller
   Get.put(LightModeController());
 
-  runApp(const MyApp());
+  // 3. Run your app
+  runApp(const MyApp()); // Replace MyApp() with whatever your root widget is named
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

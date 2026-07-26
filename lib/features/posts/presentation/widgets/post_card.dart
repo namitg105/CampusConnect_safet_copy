@@ -1,10 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
 import 'package:noteswap/utils/time_formatter.dart';
+import 'package:share_plus/share_plus.dart';
+
+// SVG Assets matching Figma specifications perfectly
+const String upvoteSvg = '''
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <line x1="12" y1="19" x2="12" y2="5"></line>
+  <polyline points="5 12 12 5 19 12"></polyline>
+</svg>
+''';
+
+const String downvoteSvg = '''
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <line x1="12" y1="5" x2="12" y2="19"></line>
+  <polyline points="19 12 12 19 5 12"></polyline>
+</svg>
+''';
+
+const String commentSvg = '''
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+</svg>
+''';
+
+const String shareSvg = '''
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="18" cy="5" r="3"></circle>
+  <circle cx="6" cy="12" r="3"></circle>
+  <circle cx="18" cy="19" r="3"></circle>
+  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+</svg>
+''';
 
 /// Day 4: Individual Post Card component
 /// Displays a single post's title, body preview, author, tag, and vote count
-/// Similar to a Reddit post card layout
+/// Styled dynamically to align with the uniConnect Figma specifications
 class PostCard extends StatelessWidget {
   final PostEntity post;
   final VoidCallback onTap;
@@ -29,86 +62,132 @@ class PostCard extends StatelessWidget {
     required this.isLightMode,
   }) : super(key: key);
 
+  String getInitials(String name) {
+    final cleanName = name.contains('@') ? name.split('@').first : name;
+    if (cleanName.trim().isEmpty) return '?';
+    final parts = cleanName.trim().split(RegExp(r'[\s._-]+'));
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return cleanName[0].toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final brandColor = const Color(0xFF6139ED);
+    final cardColor = isLightMode ? Colors.white : const Color(0xFF1E1E1E);
+    final textColor = isLightMode ? Colors.black87 : Colors.white;
+    final subTextColor = isLightMode ? Colors.grey[600] : Colors.grey[400];
+    final authorName = post.authorName.contains('@')
+        ? post.authorName.split('@').first
+        : post.authorName;
+    final initials = getInitials(post.authorName);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isLightMode ? Colors.white : const Color(0xFF1E1E1E),
+          color: cardColor,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: isLightMode
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [],
           border: Border.all(
-            color: isLightMode ? Colors.grey[300]! : Colors.grey[700]!,
+            color: isLightMode ? Colors.grey[100]! : Colors.grey[850]!,
+            width: 0.5,
           ),
-          borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Author & Tag Row
+            // User Header Row
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 GestureDetector(
                   onTap: onProfileTap,
+                  child: CircleAvatar(
+                    radius: 18,
+                    backgroundColor: brandColor.withOpacity(0.15),
+                    child: Text(
+                      initials,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: brandColor,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.account_circle,
-                        size: 32,
-                        color: const Color(0xFF6139ED),
-                      ),
-                      const SizedBox(height: 4),
                       Text(
-                        post.authorName.contains('@') ? post.authorName.split('@').first : post.authorName,
+                        authorName,
                         style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: isLightMode ? Colors.black87 : Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Posted • ${formatTimeAgo(post.createdAt)}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: subTextColor,
                         ),
                       ),
                     ],
                   ),
                 ),
+                // Tag & Delete Button
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: brandColor.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '#${post.tag}',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: brandColor,
+                        ),
+                      ),
+                    ),
                     if (onDelete != null) ...[
+                      const SizedBox(width: 8),
                       IconButton(
                         onPressed: onDelete,
                         icon: Icon(
                           Icons.delete_outline,
-                          size: 20,
+                          size: 18,
                           color: Colors.red[400],
                         ),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
-                      const SizedBox(width: 8),
                     ],
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF6139ED).withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '#${post.tag}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF6139ED),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
 
             // Post Title
             Text(
@@ -116,130 +195,164 @@ class PostCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: isLightMode ? Colors.black : Colors.white,
+                color: textColor,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 6),
 
-            // Post Body Preview (truncated)
+            // Post Body
             Text(
               post.body,
               style: TextStyle(
                 fontSize: 13,
-                color: isLightMode ? Colors.grey[600] : Colors.grey[400],
+                color: subTextColor,
               ),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
+
             if (post.imageUrl != null && post.imageUrl!.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  constraints: const BoxConstraints(maxHeight: 250),
+                  constraints: const BoxConstraints(maxHeight: 200),
                   width: double.infinity,
-                  child: Image.network(
-                    post.imageUrl!,
+                  child: Image.asset(
+                    'assets/Screenshot 2026-07-24 111253.png',
                     fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        height: 150,
-                        color: isLightMode ? Colors.grey[200] : Colors.grey[850],
-                        child: const Center(
-                          child: CircularProgressIndicator(color: Color(0xFF6139ED)),
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      color: isLightMode ? Colors.grey[100] : Colors.grey[900],
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.error_outline, color: Colors.grey),
-                          SizedBox(width: 8),
-                          Text('Could not load image', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
               ),
             ],
-            const SizedBox(height: 10),
+            const SizedBox(height: 14),
 
-            // Vote & Comment Row
+            // Actions Bottom Row
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Vote Section
+                // Upvote/Downvote Capsule
+                Container(
+                  decoration: BoxDecoration(
+                    color: isLightMode
+                        ? const Color(0xFFF3F4F6)
+                        : const Color(0xFF2D2D2D),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      GestureDetector(
+                        onTap: onUpvote,
+                        child: SvgPicture.string(
+                          upvoteSvg,
+                          width: 15,
+                          height: 15,
+                          colorFilter: ColorFilter.mode(
+                            isUpvoted
+                                ? brandColor
+                                : (isLightMode
+                                    ? Colors.grey[600]!
+                                    : Colors.grey[400]!),
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        post.upvotes.toString(),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        height: 12,
+                        width: 1,
+                        color:
+                            isLightMode ? Colors.grey[300] : Colors.grey[600],
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: onDownvote,
+                        child: SvgPicture.string(
+                          downvoteSvg,
+                          width: 15,
+                          height: 15,
+                          colorFilter: ColorFilter.mode(
+                            isDownvoted
+                                ? brandColor
+                                : (isLightMode
+                                    ? Colors.grey[600]!
+                                    : Colors.grey[400]!),
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+
+                // Comment Count Capsule (NO capsule background!)
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Upvote Button
-                    GestureDetector(
-                      onTap: onUpvote,
-                      child: Icon(
-                        Icons.arrow_upward,
-                        size: 20,
-                        color: isUpvoted
-                            ? const Color(0xFF6139ED)
-                            : (isLightMode ? Colors.grey[600] : Colors.grey[400]),
+                    SvgPicture.string(
+                      commentSvg,
+                      width: 16,
+                      height: 16,
+                      colorFilter: ColorFilter.mode(
+                        isLightMode ? Colors.grey[600]! : Colors.grey[400]!,
+                        BlendMode.srcIn,
                       ),
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      post.upvotes.toString(),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: isLightMode ? Colors.black : Colors.white,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-
-                    // Downvote Button
-                    GestureDetector(
-                      onTap: onDownvote,
-                      child: Icon(
-                        Icons.arrow_downward,
-                        size: 20,
-                        color: isDownvoted
-                            ? const Color(0xFF6139ED)
-                            : (isLightMode ? Colors.grey[600] : Colors.grey[400]),
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Relative Timestamp
-                Text(
-                  formatTimeAgo(post.createdAt),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isLightMode ? Colors.grey[600] : Colors.grey[400],
-                  ),
-                ),
-
-                // Comment Count
-                Row(
-                  children: [
-                    Icon(
-                      Icons.comment,
-                      size: 18,
-                      color: isLightMode ? Colors.grey[600] : Colors.grey[400],
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
                       post.commentCount.toString(),
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                         color: isLightMode ? Colors.grey[600] : Colors.grey[400],
                       ),
                     ),
                   ],
+                ),
+                const Spacer(),
+
+                // Share Action Button (NO capsule background!)
+                GestureDetector(
+                  onTap: () {
+                    Share.share('Check out this post on CampusConnect:\n\n${post.title}\n${post.body}');
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SvgPicture.string(
+                        shareSvg,
+                        width: 16,
+                        height: 16,
+                        colorFilter: ColorFilter.mode(
+                          isLightMode ? Colors.grey[600]! : Colors.grey[400]!,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Share',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isLightMode ? Colors.grey[600] : Colors.grey[400],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

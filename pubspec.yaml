@@ -46,6 +46,7 @@ dependencies:
   flutter_bloc: ^9.1.1
   google_sign_in: ^6.0.0
   firebase_storage: ^13.4.3
+  share_plus: ^13.3.0
 
 dev_dependencies:
   flutter_test:
@@ -74,6 +75,7 @@ flutter:
     - assets/
     - assets/images_intro/
     - assets/images_register/
+    - assets/chat_assets/
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

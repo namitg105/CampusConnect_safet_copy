@@ -20,3 +20,4 @@ String formatTimeAgo(DateTime dateTime) {
     return '${seconds < 0 ? 0 : seconds} ${seconds == 1 ? 'second' : 'seconds'} ago';
   }
 }
+

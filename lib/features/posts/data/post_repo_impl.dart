@@ -314,10 +314,26 @@ class PostRepoImpl implements PostRepo {
 
   @override
   Future<String> uploadPostImage(String localPath, String fileName) async {
-    final storageRef = FirebaseStorage.instance.ref();
-    final imageRef = storageRef.child('posts/images/${DateTime.now().millisecondsSinceEpoch}_$fileName');
-    final uploadTask = await imageRef.putFile(File(localPath));
-    return await uploadTask.ref.getDownloadURL();
+    try {
+      final storageRef = FirebaseStorage.instance.ref();
+      final imageRef = storageRef.child('posts/images/${DateTime.now().millisecondsSinceEpoch}_$fileName');
+      
+      final file = File(localPath);
+      final bytes = await file.readAsBytes();
+      
+      final contentType = fileName.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+      final uploadTask = await imageRef.putData(
+        bytes,
+        SettableMetadata(contentType: contentType),
+      );
+      return await uploadTask.ref.getDownloadURL();
+    } on FirebaseException catch (e) {
+      print("Firebase Storage Exception: [${e.code}] ${e.message}");
+      throw Exception("Storage error (${e.code}): ${e.message}");
+    } catch (e) {
+      print("Generic Storage Exception: $e");
+      throw Exception("Storage error: $e");
+    }
   }
 
   @override

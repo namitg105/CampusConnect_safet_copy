@@ -12,6 +12,7 @@ import 'package:noteswap/features/posts/data/post_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
 import 'package:noteswap/utils/time_formatter.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
+import 'package:noteswap/features/chat/presentation/pages/chat_rooms_page.dart';
 
 class DashboardPageOne extends StatefulWidget {
   const DashboardPageOne({super.key});
@@ -33,7 +34,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
     super.initState();
     profileUseCase = GetProfileUseCase(repository: ProfileRepoImpl());
     feedUseCase = GetFeedUseCase(repository: PostRepoImpl());
-    
+
     // Check if user is already authenticated at initialization
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authState = context.read<AuthCubit>().state;
@@ -58,7 +59,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
 
     final data = await profileUseCase.call(user.uid);
     final collegeId = data?['collegeId'] as String? ?? user.collegeId;
-    
+
     List<PostEntity> feed = [];
     if (collegeId.isNotEmpty) {
       try {
@@ -118,7 +119,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                 children: [
                   // Custom App Bar
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -134,7 +136,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                 color: brandColor.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Icon(Icons.school, color: brandColor, size: 24),
+                              child: Icon(Icons.school,
+                                  color: brandColor, size: 24),
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -149,7 +152,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                         ),
                         IconButton(
                           onPressed: () {},
-                          icon: Icon(Icons.notifications_none, color: textColor),
+                          icon:
+                              Icon(Icons.notifications_none, color: textColor),
                         ),
                       ],
                     ),
@@ -201,15 +205,15 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                   decoration: InputDecoration(
                                     hintText:
                                         'Search for communities, people, discussions...',
-                                    hintStyle:
-                                        TextStyle(color: subTextColor, fontSize: 13),
-                                    prefixIcon:
-                                        Icon(Icons.search, color: subTextColor, size: 20),
-                                    suffixIcon:
-                                        Icon(Icons.filter_list, color: brandColor, size: 20),
+                                    hintStyle: TextStyle(
+                                        color: subTextColor, fontSize: 13),
+                                    prefixIcon: Icon(Icons.search,
+                                        color: subTextColor, size: 20),
+                                    suffixIcon: Icon(Icons.filter_list,
+                                        color: brandColor, size: 20),
                                     border: InputBorder.none,
-                                    contentPadding:
-                                        const EdgeInsets.symmetric(vertical: 14),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        vertical: 14),
                                   ),
                                 ),
                               ),
@@ -224,21 +228,33 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                   scrollDirection: Axis.horizontal,
                                   physics: const BouncingScrollPhysics(),
                                   children: [
-                                    _buildQuickAccessItem(Icons.groups,
-                                        'My communities', brandColor, cardColor, textColor),
+                                    _buildQuickAccessItem(
+                                        Icons.groups,
+                                        'My communities',
+                                        brandColor,
+                                        cardColor,
+                                        textColor),
                                     _buildQuickAccessItem(
                                       Icons.chat_bubble,
                                       'Discussions',
                                       brandColor,
                                       cardColor,
                                       textColor,
-                                      onTap: () =>
-                                          Get.to(() => const CampusFeedScreen()),
+                                      onTap: () => Get.to(
+                                          () => const CampusFeedScreen()),
                                     ),
-                                    _buildQuickAccessItem(Icons.menu_book,
-                                        'Study Resources', brandColor, cardColor, textColor),
-                                    _buildQuickAccessItem(Icons.calendar_month,
-                                        'Events', brandColor, cardColor, textColor),
+                                    _buildQuickAccessItem(
+                                        Icons.menu_book,
+                                        'Study Resources',
+                                        brandColor,
+                                        cardColor,
+                                        textColor),
+                                    _buildQuickAccessItem(
+                                        Icons.calendar_month,
+                                        'Events',
+                                        brandColor,
+                                        cardColor,
+                                        textColor),
                                   ],
                                 ),
                               ),
@@ -299,14 +315,16 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                         borderRadius: BorderRadius.circular(16),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.black.withOpacity(0.03),
+                                            color:
+                                                Colors.black.withOpacity(0.03),
                                             blurRadius: 10,
                                             offset: const Offset(0, 4),
                                           ),
                                         ],
                                       ),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Row(
                                             mainAxisAlignment:
@@ -323,8 +341,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                                 ),
                                               ),
                                               GestureDetector(
-                                                onTap: () =>
-                                                    Get.to(() => const CampusFeedScreen()),
+                                                onTap: () => Get.to(() =>
+                                                    const CampusFeedScreen()),
                                                 child: Text(
                                                   'View all',
                                                   style: TextStyle(
@@ -339,8 +357,9 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                           const Divider(height: 16),
                                           if (newestDiscussions.isEmpty)
                                             Padding(
-                                              padding: const EdgeInsets.symmetric(
-                                                  vertical: 16.0),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 16.0),
                                               child: Center(
                                                 child: Text(
                                                   'No discussions yet',
@@ -351,8 +370,11 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                               ),
                                             )
                                           else ...[
-                                            for (int i = 0; i < newestDiscussions.length; i++) ...[
-                                              if (i > 0) const Divider(height: 16),
+                                            for (int i = 0;
+                                                i < newestDiscussions.length;
+                                                i++) ...[
+                                              if (i > 0)
+                                                const Divider(height: 16),
                                               _buildDiscussionItem(
                                                 newestDiscussions[i],
                                                 brandColor,
@@ -376,14 +398,16 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                         borderRadius: BorderRadius.circular(16),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.black.withOpacity(0.03),
+                                            color:
+                                                Colors.black.withOpacity(0.03),
                                             blurRadius: 10,
                                             offset: const Offset(0, 4),
                                           ),
                                         ],
                                       ),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Row(
                                             mainAxisAlignment:
@@ -451,7 +475,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildNavItem(Icons.home, 'Home', true, brandColor, subTextColor),
+                  _buildNavItem(
+                      Icons.home, 'Home', true, brandColor, subTextColor),
                   _buildNavItem(Icons.people_outline, 'Communities', false,
                       brandColor, subTextColor),
                   // Floating center button
@@ -471,12 +496,20 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                     ),
                     child: const Icon(Icons.add, color: Colors.white, size: 28),
                   ),
-                  _buildNavItem(Icons.chat_bubble_outline, 'Messages', false,
-                      brandColor, subTextColor),
+                  GestureDetector(
+                    onTap: () {
+                      final authState = context.read<AuthCubit>().state;
+                      if (authState is Authenticated) {
+                        Get.to(() => ChatRoomsPage(currentUser: authState.user));
+                      }
+                    },
+                    child: _buildNavItem(Icons.chat_bubble_outline, 'Messages', false,
+                        brandColor, subTextColor),
+                  ),
                   GestureDetector(
                     onTap: () => Get.to(() => const ProfileSettingsPage()),
-                    child: _buildNavItem(
-                        Icons.person_outline, 'Profile', false, brandColor, subTextColor),
+                    child: _buildNavItem(Icons.person_outline, 'Profile', false,
+                        brandColor, subTextColor),
                   ),
                 ],
               ),
@@ -552,8 +585,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
     );
   }
 
-  Widget _buildTrendingCard(
-      String title, String members, IconData icon, Color iconColor, Color bgColor) {
+  Widget _buildTrendingCard(String title, String members, IconData icon,
+      Color iconColor, Color bgColor) {
     return Container(
       width: 110,
       margin: const EdgeInsets.only(right: 12),
@@ -652,41 +685,11 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
           const SizedBox(height: 6),
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              post.imageUrl!,
+            child: Image.asset(
+              'assets/Screenshot 2026-07-24 111253.png',
               height: 80,
               width: double.infinity,
               fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  height: 80,
-                  color: isLightMode ? Colors.grey[200] : Colors.grey[850],
-                  child: const Center(
-                    child: SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Color(0xFF6139ED)),
-                    ),
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) => Container(
-                height: 40,
-                color: isLightMode ? Colors.grey[100] : Colors.grey[900],
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.error_outline, color: Colors.grey, size: 14),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Could not load image',
-                      style: TextStyle(color: Colors.grey, fontSize: 10),
-                    ),
-                  ],
-                ),
-              ),
             ),
           ),
         ],
@@ -759,12 +762,16 @@ class WavyLinePainter extends CustomPainter {
     final path = Path();
     path.moveTo(0, size.height / 2);
     path.quadraticBezierTo(
-      size.width * 0.25, size.height * 0.1,
-      size.width * 0.5, size.height / 2,
+      size.width * 0.25,
+      size.height * 0.1,
+      size.width * 0.5,
+      size.height / 2,
     );
     path.quadraticBezierTo(
-      size.width * 0.75, size.height * 0.9,
-      size.width, size.height / 2,
+      size.width * 0.75,
+      size.height * 0.9,
+      size.width,
+      size.height / 2,
     );
 
     canvas.drawPath(path, paint);

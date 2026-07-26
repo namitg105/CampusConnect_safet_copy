@@ -6,8 +6,8 @@ import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
 import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 import 'package:noteswap/features/posts/presentation/pages/campus_feed_screen.dart'; // Adjust import if needed
 import 'package:noteswap/features/dashboard/presentation/pages/dashboard_page_one.dart';
-import 'package:noteswap/features/dashboard/presentation/pages/dashboard_page_two.dart';
 import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
+import 'package:noteswap/features/chat/presentation/pages/community_files_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -99,6 +99,21 @@ class _HomePageState extends State<HomePage> {
                   onPressed: () => Get.to(() => const ProfileSettingsPage()),
                   icon: const Icon(Icons.person_pin),
                   label: const Text('Open Profile Settings Screen'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: brandColor,
+                    side: BorderSide(color: brandColor),
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () => Get.to(() => const CommunityFilesScreen()),
+                  icon: const Icon(Icons.folder_shared_outlined),
+                  label: const Text('Open Community Files Screen'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: brandColor,

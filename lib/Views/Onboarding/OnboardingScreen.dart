@@ -4,7 +4,6 @@ import 'package:noteswap/Constents/AppConstents.dart';
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
 import '../../ViewModels/OnboardingViewModels.dart';
 import '../../Widgets/Buttons/ButtonWidgets.dart';
-import '../Authentication/LoginScreen.dart';
 
 class OnboardingScreen extends StatelessWidget {
   OnboardingScreen({Key? key}) : super(key: key);

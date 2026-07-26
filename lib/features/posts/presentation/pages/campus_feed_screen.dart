@@ -9,6 +9,8 @@ import 'package:noteswap/features/posts/presentation/pages/create_post_page.dart
 import 'package:noteswap/features/posts/presentation/pages/post_detail_page.dart';
 import 'package:noteswap/features/posts/presentation/pages/user_profile_screen.dart';
 import 'package:noteswap/features/posts/presentation/widgets/post_card.dart';
+import 'package:noteswap/features/posts/presentation/pages/all_posts_screen.dart';
+import 'package:noteswap/features/posts/presentation/pages/all_announcements_screen.dart';
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
 import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
 import 'package:noteswap/features/posts/data/post_repo_impl.dart';
@@ -25,10 +27,9 @@ import 'package:noteswap/features/posts/domain/usecases/upvote_post_usecase.dart
 import 'package:noteswap/features/posts/domain/usecases/get_user_votes_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/delete_post_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_user_liked_comments_usecase.dart';
+import 'package:noteswap/utils/time_formatter.dart';
+import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
 
-/// Day 4: Campus Feed Screen
-/// Displays all posts from your college sorted by Newest or Top Voted
-/// With tag filtering and voting functionality
 class CampusFeedScreen extends StatefulWidget {
   const CampusFeedScreen({Key? key}) : super(key: key);
 
@@ -38,18 +39,8 @@ class CampusFeedScreen extends StatefulWidget {
 
 class _CampusFeedScreenState extends State<CampusFeedScreen> {
   late PostController postController;
-  final LightModeController lightModeController = Get.find<LightModeController>();
-
-  // List of available tags for filtering
-  final List<String> tags = [
-    'All',
-    'Badminton',
-    'Seniors',
-    'ExamHelp',
-    'General',
-    'Events',
-    'Study',
-  ];
+  final LightModeController lightModeController =
+      Get.find<LightModeController>();
 
   @override
   void initState() {
@@ -58,7 +49,6 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
   }
 
   void _initializePostController() {
-    // Day 4: Initialize PostController with all required use cases
     final postRepo = PostRepoImpl();
     postController = PostController(
       createPostUseCase: CreatePostUseCase(repository: postRepo),
@@ -73,7 +63,8 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
       toggleCommentLikeUseCase: ToggleCommentLikeUseCase(repository: postRepo),
       getUserVotesUseCase: GetUserVotesUseCase(repository: postRepo),
       deletePostUseCase: DeletePostUseCase(repository: postRepo),
-      getUserLikedCommentsUseCase: GetUserLikedCommentsUseCase(repository: postRepo),
+      getUserLikedCommentsUseCase:
+          GetUserLikedCommentsUseCase(repository: postRepo),
     );
 
     // Load feed when screen initializes
@@ -83,6 +74,13 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
         postController.loadFeed(authState.user);
       }
     });
+  }
+
+  String _getTimeBasedGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
   }
 
   @override
@@ -105,216 +103,759 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
         }
 
         final currentUser = authState.user;
+        final isLightMode = lightModeController.isLightMode.value;
+
+        // Custom colors matching the uniConnect Figma specification
+        final backgroundColor =
+            isLightMode ? const Color(0xFFF4F1FC) : const Color(0xFF121214);
+        final cardColor = isLightMode ? Colors.white : const Color(0xFF1E1E22);
+        final textColor = isLightMode ? const Color(0xFF1A1A1E) : Colors.white;
+        final subTextColor =
+            isLightMode ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF);
+        final brandColor = const Color(0xFF6139ED);
+
+        final greeting = _getTimeBasedGreeting();
+        final cleanName = currentUser.name.isNotEmpty
+            ? currentUser.name
+            : (currentUser.email.contains('@')
+                ? currentUser.email.split('@').first
+                : currentUser.email);
 
         return Scaffold(
-          backgroundColor: lightModeController.isLightMode.value
-              ? Colors.white
-              : Colors.black,
+          backgroundColor: backgroundColor,
           appBar: AppBar(
-            backgroundColor: lightModeController.isLightMode.value
-                ? Colors.black
-                : Colors.white,
+            backgroundColor: backgroundColor,
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.menu, color: textColor),
+              onPressed: () {},
+            ),
             title: Text(
-              'Campus Feed',
+              'uniConnect',
               style: TextStyle(
-                color: lightModeController.isLightMode.value
-                    ? Colors.white
-                    : Colors.black,
+                color: brandColor,
                 fontWeight: FontWeight.bold,
-                fontSize: 20,
+                fontSize: 22,
+                letterSpacing: 0.5,
               ),
             ),
             centerTitle: true,
-            elevation: 0,
             actions: [
-              IconButton(
-                onPressed: () => postController.loadFeed(currentUser),
-                icon: Icon(
-                  Icons.refresh,
-                  color: lightModeController.isLightMode.value
-                      ? Colors.white
-                      : Colors.black,
-                ),
-              ),
-              IconButton(
-                onPressed: () => Get.to(() => const ProfileSettingsPage()),
-                icon: Icon(
-                  Icons.person_outline,
-                  color: lightModeController.isLightMode.value
-                      ? Colors.white
-                      : Colors.black,
-                ),
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.notifications_none, color: textColor),
+                    onPressed: () {},
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Colors.redAccent,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          body: Obx(
-            () => Column(
+          body: Obx(() {
+            if (postController.isLoading.value) {
+              return const Center(
+                child: CircularProgressIndicator(color: Color(0xFF6139ED)),
+              );
+            }
+
+            if (postController.errorMessage.isNotEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      postController.errorMessage.value,
+                      style: TextStyle(color: textColor),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () => postController.loadFeed(currentUser),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return ListView(
+              physics: const BouncingScrollPhysics(),
               children: [
-                // Day 3: Tab Bar for sorting (Newest / Top Voted)
-                Container(
-                  color: lightModeController.isLightMode.value
-                      ? Colors.white
-                      : const Color(0xFF1E1E1E),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                // 1. Greet row and Page Title
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildTabButton(
-                        label: 'Newest',
-                        isActive: postController.selectedTab.value == 'Newest',
-                        onTap: () => postController.changeTab('Newest', currentUser),
+                      Text(
+                        '$greeting, $cleanName 👋',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: subTextColor,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                      _buildTabButton(
-                        label: 'Top Voted',
-                        isActive: postController.selectedTab.value == 'Top Voted',
-                        onTap: () =>
-                            postController.changeTab('Top Voted', currentUser),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Home Feed',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
                       ),
                     ],
                   ),
                 ),
 
-                // Day 3: Tag Filter Chips
-                Container(
-                  color: lightModeController.isLightMode.value
-                      ? Colors.white
-                      : const Color(0xFF1E1E1E),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                    child: Row(
-                      children: postController.availableTags.map((tag) {
-                        final isSelected = postController.selectedTag.value == tag;
-                        return GestureDetector(
-                          onTap: () =>
-                              postController.filterByTag(tag, currentUser),
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? const Color(0xFF6139ED)
-                                  : (lightModeController.isLightMode.value
-                                      ? Colors.grey[200]
-                                      : Colors.grey[800]),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '#$tag',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: isSelected
-                                    ? Colors.white
-                                    : (lightModeController.isLightMode.value
-                                        ? Colors.black
-                                        : Colors.white),
-                              ),
+                // 2. Search Bar and filter icon
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: cardColor,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: isLightMode
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.03),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ]
+                                : [],
+                          ),
+                          child: TextField(
+                            decoration: InputDecoration(
+                              hintText: 'Search posts, people, topics...',
+                              hintStyle:
+                                  TextStyle(color: subTextColor, fontSize: 13),
+                              prefixIcon: Icon(Icons.search,
+                                  color: subTextColor, size: 20),
+                              border: InputBorder.none,
+                              contentPadding:
+                                  const EdgeInsets.symmetric(vertical: 14),
                             ),
                           ),
-                        );
-                      }).toList(),
-                    ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: brandColor,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: brandColor.withOpacity(0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.filter_list,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                const SizedBox(height: 16),
 
-                // Day 4: Posts List or Loading/Empty State
-                Expanded(
-                  child: postController.isLoading.value
-                      ? const Center(
-                          child: CircularProgressIndicator(
-                            color: Color(0xFF6139ED),
+                // 3. Trending Discussions Block
+                _buildHeaderSection(
+                  'Trending Discussions',
+                  onTap: () => Get.to(() => AllPostsScreen(
+                        title: 'Trending Discussions',
+                        postsSelector: () => postController.posts.toList()
+                          ..sort((a, b) => b.upvotes.compareTo(a.upvotes)),
+                        controller: postController,
+                        currentUser: currentUser,
+                      )),
+                ),
+                const SizedBox(height: 12),
+                if (postController.trendingPosts.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'No trending posts yet',
+                          style: TextStyle(color: subTextColor, fontSize: 13),
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  Column(
+                    children: postController.trendingPosts.map((post) {
+                      return _buildTrendingDiscussionCard(
+                          post,
+                          cardColor,
+                          textColor,
+                          subTextColor,
+                          brandColor,
+                          isLightMode,
+                          currentUser);
+                    }).toList(),
+                  ),
+                const SizedBox(height: 20),
+
+                // 4. Announcements Block
+                _buildHeaderSection(
+                  'Announcements',
+                  onTap: () => Get.to(() => AllAnnouncementsScreen(
+                        controller: postController,
+                        currentUser: currentUser,
+                      )),
+                ),
+                const SizedBox(height: 12),
+                () {
+                  final announcementPosts = postController.posts
+                      .where((p) => p.tag.toLowerCase() == 'announcement')
+                      .toList();
+
+                  if (announcementPosts.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Container(
+                        height: 80,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: cardColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isLightMode
+                                ? Colors.grey[100]!
+                                : Colors.grey[850]!,
+                            width: 0.5,
                           ),
-                        )
-                      : postController.errorMessage.isNotEmpty
-                          ? Center(
-                              child: Text(
-                                postController.errorMessage.value,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: lightModeController.isLightMode.value
-                                      ? Colors.black
-                                      : Colors.white,
-                                ),
-                              ),
-                            )
-                          : postController.posts.isEmpty
-                              ? Center(
-                                  child: Text(
-                                    'No posts yet.\nBe the first to share!',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color:
-                                          lightModeController.isLightMode.value
-                                              ? Colors.grey[600]
-                                              : Colors.grey[400],
-                                    ),
-                                  ),
-                                )
-                              : ListView.builder(
-                                  itemCount: postController.posts.length,
-                                  itemBuilder: (context, index) {
-                                    final post = postController.posts[index];
-                                    return PostCard(
-                                      post: post,
-                                      onTap: () => Get.to(() => PostDetailPage(
-                                        post: post,
-                                        controller: postController,
-                                        currentUser: currentUser,
-                                      )),
-                                      onProfileTap: () => Get.to(() => UserProfileScreen(user: AppUser(
-                                        uid: post.authorId,
-                                        email: '',
-                                        name: post.authorName,
-                                        collegeId: post.collegeId,
-                                      ))),
-                                      onUpvote: () =>
-                                          postController.toggleUpvote(
-                                        post.id,
-                                        currentUser.uid,
-                                        currentUser,
-                                      ),
-                                      onDownvote: () =>
-                                          postController.toggleDownvote(
-                                        post.id,
-                                        currentUser.uid,
-                                        currentUser,
-                                      ),
-                                      onDelete: post.authorId == currentUser.uid
-                                          ? () => _confirmDeletePost(post.id, currentUser)
-                                          : null,
-                                      isLightMode: lightModeController
-                                          .isLightMode.value,
-                                      isUpvoted: postController.getUserVote(post.id) == 1,
-                                      isDownvoted: postController.getUserVote(post.id) == -1,
-                                    );
-                                  },
-                                ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'No announcements yet',
+                            style: TextStyle(color: subTextColor, fontSize: 13),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return SizedBox(
+                    height: 130,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.only(left: 16, right: 4),
+                      itemCount: announcementPosts.length,
+                      itemBuilder: (context, index) {
+                        final post = announcementPosts[index];
+                        final bgColors = [
+                          const Color(0xFFECE7FF),
+                          const Color(0xFFFEF9C3),
+                          const Color(0xFFE0F2FE),
+                          const Color(0xFFDCFCE7),
+                        ];
+                        final themeColors = [
+                          const Color(0xFF6139ED),
+                          const Color(0xFFD97706),
+                          const Color(0xFF0369A1),
+                          const Color(0xFF15803D),
+                        ];
+                        final icons = [
+                          Icons.campaign_outlined,
+                          Icons.announcement_outlined,
+                          Icons.notifications_none,
+                          Icons.info_outline,
+                        ];
+                        final bgColor = bgColors[index % bgColors.length];
+                        final themeColor =
+                            themeColors[index % themeColors.length];
+                        final icon = icons[index % icons.length];
+
+                        return GestureDetector(
+                          onTap: () => Get.to(() => PostDetailPage(
+                                post: post,
+                                controller: postController,
+                                currentUser: currentUser,
+                              )),
+                          child: _buildAnnouncementCard(
+                            post.title,
+                            post.body,
+                            formatTimeAgo(post.createdAt),
+                            bgColor,
+                            themeColor,
+                            icon,
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                }(),
+                const SizedBox(height: 24),
+
+                // 5. Latest Posts Block
+                _buildHeaderSection(
+                  'Latest Posts',
+                  onTap: () => Get.to(() => AllPostsScreen(
+                        title: 'Latest Posts',
+                        postsSelector: () => postController.posts.toList()
+                          ..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
+                        controller: postController,
+                        currentUser: currentUser,
+                      )),
+                ),
+                const SizedBox(height: 12),
+                if (postController.posts.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'No posts yet. Be the first to share!',
+                          style: TextStyle(color: subTextColor, fontSize: 13),
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  Column(
+                    children: postController.posts.take(3).map((post) {
+                      return PostCard(
+                        post: post,
+                        onTap: () => Get.to(() => PostDetailPage(
+                              post: post,
+                              controller: postController,
+                              currentUser: currentUser,
+                            )),
+                        onProfileTap: () => Get.to(() => UserProfileScreen(
+                                user: AppUser(
+                              uid: post.authorId,
+                              email: '',
+                              name: post.authorName,
+                              collegeId: post.collegeId,
+                            ))),
+                        onUpvote: () => postController.toggleUpvote(
+                          post.id,
+                          currentUser.uid,
+                          currentUser,
+                        ),
+                        onDownvote: () => postController.toggleDownvote(
+                          post.id,
+                          currentUser.uid,
+                          currentUser,
+                        ),
+                        onDelete: post.authorId == currentUser.uid
+                            ? () => _confirmDeletePost(post.id, currentUser)
+                            : null,
+                        isLightMode: isLightMode,
+                        isUpvoted: postController.getUserVote(post.id) == 1,
+                        isDownvoted: postController.getUserVote(post.id) == -1,
+                      );
+                    }).toList(),
+                  ),
+                const SizedBox(height: 100), // extra padding for nav bar
+              ],
+            );
+          }),
+          // Premium bottom navigation bar
+          bottomNavigationBar: Container(
+            margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: isLightMode
+                  ? [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ]
+                  : [],
+              border: Border.all(
+                color: isLightMode ? Colors.grey[100]! : Colors.grey[850]!,
+                width: 0.5,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildNavItem(
+                    Icons.home, 'Home', true, brandColor, subTextColor),
+                _buildNavItem(Icons.people_outline, 'Communities', false,
+                    brandColor, subTextColor),
+                // Floating center button
+                GestureDetector(
+                  onTap: () => Get.to(() => CreatePostPage(
+                        controller: postController,
+                        currentUser: currentUser,
+                      )),
+                  child: Container(
+                    height: 48,
+                    width: 48,
+                    decoration: BoxDecoration(
+                      color: brandColor,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: brandColor.withOpacity(0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.add, color: Colors.white, size: 28),
+                  ),
+                ),
+                _buildNavItem(Icons.chat_bubble_outline, 'Messages', false,
+                    brandColor, subTextColor),
+                GestureDetector(
+                  onTap: () => Get.to(() => const ProfileSettingsPage()),
+                  child: _buildNavItem(Icons.person_outline, 'Profile', false,
+                      brandColor, subTextColor),
                 ),
               ],
             ),
           ),
-
-          // Day 4: FAB to create new post
-          floatingActionButton: FloatingActionButton.extended(
-            backgroundColor: const Color(0xFF6139ED),
-            onPressed: () => Get.to(() => CreatePostPage(
-              controller: postController,
-              currentUser: currentUser,
-            )),
-            icon: const Icon(Icons.add),
-            label: const Text(
-              'New Post',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
         );
       },
+    );
+  }
+
+  Widget _buildHeaderSection(String title, {VoidCallback? onTap}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          GestureDetector(
+            onTap: onTap,
+            child: const Text(
+              'See all >',
+              style: TextStyle(
+                color: Color(0xFF6139ED),
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrendingDiscussionCard(
+      PostEntity initialPost,
+      Color cardColor,
+      Color textColor,
+      Color subTextColor,
+      Color brandColor,
+      bool isLightMode,
+      AppUser currentUser) {
+    // Resolve post dynamically to keep reactive updates in sync
+    final postIndex =
+        postController.trendingPosts.indexWhere((p) => p.id == initialPost.id);
+    final post =
+        postIndex != -1 ? postController.trendingPosts[postIndex] : initialPost;
+    final userVote = postController.getUserVote(post.id);
+    final timeStr = formatTimeAgo(post.createdAt);
+    final groupName = 'r/${post.tag.replaceAll(" ", "")}';
+
+    return GestureDetector(
+      onTap: () => Get.to(() => PostDetailPage(
+            post: post,
+            controller: postController,
+            currentUser: currentUser,
+          )),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: isLightMode
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [],
+          border: Border.all(
+            color: isLightMode ? Colors.grey[100]! : Colors.grey[850]!,
+            width: 0.5,
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Left Vote Counter Block
+            Column(
+              children: [
+                const SizedBox(height: 30),
+                GestureDetector(
+                  onTap: () => postController.toggleUpvote(
+                      post.id, currentUser.uid, currentUser),
+                  child: Icon(
+                    Icons.arrow_upward,
+                    size: 16,
+                    color: userVote == 1 ? brandColor : subTextColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  post.upvotes.toString(),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                GestureDetector(
+                  onTap: () => postController.toggleDownvote(
+                      post.id, currentUser.uid, currentUser),
+                  child: Icon(
+                    Icons.arrow_downward,
+                    size: 16,
+                    color: userVote == -1 ? Colors.redAccent : subTextColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 16),
+
+            // Right content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Topic Badge & Time
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: brandColor.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          post.tag,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: brandColor,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        timeStr,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: subTextColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Post Title
+                  Text(
+                    post.title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+
+                  // Post Body Snippet
+                  Text(
+                    post.body,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: subTextColor,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Subtopic label & replies counter
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        groupName,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: subTextColor,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: brandColor.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.chat_bubble_outline,
+                                size: 10, color: brandColor),
+                            const SizedBox(width: 4),
+                            Text(
+                              post.commentCount.toString(),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: brandColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnnouncementCard(String title, String description, String date,
+      Color bgColor, Color themeColor, IconData icon) {
+    return Container(
+      width: 170,
+      margin: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: themeColor, size: 18),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Expanded(
+            child: Text(
+              description,
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.grey[800],
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Icon(Icons.calendar_month, size: 11, color: themeColor),
+              const SizedBox(width: 4),
+              Text(
+                date,
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: themeColor,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, String label, bool isSelected,
+      Color brandColor, Color? unselectedColor) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          color: isSelected ? brandColor : unselectedColor,
+          size: 24,
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? brandColor : unselectedColor,
+          ),
+        ),
+      ],
     );
   }
 
@@ -324,7 +865,8 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Delete Post'),
-          content: const Text('Are you sure you want to delete this post? This action cannot be undone.'),
+          content: const Text(
+              'Are you sure you want to delete this post? This action cannot be undone.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -344,40 +886,6 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
           ],
         );
       },
-    );
-  }
-
-  /// Helper widget for sorting tab buttons
-  Widget _buildTabButton({
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive
-              ? const Color(0xFF6139ED)
-              : (lightModeController.isLightMode.value
-                  ? Colors.grey[200]
-                  : Colors.grey[800]),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: isActive
-                ? Colors.white
-                : (lightModeController.isLightMode.value
-                    ? Colors.black
-                    : Colors.white),
-          ),
-        ),
-      ),
     );
   }
 }
