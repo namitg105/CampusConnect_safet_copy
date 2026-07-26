@@ -8,6 +8,7 @@ import 'package:noteswap/features/private_chat/domain/repos/chat_controller.dart
 import 'presentation/Design_By_Opencode_3/directory_screen.dart';
 import 'presentation/Design_By_Opencode_5/chat_request_screen.dart';
 import 'presentation/Design_By_Opencode/recent_chats_screen.dart';
+import 'presentation/Design_By_Opencode/recent_chats_components.dart';
 import 'package:noteswap/features/events/notifications/notifications_screen.dart';
 import 'package:noteswap/features/events/announcements/announcements_screen.dart';
 
@@ -20,13 +21,25 @@ class PrivateChatPageController extends StatefulWidget {
 }
 
 class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
-  int _page = 0;
+  int _selectedTab = 0;
+  String _searchQuery = '';
+  late TextEditingController _searchController;
+
+  late UserController _userController;
 
   @override
   void initState() {
     super.initState();
+    _searchController = TextEditingController();
     Get.put(ChatController());
     Get.put(UserController());
+    _userController = Get.find<UserController>();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void logout() {
@@ -34,61 +47,16 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
     authCubit.logout();
   }
 
-  Widget _buildHeaderIcon(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              blurRadius: 10,
-              spreadRadius: 0,
-              offset: const Offset(0, 2),
-              color: Colors.black.withValues(alpha: 0.08),
-            ),
-          ],
-        ),
-        child: Icon(icon, color: const Color(0xFF6139ED), size: 22),
-      ),
-    );
+  void _onSearchChanged(String query) {
+    setState(() => _searchQuery = query.trim());
   }
 
-  Widget _buildTab(String label, int index) {
-    final isSelected = _page == index;
-    return GestureDetector(
-      onTap: () => setState(() => _page = index),
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: isSelected
-                ? Colors.white
-                : Colors.white.withValues(alpha: 0.75),
-          ),
-        ),
-      ),
-    );
+  void _onTabSelected(int index) {
+    setState(() => _selectedTab = index);
   }
 
-  String get _title {
-    switch (_page) {
-      case 0:
-        return 'Find Friends';
-      case 1:
-        return 'Get Request';
-      case 2:
-        return 'Chat With Them';
-      default:
-        return 'Chat With\n Friends';
-    }
+  void _switchToRequestTab() {
+    setState(() => _selectedTab = 2);
   }
 
   @override
@@ -96,152 +64,201 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
     return DefaultTextStyle(
       style: const TextStyle(fontFamily: 'Quicksand'),
       child: Scaffold(
-        backgroundColor: Colors.transparent,
-        resizeToAvoidBottomInset: true,
+        backgroundColor: const Color(0xFFF8F8FC),
         body: SafeArea(
-          bottom: false,
-          child: Stack(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF6139ED),
-                      Color.fromARGB(255, 221, 220, 224),
-                      Color.fromARGB(255, 221, 220, 224).withValues(alpha: 0.8),
-                      Color.fromARGB(255, 221, 220, 224).withValues(alpha: 0.8),
-                      // Color.fromARGB(255, 221, 220, 224).withValues(alpha: 0.4),
-                      // Color.fromARGB(255, 221, 220, 224).withValues(alpha: 0.4),
-                    ],
-                  ),
-                ),
+              _buildHeader(),
+              Divider(height: 1, thickness: 1, color: const Color(0xFFECECEC)),
+              ChatsTabBar(
+                selectedIndex: _selectedTab,
+                onTabSelected: _onTabSelected,
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      left: 24,
-                      right: 24,
-                      top: 30,
-                      bottom: 10,
+              Divider(height: 1, thickness: 1, color: const Color(0xFFECECEC)),
+              SearchPeopleBar(
+                controller: _searchController,
+                onChanged: _onSearchChanged,
+              ),
+              Obx(() {
+                final friendsCount = _userController.friendsList.length;
+                final onlineCount = _getOnlineCount();
+                final blockedCount = _userController.blockedUids.length;
+                return ChatStatisticsCard(
+                  friendsCount: friendsCount,
+                  onlineCount: onlineCount,
+                  blockedCount: blockedCount,
+                );
+              }),
+              const SizedBox(height: 8),
+              Expanded(
+                child: IndexedStack(
+                  index: _selectedTab,
+                  children: [
+                    RecentChatsScreen(
+                      searchQuery: _searchQuery,
+                      selectedTab: 0,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _title,
-                              style: TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                height: 1.1,
-                                letterSpacing: 0,
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                _buildHeaderIcon(
-                                  Icons.notifications,
-                                  () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const NotificationsScreen(),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                _buildHeaderIcon(
-                                  Icons.calendar_today,
-                                  () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const AnnouncementsScreen(),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _buildTab('Message', 0),
-                            _buildTab('Requests', 1),
-                            _buildTab('Friends', 2),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                      ],
+                    RecentChatsScreen(
+                      searchQuery: _searchQuery,
+                      selectedTab: 1,
                     ),
-                  ),
-                  Expanded(
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(36),
-                          topRight: Radius.circular(36),
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(36),
-                          topRight: Radius.circular(36),
-                        ),
-                        child: Stack(
-                          children: [
-                            IndexedStack(
-                              index: _page,
-                              children: [
-                                DirectoryScreen(
-                                    onGoToRequests: () =>
-                                        setState(() => _page = 1)),
-                                const ChatRequestScreen(),
-                                const RecentChatsScreen(),
-                              ],
-                            ),
-                            Positioned(
-                              right: 16,
-                              bottom: 16,
-                              child: GestureDetector(
-                                onTap: logout,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.shade50,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    'Logout',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.red.shade700,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    ChatRequestScreen(
+                      searchQuery: _searchQuery,
                     ),
-                  ),
-                ],
+                    DirectoryScreen(
+                      searchQuery: _searchQuery,
+                      onGoToRequests: _switchToRequestTab,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  int _getOnlineCount() {
+    return _userController.friendStatuses.values.where((v) => v == true).length;
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Chats',
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1F2937),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Obx(() {
+                  final friendsCount = _userController.friendsList.length;
+                  final onlineCount = _getOnlineCount();
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                        Text(
+                          '$friendsCount friends',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF22C55E),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '$onlineCount Online',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF1F2937),
+                          ),
+                        ),
+                      ],
+                    );
+                }),
+              ],
+            ),
+          ),
+          Row(
+            children: [
+              HeaderIconButton(
+                icon: Icons.calendar_today_outlined,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AnnouncementsScreen(),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              HeaderIconButton(
+                icon: Icons.notifications_none,
+                hasBadge: true,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const NotificationsScreen(),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              ProfileAvatarButton(
+                onTap: () => _showLogoutDialog(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Logout',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1F2937),
+          ),
+        ),
+        content: const Text(
+          'Are you sure you want to logout?',
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFF6B7280),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                color: Color(0xFF6B7280),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              logout();
+            },
+            child: const Text(
+              'Logout',
+              style: TextStyle(
+                color: Color(0xFFEF4444),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

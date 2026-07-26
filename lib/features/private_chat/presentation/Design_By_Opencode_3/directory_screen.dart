@@ -9,22 +9,24 @@ import 'directory_components.dart';
 import 'directory_model.dart';
 
 class DirectoryScreen extends StatefulWidget {
+  final String searchQuery;
   final VoidCallback? onGoToRequests;
-  const DirectoryScreen({super.key, this.onGoToRequests});
+
+  const DirectoryScreen({
+    super.key,
+    this.searchQuery = '',
+    this.onGoToRequests,
+  });
 
   @override
   State<DirectoryScreen> createState() => _DirectoryScreenState();
 }
 
 class _DirectoryScreenState extends State<DirectoryScreen> {
-  late TextEditingController _searchController;
-  int _selectedChip = 0;
   List<DirectoryUser> _filteredUsers = [];
   List<DirectoryUser> _allDirectoryUsers = [];
   bool _isLoading = true;
   int _displayCount = 5;
-
-  final List<String> _chipLabels = ['All', 'VIT Vellore', 'SRM Vellore', 'Clubs', 'Friends'];
 
   late ChatController _chatController;
   late UserController _userController;
@@ -32,7 +34,6 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController();
     _chatController = Get.find<ChatController>();
     _userController = Get.find<UserController>();
 
@@ -51,6 +52,14 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     _chatController.isDirectoryLoading.listen((loading) {
       if (mounted) setState(() => _isLoading = loading);
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant DirectoryScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.searchQuery != widget.searchQuery) {
+      _rebuildFromData();
+    }
   }
 
   void _rebuildFromData() {
@@ -77,34 +86,13 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
 
   @override
   void dispose() {
-    _searchController.dispose();
     super.dispose();
-  }
-
-  void _onChipSelected(int index) {
-    setState(() {
-      _selectedChip = index;
-      _displayCount = 5;
-      _applyFilters();
-    });
-  }
-
-  void _onSearchChanged(String query) {
-    setState(() {
-      _displayCount = 5;
-      _applyFilters();
-    });
   }
 
   void _applyFilters() {
     List<DirectoryUser> result = _allDirectoryUsers;
 
-    final chip = _chipLabels[_selectedChip];
-    if (chip != 'All') {
-      result = result.where((u) => u.affiliation == chip).toList();
-    }
-
-    final query = _searchController.text.trim().toLowerCase();
+    final query = widget.searchQuery.toLowerCase();
     if (query.isNotEmpty) {
       result = result.where((u) {
         return u.name.toLowerCase().contains(query) ||
@@ -148,22 +136,6 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
-          child: DirectorySearchField(
-            controller: _searchController,
-            onChanged: _onSearchChanged,
-          ),
-        ),
-        const SizedBox(height: 20),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: DirectoryFilterChips(
-            labels: _chipLabels,
-            selectedIndex: _selectedChip,
-            onSelected: _onChipSelected,
-          ),
-        ),
         const SizedBox(height: 8),
         Expanded(child: _buildBody()),
       ],
@@ -241,12 +213,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
   int _getTotalFilteredCount() {
     List<DirectoryUser> result = _allDirectoryUsers;
 
-    final chip = _chipLabels[_selectedChip];
-    if (chip != 'All') {
-      result = result.where((u) => u.affiliation == chip).toList();
-    }
-
-    final query = _searchController.text.trim().toLowerCase();
+    final query = widget.searchQuery.toLowerCase();
     if (query.isNotEmpty) {
       result = result.where((u) {
         return u.name.toLowerCase().contains(query) ||
