@@ -115,10 +115,7 @@ class _LoginscreenState extends State<Loginscreen> {
     );
   }
 
-<<<<<<< HEAD
-=======
-//login button pressed
->>>>>>> origin/feature/community
+  //login button pressed
   void login() {
     final String email = emailController.text;
     final String pw = pwController.text;
