@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'directory_model.dart';
 
 const Color indigo = Color(0xFF5B5CEB);
@@ -449,8 +449,8 @@ class _DirectoryUserTileState extends State<DirectoryUserTile> {
                   ),
                 ],
         ),
-        child: SizedBox(
-          height: 84,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 84),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
