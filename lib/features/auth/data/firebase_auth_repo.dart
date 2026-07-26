@@ -9,18 +9,10 @@ class FirebaseAuthRepo implements AuthRepo {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final GoogleAuthService _googleAuthService = GoogleAuthService();
 
-  // IMPORTANT: Helper method to extract the college domain from the email.
-  // E.g., it turns "namit@vitstudent.ac.in" into "vitstudent.ac.in"
+  // Helper method to extract the college domain from the email.
   String _extractCollegeId(String email) {
     if (email.isEmpty || !email.contains('@')) return 'unknown';
     return email.split('@').last.toLowerCase();
-  }
-
-  Future<void> _saveUserProfile(AppUser user) async {
-    await firestore.collection('users').doc(user.uid).set(
-          user.toJson(),
-          SetOptions(merge: true),
-        );
   }
 
   @override
@@ -31,33 +23,57 @@ class FirebaseAuthRepo implements AuthRepo {
           .signInWithEmailAndPassword(email: email, password: password);
       print("Firebase login successful");
 
-      final String uid = userCredential.user!.uid;
-      final userDoc = await firestore.collection('users').doc(uid).get();
+      final firebaseUser = userCredential.user!;
+
+      await firestore.collection('users').doc(firebaseUser.uid).update({
+        'isOnline': true,
+      });
+
+      final userDoc = await firestore.collection('users').doc(firebaseUser.uid).get();
       String userName = '';
+      String collegeId = _extractCollegeId(email);
+      bool isOnline = true;
+      bool isImageExists = false;
+      String imageURL = '';
+      String? phoneNumber;
+
       if (userDoc.exists) {
-        final userData = userDoc.data();
-        if (userData != null && userData['name'] != null && (userData['name'] as String).isNotEmpty) {
-          userName = userData['name'] as String;
+        final data = userDoc.data()!;
+        userName = data['name'] ?? firebaseUser.displayName ?? '';
+        collegeId = data['collegeId'] ?? _extractCollegeId(email);
+        isOnline = data['isOnline'] ?? true;
+        isImageExists = data['isImageExists'] ?? false;
+        imageURL = data['ImageURL'] ?? '';
+        phoneNumber = data['phoneNumber'];
+      } else {
+        userName = firebaseUser.displayName ?? '';
+        if (userName.isEmpty && email.contains('@')) {
+          userName = email.split('@').first;
         }
-      }
-
-      if (userName.isEmpty) {
-        userName = userCredential.user?.displayName ?? '';
-      }
-
-      if (userName.isEmpty && email.contains('@')) {
-        userName = email.split('@').first;
+        await firestore.collection('users').doc(firebaseUser.uid).set({
+          'uid': firebaseUser.uid,
+          'name': userName,
+          'email': email,
+          'collegeId': collegeId,
+          'isOnline': true,
+          'isImageExists': false,
+          'ImageURL': firebaseUser.photoURL ?? '',
+          'profileImage': firebaseUser.photoURL ?? '',
+          'phoneNumber': null,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
       }
 
       final AppUser user = AppUser(
-        uid: uid,
+        uid: firebaseUser.uid,
         email: email,
         name: userName,
-        collegeId: _extractCollegeId(email),
+        collegeId: collegeId,
+        isOnline: isOnline,
+        isImageExists: isImageExists,
+        imageURL: imageURL,
+        phoneNumber: phoneNumber,
       );
-
-      // Keep the user's college identity stored in Firestore.
-      await _saveUserProfile(user);
 
       return user;
     } catch (e) {
@@ -76,15 +92,31 @@ class FirebaseAuthRepo implements AuthRepo {
       UserCredential userCredential = await firebaseAuth
           .createUserWithEmailAndPassword(email: email, password: password);
 
+      final firebaseUser = userCredential.user!;
+      final collegeId = _extractCollegeId(email);
+
       final AppUser user = AppUser(
-        uid: userCredential.user!.uid,
+        uid: firebaseUser.uid,
         email: email,
         name: name,
-        collegeId: _extractCollegeId(email),
+        collegeId: collegeId,
+        isOnline: true,
+        isImageExists: false,
+        imageURL: '',
       );
 
-      // Save the newly registered user profile for college isolation.
-      await _saveUserProfile(user);
+      await firestore.collection('users').doc(user.uid).set({
+        'uid': user.uid,
+        'name': name,
+        'email': email,
+        'collegeId': collegeId,
+        'isOnline': true,
+        'isImageExists': false,
+        'ImageURL': '',
+        'profileImage': '',
+        'phoneNumber': null,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
       return user;
     } catch (e) {
@@ -95,6 +127,12 @@ class FirebaseAuthRepo implements AuthRepo {
   @override
   Future<void> logout() async {
     try {
+      final currentUid = firebaseAuth.currentUser?.uid;
+      if (currentUid != null) {
+        await firestore.collection('users').doc(currentUid).update({
+          'isOnline': false,
+        });
+      }
       await firebaseAuth.signOut();
       await _googleAuthService.signOut();
     } catch (e) {
@@ -106,10 +144,7 @@ class FirebaseAuthRepo implements AuthRepo {
   Future<AppUser?> getCurrentUser() async {
     try {
       final currentFirebaseUser = firebaseAuth.currentUser;
-
-      if (currentFirebaseUser == null) {
-        return null;
-      }
+      if (currentFirebaseUser == null) return null;
 
       final email = currentFirebaseUser.email ?? '';
       final userDoc = await firestore
@@ -117,21 +152,40 @@ class FirebaseAuthRepo implements AuthRepo {
           .doc(currentFirebaseUser.uid)
           .get();
 
-      if (userDoc.exists) {
-        final userData = userDoc.data()!;
-        return AppUser.fromJson(userData);
+      if (!userDoc.exists) {
+        final collegeId = _extractCollegeId(email);
+        await firestore
+            .collection('users')
+            .doc(currentFirebaseUser.uid)
+            .set({
+          'uid': currentFirebaseUser.uid,
+          'name': currentFirebaseUser.displayName ?? '',
+          'email': email,
+          'collegeId': collegeId,
+          'isOnline': false,
+          'isImageExists': false,
+          'ImageURL': currentFirebaseUser.photoURL ?? '',
+          'profileImage': currentFirebaseUser.photoURL ?? '',
+          'phoneNumber': null,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
       }
 
-      // If no Firestore profile exists yet, build one from auth info and persist it.
-      final AppUser user = AppUser(
-        uid: currentFirebaseUser.uid,
-        email: email,
-        name: currentFirebaseUser.displayName ?? '',
-        collegeId: _extractCollegeId(email),
-      );
+      final data =
+          (await firestore.collection('users').doc(currentFirebaseUser.uid)
+                  .get())
+              .data()!;
 
-      await _saveUserProfile(user);
-      return user;
+      return AppUser(
+        uid: currentFirebaseUser.uid,
+        email: data['email'] ?? email,
+        name: data['name'] ?? '',
+        collegeId: data['collegeId'] ?? _extractCollegeId(email),
+        isOnline: data['isOnline'] ?? false,
+        isImageExists: data['isImageExists'] ?? false,
+        imageURL: data['ImageURL'] ?? '',
+        phoneNumber: data['phoneNumber'],
+      );
     } catch (e) {
       throw Exception('Get current user failed: $e');
     }
@@ -143,30 +197,48 @@ class FirebaseAuthRepo implements AuthRepo {
 
     if (firebaseUser != null) {
       final email = firebaseUser.email ?? '';
-      final userDoc = await firestore.collection('users').doc(firebaseUser.uid).get();
-      String userName = '';
-      if (userDoc.exists) {
-        final userData = userDoc.data();
-        if (userData != null && userData['name'] != null && (userData['name'] as String).isNotEmpty) {
-          userName = userData['name'] as String;
-        }
+      final collegeId = _extractCollegeId(email);
+      DocumentSnapshot userDoc =
+          await firestore.collection('users').doc(firebaseUser.uid).get();
+
+      if (!userDoc.exists) {
+        await firestore.collection('users').doc(firebaseUser.uid).set({
+          'uid': firebaseUser.uid,
+          'name': firebaseUser.displayName ?? 'Google User',
+          'email': email,
+          'collegeId': collegeId,
+          'isOnline': true,
+          'isImageExists': false,
+          'ImageURL': firebaseUser.photoURL ?? '',
+          'profileImage': firebaseUser.photoURL ?? '',
+          'phoneNumber': null,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      } else {
+        await firestore
+            .collection('users')
+            .doc(firebaseUser.uid)
+            .update({
+              'isOnline': true,
+              'collegeId': collegeId,
+            });
       }
 
-      if (userName.isEmpty) {
-        userName = firebaseUser.displayName ?? 'Google User';
-      }
+      final data =
+          (await firestore.collection('users').doc(firebaseUser.uid).get())
+              .data()!;
 
-      final AppUser user = AppUser(
+      return AppUser(
         uid: firebaseUser.uid,
-        email: email,
-        name: userName,
-        collegeId: _extractCollegeId(email),
+        email: data['email'] ?? email,
+        name: data['name'] ?? firebaseUser.displayName ?? 'Google User',
+        collegeId: data['collegeId'] ?? collegeId,
+        isOnline: data['isOnline'] ?? true,
+        isImageExists: data['isImageExists'] ?? false,
+        imageURL: data['ImageURL'] ?? firebaseUser.photoURL ?? '',
+        phoneNumber: data['phoneNumber'],
       );
-
-      await _saveUserProfile(user);
-      return user;
     }
-
     return null;
   }
 

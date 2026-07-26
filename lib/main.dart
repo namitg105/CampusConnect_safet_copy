@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,16 +9,14 @@ import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
 import 'package:noteswap/features/auth/presentation/pages/SplashScreen.dart';
 import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 import 'package:noteswap/features/home/presentation/pages/home_page.dart';
+import 'package:noteswap/features/private_chat/data/private-chat-services/user_service.dart';
+import 'package:noteswap/features/private_chat/page_controller.dart';
 import 'package:noteswap/firebase_options.dart';
 import 'ViewModels/DarkModeViewModels.dart'; // Retained member's theme controller
-import 'dart:ui';
-
 
 void main() async {
-  // 1. Ensure Flutter bindings are initialized before calling native code
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Only initialize Firebase if it hasn't been initialized yet
   try {
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp(
@@ -31,13 +30,13 @@ void main() async {
       rethrow;
     }
   }
-  // Initialize your teammate's theme controller
+
+  // Initialize controllers
   Get.put(LightModeController());
+  await Get.putAsync<UserService>(() async => UserService());
 
-  // 3. Run your app
-  runApp(const MyApp()); // Replace MyApp() with whatever your root widget is named
+  runApp(const MyApp());
 }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -47,19 +46,16 @@ class MyApp extends StatelessWidget {
     final LightModeController darkModeController =
         Get.find<LightModeController>();
 
-    // 1. Provide the Authentication Data Layer Repository at the top
     return RepositoryProvider(
       create: (context) => FirebaseAuthRepo(),
       child: MultiBlocProvider(
         providers: [
-          // 2. Instantiate AuthCubit and instantly check authentication state
           BlocProvider<AuthCubit>(
             create: (context) => AuthCubit(
               authRepo: context.read<FirebaseAuthRepo>(),
             )..checkAuth(),
           ),
         ],
-        // 3. Keep GetMaterialApp so your teammate's reactive dark mode works cleanly
         child: Obx(
           () => GetMaterialApp(
             debugShowCheckedModeBanner: false,
@@ -69,8 +65,6 @@ class MyApp extends StatelessWidget {
                 ? ThemeMode.light
                 : ThemeMode.dark,
             scrollBehavior: MyCustomScrollBehavior(),
-
-            // 4. Set the Splash Screen as the absolute first view
             home: SplashScreen(),
           ),
         ),
@@ -105,8 +99,10 @@ class AuthWrapper extends StatelessWidget {
       builder: (context, authState) {
         print("Current UI Auth State: $authState");
         if (authState is Authenticated) {
-          return const HomePage();
+          Get.find<UserService>().updateUser(authState.user);
+          return const HomePage(); // Land on HomePage as our primary hub!
         } else if (authState is Unauthenticated) {
+          Get.find<UserService>().clearUser();
           return const AuthPage();
         }
 
@@ -122,58 +118,3 @@ class AuthWrapper extends StatelessWidget {
     );
   }
 }
-
-/*
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:noteswap/features/auth/presentation/pages/SplashScreen.dart';
-import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
-import 'package:noteswap/firebase_options.dart';
-
-import 'ViewModels/DarkModeViewModels.dart';
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  Get.put(LightModeController());
-
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final LightModeController darkModeController =
-        Get.find<LightModeController>();
-
-    return Obx(
-      () => GetMaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData.light(),
-        darkTheme: ThemeData.dark(),
-
-        // Fixed theme mode logic
-        themeMode: darkModeController.isLightMode.value
-            ? ThemeMode.light
-            : ThemeMode.dark,
-
-        initialRoute: '/homeScreen',
-
-        getPages: [
-          GetPage(
-            name: '/homeScreen',
-            page: () => SplashScreen(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-*/

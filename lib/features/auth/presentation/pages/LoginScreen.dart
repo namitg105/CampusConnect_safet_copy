@@ -4,6 +4,7 @@ import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
 import 'package:get/get.dart';
 import 'package:noteswap/features/home/presentation/pages/home_page.dart';
+import 'package:noteswap/features/private_chat/presentation/common_widgets.dart';
 
 class Loginscreen extends StatefulWidget {
   final void Function()? togglePages;
@@ -15,12 +16,9 @@ class Loginscreen extends StatefulWidget {
 }
 
 class _LoginscreenState extends State<Loginscreen> {
-  //text controllers
-
   final emailController = TextEditingController();
   final pwController = TextEditingController();
 
-//forgot password button pressed
   Future<void> _showForgotPasswordDialog() async {
     final resetEmailController =
         TextEditingController(text: emailController.text);
@@ -76,7 +74,6 @@ class _LoginscreenState extends State<Loginscreen> {
                 final email = resetEmailController.text.trim();
                 if (email.isEmpty) return;
 
-                // Show loading circle
                 showDialog(
                   context: context,
                   barrierDismissible: false,
@@ -85,7 +82,6 @@ class _LoginscreenState extends State<Loginscreen> {
                 );
 
                 try {
-                  // Call the Cubit method instead of Firebase directly
                   await context.read<AuthCubit>().sendPasswordResetEmail(email);
 
                   if (context.mounted) {
@@ -117,25 +113,16 @@ class _LoginscreenState extends State<Loginscreen> {
     );
   }
 
-//login button pressed
   void login() {
     final String email = emailController.text;
     final String pw = pwController.text;
 
-    //authcubit
     final authCubit = context.read<AuthCubit>();
 
-    //ensure email and pw fields are not empty
     if (email.isNotEmpty && pw.isNotEmpty) {
-      //login
       authCubit.login(email, pw);
-    }
-
-    //display error if some fields are empty
-    else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter both email and password")),
-      );
+    } else {
+      showErrorSnackbar("Please enter both email and password");
     }
   }
 
@@ -151,8 +138,9 @@ class _LoginscreenState extends State<Loginscreen> {
     return BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
-            // This clears the navigation stack and safely lands them on HomePage
             Get.offAll(() => const HomePage());
+          } else if (state is AuthError) {
+            showErrorSnackbar(state.message);
           }
         },
         child: Scaffold(
@@ -213,7 +201,7 @@ class _LoginscreenState extends State<Loginscreen> {
                 bottom: 0,
                 height: MediaQuery.of(context).size.height * 0.58,
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -225,11 +213,11 @@ class _LoginscreenState extends State<Loginscreen> {
                         topLeft: Radius.circular(12),
                         topRight: Radius.circular(12),
                       ),
-                      boxShadow: [
+                      boxShadow: const [
                         BoxShadow(
                           color: Colors.black12,
                           blurRadius: 15,
-                          offset: const Offset(0, -5),
+                          offset: Offset(0, -5),
                         ),
                       ],
                     ),
@@ -242,10 +230,9 @@ class _LoginscreenState extends State<Loginscreen> {
                           const Text(
                             "University Email",
                             style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A1A1A),
-                            ),
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1A1A1A)),
                           ),
                           const SizedBox(height: 8),
                           TextField(
@@ -378,7 +365,7 @@ class _LoginscreenState extends State<Loginscreen> {
                               child: Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.all(
+                                  borderRadius: const BorderRadius.all(
                                     Radius.circular(16),
                                   ),
                                   border:

@@ -3,9 +3,13 @@ AuthCubit: State Management
  */
 
 import 'package:bloc/bloc.dart';
+import 'package:get/get.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/auth/domain/repos/auth_repo.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
+import 'package:noteswap/features/private_chat/data/private-chat-services/user_friend_add.dart';
+import 'package:noteswap/features/private_chat/domain/repos/chat_controller.dart';
+import 'package:noteswap/features/private_chat/domain/repos/online_user_controller.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepo authRepo;
@@ -67,15 +71,23 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   //logout
-
   Future<void> logout() async {
+    if (Get.isRegistered<ChatController>()) {
+      Get.delete<ChatController>(force: true);
+    }
+    if (Get.isRegistered<UserController>()) {
+      Get.delete<UserController>(force: true);
+    }
+    if (Get.isRegistered<UserOnlineController>()) {
+      Get.delete<UserOnlineController>(force: true);
+    }
+
     await authRepo.logout();
     _currentUser = null;
     emit(Unauthenticated());
   }
 
   // Add this method inside your AuthCubit class
-
   Future<void> loginWithGoogle() async {
     try {
       emit(AuthLoading());
@@ -89,10 +101,9 @@ class AuthCubit extends Cubit<AuthState> {
         emit(Unauthenticated());
       }
     } catch (e) {
-      emit(AuthError(e.toString()));
-      emit(Unauthenticated());
       print("LOGIN ERROR: $e");
       emit(AuthError(e.toString()));
+      emit(Unauthenticated());
     }
   }
 
