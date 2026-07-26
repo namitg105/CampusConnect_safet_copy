@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:noteswap/features/posts/presentation/pages/campus_feed_screen.dart';
 import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
+import 'package:noteswap/features/private_chat/page_controller.dart';
 
 class DashboardPageTwo extends StatelessWidget {
   const DashboardPageTwo({super.key});
@@ -378,7 +379,10 @@ class DashboardPageTwo extends StatelessWidget {
               ),
               child: const Icon(Icons.add, color: Colors.white, size: 28),
             ),
-            _buildNavItem(Icons.chat_bubble_outline, 'Messages', false, brandColor, subTextColor),
+            GestureDetector(
+              onTap: () => Get.to(() => const PrivateChatPageController()),
+              child: _buildNavItem(Icons.chat_bubble_outline, 'Messages', false, brandColor, subTextColor),
+            ),
             GestureDetector(
               onTap: () => Get.to(() => const ProfileSettingsPage()),
               child: _buildNavItem(Icons.person_outline, 'Profile', false, brandColor, subTextColor),

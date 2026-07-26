@@ -6,13 +6,13 @@ import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
 import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
 import 'package:noteswap/features/posts/presentation/pages/campus_feed_screen.dart';
+import 'package:noteswap/features/private_chat/page_controller.dart';
 import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_feed_usecase.dart';
 import 'package:noteswap/features/posts/data/post_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
 import 'package:noteswap/utils/time_formatter.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
-import 'package:noteswap/features/chat/presentation/pages/chat_rooms_page.dart';
 
 class DashboardPageOne extends StatefulWidget {
   const DashboardPageOne({super.key});
@@ -243,12 +243,6 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                       onTap: () => Get.to(
                                           () => const CampusFeedScreen()),
                                     ),
-                                    _buildQuickAccessItem(
-                                        Icons.menu_book,
-                                        'Study Resources',
-                                        brandColor,
-                                        cardColor,
-                                        textColor),
                                     _buildQuickAccessItem(
                                         Icons.calendar_month,
                                         'Events',
@@ -500,11 +494,12 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                     onTap: () {
                       final authState = context.read<AuthCubit>().state;
                       if (authState is Authenticated) {
-                        Get.to(() => ChatRoomsPage(currentUser: authState.user));
+                        Get.to(
+                          () => const PrivateChatPageController());
                       }
                     },
-                    child: _buildNavItem(Icons.chat_bubble_outline, 'Messages', false,
-                        brandColor, subTextColor),
+                    child: _buildNavItem(Icons.chat_bubble_outline, 'Messages',
+                        false, brandColor, subTextColor),
                   ),
                   GestureDetector(
                     onTap: () => Get.to(() => const ProfileSettingsPage()),

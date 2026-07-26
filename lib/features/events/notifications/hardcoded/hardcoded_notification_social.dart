@@ -16,7 +16,8 @@ final List<NotificationData> hardcodedSocialNotifications = [
     ),
     title: 'commented on your post',
     subtitle: 'Computer Science',
-    description: 'Great insights on the AI workshop! Would love to join next time.',
+    description:
+        'Great insights on the AI workshop! Would love to join next time.',
     timestamp: DateTime.now().subtract(const Duration(minutes: 30)),
     isRead: false,
     actionIcon: Icons.comment_outlined,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/features/private_chat/page_controller.dart';
 
 class CommunityFilesScreen extends StatelessWidget {
   const CommunityFilesScreen({super.key});
@@ -366,7 +367,10 @@ class CommunityFilesScreen extends StatelessWidget {
                   ),
                   child: const Icon(Icons.add, color: Colors.white, size: 28),
                 ),
-                _buildNavItem(Icons.chat_bubble_outline, 'Messages', false, brandColor, subTextColor),
+                GestureDetector(
+                  onTap: () => Get.to(() => const PrivateChatPageController()),
+                  child: _buildNavItem(Icons.chat_bubble_outline, 'Messages', false, brandColor, subTextColor),
+                ),
                 _buildNavItem(Icons.person_outline, 'Profile', false, brandColor, subTextColor),
               ],
             ),
