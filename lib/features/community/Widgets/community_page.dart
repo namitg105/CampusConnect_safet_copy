@@ -483,7 +483,7 @@ class _MyCommunitiesSection extends StatelessWidget {
           )
         else
           SizedBox(
-            height: 125,
+            height: 140,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: myGroups.length + 1,
@@ -792,7 +792,7 @@ class UpcomingEventsSection extends StatelessWidget {
         const _SectionHeader(title: "Upcoming Events"),
         const SizedBox(height: 10),
         SizedBox(
-          height: 110,
+          height: 125,
           child: StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('events')
