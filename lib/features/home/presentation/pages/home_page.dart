@@ -6,9 +6,6 @@ import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
 import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 import 'package:noteswap/features/posts/presentation/pages/campus_feed_screen.dart';
 import 'package:noteswap/features/dashboard/presentation/pages/dashboard_page_one.dart';
-import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
-import 'package:noteswap/features/chat/presentation/pages/community_files_screen.dart';
-import 'package:noteswap/features/private_chat/page_controller.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 import 'package:noteswap/features/auth/presentation/pages/SplashScreen.dart';
 
@@ -82,52 +79,15 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
-                    onPressed: () => Get.to(() => const ProfileSettingsPage()),
-                    icon: const Icon(Icons.person_pin),
-                    label: const Text('Open Profile Settings Screen'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: brandColor,
-                      side: BorderSide(color: brandColor),
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () => Get.to(() => const CommunityFilesScreen()),
-                    icon: const Icon(Icons.folder_shared_outlined),
-                    label: const Text('Open Community Files Screen'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: brandColor,
-                      side: BorderSide(color: brandColor),
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () => Get.to(() => const PrivateChatPageController()),
-                    icon: const Icon(Icons.chat_outlined),
-                    label: const Text('Open Private Chat'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: brandColor,
-                      side: BorderSide(color: brandColor),
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () => Get.to(() => const MainPage()),
+                    onPressed: () {
+                      if (Get.isRegistered<MainPageController>()) {
+                        Get.find<MainPageController>().changeIndex(1);
+                      } else {
+                        final controller = Get.put(MainPageController());
+                        controller.changeIndex(1);
+                        Get.offAll(() => const MainPage());
+                      }
+                    },
                     icon: const Icon(Icons.group_outlined),
                     label: const Text('Open Community Pages'),
                     style: ElevatedButton.styleFrom(

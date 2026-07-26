@@ -1,125 +1,130 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
 import 'package:noteswap/features/community/presentation/pages/create_group_page.dart';
 import 'package:noteswap/features/events/presentation/screens/create_event.dart';
 import 'package:noteswap/features/group_chat/presentation/pages/groups_page.dart';
 import 'package:noteswap/features/home/presentation/pages/home_page.dart';
 import 'package:noteswap/features/profile/presentation/pages/profile_page.dart';
+import 'package:noteswap/features/private_chat/page_controller.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../community/presentation/cubits/group_cubit.dart';
 import '../../../community/presentation/pages/groups_page.dart';
 import '../../../group_chat/presentation/pages/new_group.dart';
 
-class MainPage extends StatefulWidget {
-  const MainPage({
-    super.key,
-  });
+class MainPageController extends GetxController {
+  var currentIndex = 0.obs;
 
-  @override
-  State<MainPage> createState() => _MainPageState();
+  void changeIndex(int index) {
+    currentIndex.value = index;
+  }
 }
 
-class _MainPageState extends State<MainPage> {
-  int _currentIndex = 0;
-
-  static const Color _brandPrimary = Color(0xFF6366F1);
-  static const Color _textDark = Color(0xFF0F172A);
-  static const Color _textMuted = Color(0xFF64748B);
-
-  void _navigateToCreateGroup() {}
+class MainPage extends StatelessWidget {
+  const MainPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.put(MainPageController());
+    const Color brandPrimary = Color(0xFF6366F1);
+    const Color textDark = Color(0xFF0F172A);
+    const Color textMuted = Color(0xFF64748B);
+
+    void navigateToCreateGroup() {
+      Get.to(() => const CreateGroupPage(collegeId: ""));
+    }
+
     return BlocProvider<GroupCubit>(
       create: (_) => sl<GroupCubit>(),
-      child: Scaffold(
-        extendBody: true,
-        body: IndexedStack(
-          index: _currentIndex,
-          children: [
-            HomePage(),
-            const GroupsPage(),
-            const GroupsDisplayPage(),
-            UserProfilePage()
-            //   CreateEventPage()
-          ],
-        ),
-        bottomNavigationBar: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-            child: SizedBox(
-              height: 70,
-              child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.topCenter,
-                children: [
-                  // The pill-shaped bar itself.
-                  Positioned.fill(
-                    top: 14, // leaves room for the center button to overlap
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF3F1FE),
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _textDark.withOpacity(0.06),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _NavBarIcon(
-                            assetPath: 'assets/community/home_nav.png',
-                            label: 'Home',
-                            isSelected: _currentIndex == 0,
-                            activeColor: _brandPrimary,
-                            inactiveColor: _textMuted,
-                            onTap: () => setState(() => _currentIndex = 0),
-                          ),
-                          _NavBarIcon(
-                            assetPath: 'assets/community/comm_nav.png',
-                            label: 'Community',
-                            isSelected: _currentIndex == 1,
-                            activeColor: _brandPrimary,
-                            inactiveColor: _textMuted,
-                            onTap: () => setState(() => _currentIndex = 1),
-                          ),
-                          // Empty space the floating center button sits over.
-                          const SizedBox(width: 56),
-                          _NavBarIcon(
-                            assetPath: 'assets/community/msg_nav.png',
-                            label: 'Messages',
-                            isSelected: _currentIndex == 2,
-                            activeColor: _brandPrimary,
-                            inactiveColor: _textMuted,
-                            onTap: () => setState(() => _currentIndex = 2),
-                          ),
-                          _NavBarIcon(
-                            assetPath: 'assets/community/prof_nav.png',
-                            label: 'Profile',
-                            isSelected: _currentIndex == 3,
-                            activeColor: _brandPrimary,
-                            inactiveColor: _textMuted,
-                            onTap: () => setState(() => _currentIndex = 3),
-                          ),
-                        ],
+      child: Obx(
+        () => Scaffold(
+          extendBody: true,
+          body: IndexedStack(
+            index: controller.currentIndex.value,
+            children: [
+              const HomePage(),
+              const GroupsPage(),
+              const PrivateChatPageController(), // Direct to private chat
+              UserProfilePage()
+            ],
+          ),
+          bottomNavigationBar: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              child: SizedBox(
+                height: 70,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.topCenter,
+                  children: [
+                    // The pill-shaped bar itself.
+                    Positioned.fill(
+                      top: 14, // leaves room for the center button to overlap
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F1FE),
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: textDark.withOpacity(0.06),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _NavBarIcon(
+                              assetPath: 'assets/community/home_nav.png',
+                              label: 'Home',
+                              isSelected: controller.currentIndex.value == 0,
+                              activeColor: brandPrimary,
+                              inactiveColor: textMuted,
+                              onTap: () => controller.changeIndex(0),
+                            ),
+                            _NavBarIcon(
+                              assetPath: 'assets/community/comm_nav.png',
+                              label: 'Community',
+                              isSelected: controller.currentIndex.value == 1,
+                              activeColor: brandPrimary,
+                              inactiveColor: textMuted,
+                              onTap: () => controller.changeIndex(1),
+                            ),
+                            // Empty space the floating center button sits over.
+                            const SizedBox(width: 56),
+                            _NavBarIcon(
+                              assetPath: 'assets/community/msg_nav.png',
+                              label: 'Messages',
+                              isSelected: controller.currentIndex.value == 2,
+                              activeColor: brandPrimary,
+                              inactiveColor: textMuted,
+                              onTap: () => controller.changeIndex(2),
+                            ),
+                            _NavBarIcon(
+                              assetPath: 'assets/community/prof_nav.png',
+                              label: 'Profile',
+                              isSelected: controller.currentIndex.value == 3,
+                              activeColor: brandPrimary,
+                              inactiveColor: textMuted,
+                              onTap: () => controller.changeIndex(3),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  // Elevated center create button, popping above the bar.
-                  Positioned(
-                    top: 0,
-                    child: _CreateButton(
-                      color: _brandPrimary,
-                      onTap: _navigateToCreateGroup,
+                    // Elevated center create button, popping above the bar.
+                    Positioned(
+                      top: 0,
+                      child: _CreateButton(
+                        color: brandPrimary,
+                        onTap: navigateToCreateGroup,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
