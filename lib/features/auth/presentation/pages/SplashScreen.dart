@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
 import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 import 'package:noteswap/main.dart';
+import 'package:noteswap/Views/Onboarding/OnboardingScreen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -96,7 +97,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     children: [
                       GestureDetector(
                         onTap: () {
-                          Get.to(() => const AuthWrapper());
+                          Get.to(() => OnboardingScreen());
                         },
                         child: Image.asset(
                           "assets/Button.png",
