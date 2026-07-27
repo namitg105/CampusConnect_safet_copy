@@ -13,6 +13,7 @@ import 'package:noteswap/features/posts/data/post_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
 import 'package:noteswap/utils/time_formatter.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
+import 'package:noteswap/features/group_chat/presentation/pages/groups_page.dart';
 
 class DashboardPageOne extends StatefulWidget {
   const DashboardPageOne({super.key});
@@ -218,9 +219,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                 ),
                               ),
                               const SizedBox(height: 24),
-
                               // Quick Access Section
-                              _buildHeader('Quick Access'),
+                              _buildHeader('Quick Access', showViewAll: false),
                               const SizedBox(height: 12),
                               SizedBox(
                                 height: 110,
@@ -230,10 +230,12 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                   children: [
                                     _buildQuickAccessItem(
                                         Icons.groups,
-                                        'My communities',
+                                        'Community chat',
                                         brandColor,
                                         cardColor,
-                                        textColor),
+                                        textColor,
+                                        onTap: () => Get.to(() => const GroupsDisplayPage()),
+                                    ),
                                     _buildQuickAccessItem(
                                       Icons.chat_bubble,
                                       'Discussions',
@@ -254,8 +256,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                               ),
                               const SizedBox(height: 24),
 
-                              // Trending Communities
-                              _buildHeader('Trending Communities'),
+                              // Announcements Section
+                              _buildHeader('Announcements'),
                               const SizedBox(height: 12),
                               SizedBox(
                                 height: 140,
@@ -264,187 +266,105 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                   physics: const BouncingScrollPhysics(),
                                   children: [
                                     _buildTrendingCard(
-                                      'Coding Club',
-                                      '542 members',
-                                      Icons.code,
+                                      'CAT-I Exam Schedule Released',
+                                      'Check your vtop portal',
+                                      Icons.notifications_active,
                                       const Color(0xFF6139ED),
                                       const Color(0xFFECE7FF),
                                     ),
                                     _buildTrendingCard(
-                                      'Basketball Team',
-                                      '320 members',
-                                      Icons.sports_basketball,
+                                      'Annual Tech Fest 2025',
+                                      'Registrations Open!',
+                                      Icons.event,
                                       const Color(0xFF00BFA5),
                                       const Color(0xFFE0F2F1),
                                     ),
                                     _buildTrendingCard(
-                                      'Photography Club',
-                                      '256 members',
-                                      Icons.camera_alt,
+                                      'New Scholarships',
+                                      'Apply before deadline',
+                                      Icons.school,
                                       const Color(0xFFFF6D00),
                                       const Color(0xFFFBE9E7),
-                                    ),
-                                    _buildTrendingCard(
-                                      'Music club',
-                                      '460 members',
-                                      Icons.headphones,
-                                      const Color(0xFF2979FF),
-                                      const Color(0xFFE3F2FD),
                                     ),
                                   ],
                                 ),
                               ),
                               const SizedBox(height: 24),
 
-                              // Recent Discussions & Announcements block
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Recent Discussions Card
-                                  Expanded(
-                                    child: Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: cardColor,
-                                        borderRadius: BorderRadius.circular(16),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color:
-                                                Colors.black.withOpacity(0.03),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  'Recent Discussions',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 13,
-                                                    color: textColor,
-                                                  ),
-                                                ),
-                                              ),
-                                              GestureDetector(
-                                                onTap: () => Get.to(() =>
-                                                    const CampusFeedScreen()),
-                                                child: Text(
-                                                  'View all',
-                                                  style: TextStyle(
-                                                    color: brandColor,
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const Divider(height: 16),
-                                          if (newestDiscussions.isEmpty)
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      vertical: 16.0),
-                                              child: Center(
-                                                child: Text(
-                                                  'No discussions yet',
-                                                  style: TextStyle(
-                                                      color: subTextColor,
-                                                      fontSize: 11),
-                                                ),
-                                              ),
-                                            )
-                                          else ...[
-                                            for (int i = 0;
-                                                i < newestDiscussions.length;
-                                                i++) ...[
-                                              if (i > 0)
-                                                const Divider(height: 16),
-                                              _buildDiscussionItem(
-                                                newestDiscussions[i],
-                                                brandColor,
-                                                textColor,
-                                                subTextColor,
-                                                isLightMode,
-                                              ),
-                                            ]
-                                          ],
-                                        ],
-                                      ),
+                              // Recent Discussions Section (Full Width, below Announcements)
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: cardColor,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.03),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
                                     ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  // Announcements Card
-                                  Expanded(
-                                    child: Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: cardColor,
-                                        borderRadius: BorderRadius.circular(16),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color:
-                                                Colors.black.withOpacity(0.03),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 4),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Recent Discussions',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            color: textColor,
                                           ),
-                                        ],
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                'Announcements',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 13,
-                                                  color: textColor,
-                                                ),
-                                              ),
-                                            ],
+                                        ),
+                                        GestureDetector(
+                                          onTap: () => Get.to(() => const CampusFeedScreen()),
+                                          child: Text(
+                                            'View all',
+                                            style: TextStyle(
+                                              color: brandColor,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                           ),
-                                          const Divider(height: 16),
-                                          _buildAnnouncementItem(
-                                            'CAT-I Exam Schedule Released',
-                                            'Check your vtop portal',
-                                            textColor,
-                                            subTextColor,
-                                          ),
-                                          const Divider(height: 16),
-                                          _buildAnnouncementItem(
-                                            'Annual Tech Fest 2025 Registrations Open!',
-                                            'Don\'t miss out!',
-                                            textColor,
-                                            subTextColor,
-                                          ),
-                                          const Divider(height: 16),
-                                          _buildAnnouncementItem(
-                                            'New Scholarships Available',
-                                            'Apply before the deadline',
-                                            textColor,
-                                            subTextColor,
-                                          ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ],
+                                    const Divider(height: 24),
+                                    if (newestDiscussions.isEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 24.0),
+                                        child: Center(
+                                          child: Text(
+                                            'No discussions yet',
+                                            style: TextStyle(
+                                                color: subTextColor,
+                                                fontSize: 11),
+                                          ),
+                                        ),
+                                      )
+                                    else ...[
+                                      for (int i = 0;
+                                          i < newestDiscussions.length;
+                                          i++) ...[
+                                        if (i > 0)
+                                          const Divider(height: 16),
+                                        _buildDiscussionItem(
+                                          newestDiscussions[i],
+                                          brandColor,
+                                          textColor,
+                                          subTextColor,
+                                          isLightMode,
+                                        ),
+                                      ]
+                                    ],
+                                  ],
+                                ),
                               ),
-                              const SizedBox(height: 80), // bottom nav space
+                              const SizedBox(height: 100), // bottom nav space
                             ],
                           ),
                   ),
@@ -514,7 +434,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
     );
   }
 
-  Widget _buildHeader(String title) {
+  Widget _buildHeader(String title, {bool showViewAll = true}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -525,14 +445,15 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        const Text(
-          'View all',
-          style: TextStyle(
-            color: Color(0xFF6139ED),
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
+        if (showViewAll)
+          const Text(
+            'View all',
+            style: TextStyle(
+              color: Color(0xFF6139ED),
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
           ),
-        ),
       ],
     );
   }

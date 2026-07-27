@@ -239,53 +239,122 @@ class PostCard extends StatelessWidget {
             // Actions Bottom Row
             Row(
               children: [
-                // 1. Like Button
-                GestureDetector(
-                  onTap: onUpvote,
+                // Upvote/Downvote Capsule
+                Container(
+                  decoration: BoxDecoration(
+                    color: isLightMode
+                        ? const Color(0xFFF3F4F6)
+                        : const Color(0xFF2D2D2D),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Image.asset(
-                        'assets/posts_screen_assets/like_button.png',
-                        width: 20,
-                        height: 20,
-                        color: isUpvoted
-                            ? Colors.redAccent
-                            : (isLightMode
-                                ? Colors.grey[600]
-                                : Colors.grey[400]),
+                      GestureDetector(
+                        onTap: onUpvote,
+                        child: SvgPicture.string(
+                          upvoteSvg,
+                          width: 15,
+                          height: 15,
+                          colorFilter: ColorFilter.mode(
+                            isUpvoted
+                                ? brandColor
+                                : (isLightMode
+                                    ? Colors.grey[600]!
+                                    : Colors.grey[400]!),
+                            BlendMode.srcIn,
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       Text(
                         post.upvotes.toString(),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color:
-                              isLightMode ? Colors.grey[600] : Colors.grey[400],
+                          color: textColor,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        height: 12,
+                        width: 1,
+                        color:
+                            isLightMode ? Colors.grey[300] : Colors.grey[600],
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: onDownvote,
+                        child: SvgPicture.string(
+                          downvoteSvg,
+                          width: 15,
+                          height: 15,
+                          colorFilter: ColorFilter.mode(
+                            isDownvoted
+                                ? brandColor
+                                : (isLightMode
+                                    ? Colors.grey[600]!
+                                    : Colors.grey[400]!),
+                            BlendMode.srcIn,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 20),
+                const SizedBox(width: 16),
 
-                // 2. Comment Button
+                // Comment Count Capsule
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/posts_screen_assets/comment_view.png',
+                      height: 22,
+                      fit: BoxFit.contain,
+                    ),
+                    Positioned(
+                      right: 5,
+                      child: Container(
+                        color: const Color(0xFFF5F2FD),
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: Text(
+                          post.commentCount.toString(),
+                          style: GoogleFonts.poppins(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF6139ED),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+
+                // Share Action Button (NO capsule background!)
                 GestureDetector(
-                  onTap: onTap,
+                  onTap: () {
+                    Share.share(
+                        'Check out this post on CampusConnect:\n\n${post.title}\n${post.body}');
+                  },
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Image.asset(
-                        'assets/posts_screen_assets/comment_icon.png',
-                        width: 20,
-                        height: 20,
-                        color:
-                            isLightMode ? Colors.grey[600] : Colors.grey[400],
+                      SvgPicture.string(
+                        shareSvg,
+                        width: 16,
+                        height: 16,
+                        colorFilter: ColorFilter.mode(
+                          isLightMode ? Colors.grey[600]! : Colors.grey[400]!,
+                          BlendMode.srcIn,
+                        ),
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        post.commentCount.toString(),
+                        'Share',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -294,42 +363,6 @@ class PostCard extends StatelessWidget {
                         ),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(width: 20),
-
-                // 3. Share Button
-                GestureDetector(
-                  onTap: () {
-                    Share.share(
-                        'Check out this post on CampusConnect:\n\n${post.title}\n${post.body}');
-                  },
-                  child: Image.asset(
-                    'assets/posts_screen_assets/share_button.png',
-                    width: 20,
-                    height: 20,
-                    color: isLightMode ? Colors.grey[600] : Colors.grey[400],
-                  ),
-                ),
-                const Spacer(),
-
-                // 4. Save Button
-                GestureDetector(
-                  onTap: () {
-                    Get.snackbar(
-                      'Saved',
-                      'Post saved to your bookmarks!',
-                      snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: brandColor,
-                      colorText: Colors.white,
-                      duration: const Duration(seconds: 2),
-                    );
-                  },
-                  child: Image.asset(
-                    'assets/posts_screen_assets/save_icon.png',
-                    width: 20,
-                    height: 20,
-                    color: brandColor,
                   ),
                 ),
               ],

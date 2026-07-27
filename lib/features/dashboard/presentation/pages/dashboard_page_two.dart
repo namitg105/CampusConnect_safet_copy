@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:noteswap/features/posts/presentation/pages/campus_feed_screen.dart';
 import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
 import 'package:noteswap/features/private_chat/page_controller.dart';
+import 'package:noteswap/features/group_chat/presentation/pages/groups_page.dart';
 
 class DashboardPageTwo extends StatelessWidget {
   const DashboardPageTwo({super.key});
@@ -110,7 +111,7 @@ class DashboardPageTwo extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   // Quick Access Section (5 Items)
-                  _buildHeader('Quick Access'),
+                  _buildHeader('Quick Access', showViewAll: false),
                   const SizedBox(height: 12),
                   SizedBox(
                     height: 110,
@@ -118,7 +119,14 @@ class DashboardPageTwo extends StatelessWidget {
                       scrollDirection: Axis.horizontal,
                       physics: const BouncingScrollPhysics(),
                       children: [
-                        _buildQuickAccessItem(Icons.groups, 'My communities', brandColor, cardColor, textColor),
+                        _buildQuickAccessItem(
+                          Icons.groups,
+                          'Community chat',
+                          brandColor,
+                          cardColor,
+                          textColor,
+                          onTap: () => Get.to(() => const GroupsDisplayPage()),
+                        ),
                         _buildQuickAccessItem(
                           Icons.chat_bubble,
                           'Discussions',
@@ -135,8 +143,8 @@ class DashboardPageTwo extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
 
-                  // Trending Communities
-                  _buildHeader('Trending Communities'),
+                  // Announcements Section
+                  _buildHeader('Announcements'),
                   const SizedBox(height: 12),
                   SizedBox(
                     height: 140,
@@ -145,186 +153,102 @@ class DashboardPageTwo extends StatelessWidget {
                       physics: const BouncingScrollPhysics(),
                       children: [
                         _buildTrendingCard(
-                          'Coding Club',
-                          '542 members',
-                          Icons.code,
+                          'CAT-I Exam Schedule Released',
+                          'Check your vtop portal',
+                          Icons.notifications_active,
                           const Color(0xFF6139ED),
                           const Color(0xFFECE7FF),
                         ),
                         _buildTrendingCard(
-                          'Basketball Team',
-                          '320 members',
-                          Icons.sports_basketball,
+                          'Annual Tech Fest 2025',
+                          'Registrations Open!',
+                          Icons.event,
                           const Color(0xFF00BFA5),
                           const Color(0xFFE0F2F1),
                         ),
                         _buildTrendingCard(
-                          'Photography Club',
-                          '256 members',
-                          Icons.camera_alt,
+                          'New Scholarships',
+                          'Apply before deadline',
+                          Icons.school,
                           const Color(0xFFFF6D00),
                           const Color(0xFFFBE9E7),
-                        ),
-                        _buildTrendingCard(
-                          'Music club',
-                          '460 members',
-                          Icons.headphones,
-                          const Color(0xFF2979FF),
-                          const Color(0xFFE3F2FD),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 24),
 
-                  // Recent Discussions & Announcements block (With dots/timestamp)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Recent Discussions Card
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: cardColor,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      'Recent Discussions',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                        color: textColor,
-                                      ),
-                                    ),
-                                  ),
-                                  Text(
-                                    'View all',
-                                    style: TextStyle(
-                                      color: brandColor,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const Divider(height: 16),
-                              _buildDiscussionItem(
-                                'How to prepare for CAT-I?',
-                                'Riya sharma • 10m ago',
-                                12,
-                                brandColor,
-                                textColor,
-                                subTextColor,
-                              ),
-                              const Divider(height: 16),
-                              _buildDiscussionItem(
-                                'Best python recourses for beginners?',
-                                'Suresh • 45m ago',
-                                8,
-                                brandColor,
-                                textColor,
-                                subTextColor,
-                              ),
-                              const Divider(height: 16),
-                              _buildDiscussionItem(
-                                'Anyone up for coding session for today?',
-                                'Arjun krish • 1hr ago',
-                                15,
-                                brandColor,
-                                textColor,
-                                subTextColor,
-                              ),
-                            ],
-                          ),
+                  // Recent Discussions Section (Full Width, below Announcements)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      // Announcements Card (With dots and time)
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: cardColor,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Recent Discussions',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: textColor,
                               ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Announcements',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                      color: textColor,
-                                    ),
-                                  ),
-                                  Text(
-                                    'View all',
-                                    style: TextStyle(
-                                      color: brandColor,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
+                            ),
+                            GestureDetector(
+                              onTap: () => Get.to(() => const CampusFeedScreen()),
+                              child: Text(
+                                'View all',
+                                style: TextStyle(
+                                  color: brandColor,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                              const Divider(height: 16),
-                              _buildAnnouncementItemWithDot(
-                                'CAT-I Exam Schedule Released',
-                                'Check your vtop portal',
-                                true,
-                                null,
-                                textColor,
-                                subTextColor,
-                              ),
-                              const Divider(height: 16),
-                              _buildAnnouncementItemWithDot(
-                                'Annual Tech Fest 2025 Registrations Open!',
-                                'Don\'t miss out!',
-                                true,
-                                null,
-                                textColor,
-                                subTextColor,
-                              ),
-                              const Divider(height: 16),
-                              _buildAnnouncementItemWithDot(
-                                'New Scholarships Available',
-                                'Apply before the deadline',
-                                false,
-                                '1d ago',
-                                textColor,
-                                subTextColor,
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                        const Divider(height: 24),
+                        _buildDiscussionItem(
+                          'How to prepare for CAT-I?',
+                          'Riya sharma • 10m ago',
+                          12,
+                          brandColor,
+                          textColor,
+                          subTextColor,
+                        ),
+                        const Divider(height: 16),
+                        _buildDiscussionItem(
+                          'Best python recourses for beginners?',
+                          'Suresh • 45m ago',
+                          8,
+                          brandColor,
+                          textColor,
+                          subTextColor,
+                        ),
+                        const Divider(height: 16),
+                        _buildDiscussionItem(
+                          'Anyone up for coding session for today?',
+                          'Arjun krish • 1hr ago',
+                          15,
+                          brandColor,
+                          textColor,
+                          subTextColor,
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 24),
 
@@ -393,7 +317,7 @@ class DashboardPageTwo extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(String title) {
+  Widget _buildHeader(String title, {bool showViewAll = true}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -404,14 +328,15 @@ class DashboardPageTwo extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        const Text(
-          'View all',
-          style: TextStyle(
-            color: Color(0xFF6139ED),
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
+        if (showViewAll)
+          const Text(
+            'View all',
+            style: TextStyle(
+              color: Color(0xFF6139ED),
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
           ),
-        ),
       ],
     );
   }

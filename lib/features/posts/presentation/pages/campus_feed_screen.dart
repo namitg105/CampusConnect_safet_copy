@@ -15,6 +15,7 @@ import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
 import 'package:noteswap/features/private_chat/page_controller.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
+import 'package:noteswap/features/community/presentation/pages/groups_page.dart';
 import 'package:noteswap/features/posts/data/post_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/add_comment_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/create_post_usecase.dart';
@@ -536,8 +537,11 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
               children: [
                 _buildNavItem(
                     Icons.home, 'Home', true, brandColor, subTextColor),
-                _buildNavItem(Icons.people_outline, 'Communities', false,
-                    brandColor, subTextColor),
+                GestureDetector(
+                   onTap: () => Get.to(() => const GroupsPage()),
+                   child: _buildNavItem(Icons.people_outline, 'Communities', false,
+                       brandColor, subTextColor),
+                 ),
                 // Floating center button
                 GestureDetector(
                   onTap: () => Get.to(() => CreatePostPage(
