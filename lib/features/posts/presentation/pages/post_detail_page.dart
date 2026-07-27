@@ -8,6 +8,7 @@ import 'package:noteswap/features/posts/presentation/controllers/post_controller
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
 import 'package:noteswap/utils/time_formatter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 // SVG Assets matching Figma specifications perfectly
 const String upvoteSvg = '''
@@ -363,14 +364,15 @@ class _PostDetailPageState extends State<PostDetailPage> {
                         const SizedBox(height: 14),
 
                         // Post Body text
-                        Text(
-                          widget.post.body,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: textColor,
-                            height: 1.5,
-                          ),
-                        ),
+                         Text(
+                           widget.post.body,
+                           style: GoogleFonts.poppins(
+                             fontSize: 13,
+                             fontWeight: FontWeight.w400,
+                             height: 1.5,
+                             color: textColor,
+                           ),
+                         ),
 
                         // Post image
                         if (widget.post.imageUrl != null &&

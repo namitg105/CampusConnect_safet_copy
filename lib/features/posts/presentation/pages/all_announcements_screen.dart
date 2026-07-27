@@ -5,6 +5,7 @@ import 'package:noteswap/features/posts/presentation/controllers/post_controller
 import 'package:noteswap/features/posts/presentation/pages/post_detail_page.dart';
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
 import 'package:noteswap/utils/time_formatter.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AllAnnouncementsScreen extends StatelessWidget {
   final PostController controller;
@@ -148,9 +149,10 @@ class AllAnnouncementsScreen extends StatelessWidget {
                                   children: [
                                     Text(
                                       post.title,
-                                      style: TextStyle(
+                                      style: GoogleFonts.poppins(
                                         fontSize: 15,
-                                        fontWeight: FontWeight.bold,
+                                        fontWeight: FontWeight.w400,
+                                        height: 1.45,
                                         color: textColor,
                                       ),
                                     ),
@@ -171,10 +173,11 @@ class AllAnnouncementsScreen extends StatelessWidget {
                           const SizedBox(height: 12),
                           Text(
                             post.body,
-                            style: TextStyle(
+                            style: GoogleFonts.poppins(
                               fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              height: 1.5,
                               color: subTextColor,
-                              height: 1.4,
                             ),
                           ),
                         ],

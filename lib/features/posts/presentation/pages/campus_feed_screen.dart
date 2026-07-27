@@ -13,6 +13,7 @@ import 'package:noteswap/features/posts/presentation/pages/all_posts_screen.dart
 import 'package:noteswap/features/posts/presentation/pages/all_announcements_screen.dart';
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
 import 'package:noteswap/features/private_chat/page_controller.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
 import 'package:noteswap/features/posts/data/post_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/add_comment_usecase.dart';
@@ -231,51 +232,69 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                     children: [
                       Expanded(
                         child: Container(
+                          height: 48,
                           decoration: BoxDecoration(
-                            color: cardColor,
+                            color: isLightMode ? Colors.white : const Color(0xFF1E1E1E),
                             borderRadius: BorderRadius.circular(16),
-                            boxShadow: isLightMode
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.03),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ]
-                                : [],
-                          ),
-                          child: TextField(
-                            decoration: InputDecoration(
-                              hintText: 'Search posts, people, topics...',
-                              hintStyle:
-                                  TextStyle(color: subTextColor, fontSize: 13),
-                              prefixIcon: Icon(Icons.search,
-                                  color: subTextColor, size: 20),
-                              border: InputBorder.none,
-                              contentPadding:
-                                  const EdgeInsets.symmetric(vertical: 14),
+                            border: Border.all(
+                              color: isLightMode ? const Color(0xFFEBEBF0) : const Color(0xFF2D2D2D),
+                              width: 1,
                             ),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            children: [
+                              Image.asset(
+                                'assets/posts_screen_assets/serach_icon.png',
+                                width: 20,
+                                height: 20,
+                                fit: BoxFit.contain,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextField(
+                                  decoration: InputDecoration(
+                                    hintText: 'Search posts, people, topics...',
+                                    hintStyle: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w400,
+                                      height: 1.0,
+                                      color: isLightMode 
+                                          ? const Color(0xFF1A1A2E).withOpacity(0.5)
+                                          : Colors.white.withOpacity(0.5),
+                                    ),
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                    height: 1.0,
+                                    color: isLightMode 
+                                        ? const Color(0xFF1A1A2E)
+                                        : Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: brandColor,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: brandColor.withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                      GestureDetector(
+                        onTap: () {},
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: SizedBox(
+                            width: 44,
+                            height: 44,
+                            child: Image.asset(
+                              'assets/posts_screen_assets/filter_icon.png',
+                              fit: BoxFit.cover,
+                              alignment: Alignment.bottomRight,
                             ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.filter_list,
-                          color: Colors.white,
-                          size: 20,
+                          ),
                         ),
                       ),
                     ],
@@ -561,18 +580,77 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
   }
 
   Widget _buildHeaderSection(String title, {VoidCallback? onTap}) {
+    Widget titleWidget;
+    if (title == 'Trending Discussions') {
+      titleWidget = Image.asset(
+        'assets/posts_screen_assets/trending_discussions_bar.png',
+        height: 22,
+        fit: BoxFit.contain,
+      );
+    } else if (title == 'Announcements') {
+      titleWidget = Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/posts_screen_assets/announcement_icon.png',
+            width: 24,
+            height: 24,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.w400,
+              height: 1.5, // 33px / 22px = 1.5
+              letterSpacing: 0,
+              color: const Color(0xFF1E1F24),
+            ),
+          ),
+        ],
+      );
+    } else if (title == 'Latest Posts') {
+      titleWidget = Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/posts_screen_assets/latest_posts_timer.png',
+            width: 24,
+            height: 24,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.w400,
+              height: 1.5, // 33px / 22px = 1.5
+              letterSpacing: 0,
+              color: const Color(0xFF1E1F24),
+            ),
+          ),
+        ],
+      );
+    } else {
+      titleWidget = Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          titleWidget,
           GestureDetector(
             onTap: onTap,
             child: const Text(
@@ -710,9 +788,10 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                   // Post Title
                   Text(
                     post.title,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                    style: GoogleFonts.poppins(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
+                      height: 1.45,
                       color: textColor,
                     ),
                     maxLines: 2,
@@ -723,8 +802,10 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                   // Post Body Snippet
                   Text(
                     post.body,
-                    style: TextStyle(
-                      fontSize: 12,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      height: 1.5,
                       color: subTextColor,
                     ),
                     maxLines: 2,
@@ -798,11 +879,11 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
+           Text(
             title,
-            style: const TextStyle(
+            style: GoogleFonts.poppins(
               fontSize: 12,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w400,
               color: Colors.black87,
             ),
             maxLines: 1,
@@ -812,8 +893,9 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
           Expanded(
             child: Text(
               description,
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 10,
+                fontWeight: FontWeight.w400,
                 color: Colors.grey[800],
               ),
               maxLines: 3,

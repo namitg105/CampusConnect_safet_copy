@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_navigation/src/extension_navigation.dart';
+import 'package:get/get_navigation/src/snackbar/snackbar.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
 import 'package:noteswap/utils/time_formatter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 // SVG Assets matching Figma specifications perfectly
 const String upvoteSvg = '''
@@ -192,9 +196,10 @@ class PostCard extends StatelessWidget {
             // Post Title
             Text(
               post.title,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w400,
+                height: 1.45,
                 color: textColor,
               ),
               maxLines: 2,
@@ -205,8 +210,10 @@ class PostCard extends StatelessWidget {
             // Post Body
             Text(
               post.body,
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 13,
+                fontWeight: FontWeight.w400,
+                height: 1.5,
                 color: subTextColor,
               ),
               maxLines: 3,
@@ -232,126 +239,97 @@ class PostCard extends StatelessWidget {
             // Actions Bottom Row
             Row(
               children: [
-                // Upvote/Downvote Capsule
-                Container(
-                  decoration: BoxDecoration(
-                    color: isLightMode
-                        ? const Color(0xFFF3F4F6)
-                        : const Color(0xFF2D2D2D),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                // 1. Like Button
+                GestureDetector(
+                  onTap: onUpvote,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      GestureDetector(
-                        onTap: onUpvote,
-                        child: SvgPicture.string(
-                          upvoteSvg,
-                          width: 15,
-                          height: 15,
-                          colorFilter: ColorFilter.mode(
-                            isUpvoted
-                                ? brandColor
-                                : (isLightMode
-                                    ? Colors.grey[600]!
-                                    : Colors.grey[400]!),
-                            BlendMode.srcIn,
-                          ),
-                        ),
+                      Image.asset(
+                        'assets/posts_screen_assets/like_button.png',
+                        width: 20,
+                        height: 20,
+                        color: isUpvoted
+                            ? Colors.redAccent
+                            : (isLightMode
+                                ? Colors.grey[600]
+                                : Colors.grey[400]),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       Text(
                         post.upvotes.toString(),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: textColor,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        height: 12,
-                        width: 1,
-                        color:
-                            isLightMode ? Colors.grey[300] : Colors.grey[600],
-                      ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: onDownvote,
-                        child: SvgPicture.string(
-                          downvoteSvg,
-                          width: 15,
-                          height: 15,
-                          colorFilter: ColorFilter.mode(
-                            isDownvoted
-                                ? brandColor
-                                : (isLightMode
-                                    ? Colors.grey[600]!
-                                    : Colors.grey[400]!),
-                            BlendMode.srcIn,
-                          ),
+                          color:
+                              isLightMode ? Colors.grey[600] : Colors.grey[400],
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 20),
 
-                // Comment Count Capsule (NO capsule background!)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SvgPicture.string(
-                      commentSvg,
-                      width: 16,
-                      height: 16,
-                      colorFilter: ColorFilter.mode(
-                        isLightMode ? Colors.grey[600]! : Colors.grey[400]!,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      post.commentCount.toString(),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isLightMode ? Colors.grey[600] : Colors.grey[400],
-                      ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-
-                // Share Action Button (NO capsule background!)
+                // 2. Comment Button
                 GestureDetector(
-                  onTap: () {
-                    Share.share('Check out this post on CampusConnect:\n\n${post.title}\n${post.body}');
-                  },
+                  onTap: onTap,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      SvgPicture.string(
-                        shareSvg,
-                        width: 16,
-                        height: 16,
-                        colorFilter: ColorFilter.mode(
-                          isLightMode ? Colors.grey[600]! : Colors.grey[400]!,
-                          BlendMode.srcIn,
-                        ),
+                      Image.asset(
+                        'assets/posts_screen_assets/comment_icon.png',
+                        width: 20,
+                        height: 20,
+                        color:
+                            isLightMode ? Colors.grey[600] : Colors.grey[400],
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'Share',
+                        post.commentCount.toString(),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: isLightMode ? Colors.grey[600] : Colors.grey[400],
+                          color:
+                              isLightMode ? Colors.grey[600] : Colors.grey[400],
                         ),
                       ),
                     ],
+                  ),
+                ),
+                const SizedBox(width: 20),
+
+                // 3. Share Button
+                GestureDetector(
+                  onTap: () {
+                    Share.share(
+                        'Check out this post on CampusConnect:\n\n${post.title}\n${post.body}');
+                  },
+                  child: Image.asset(
+                    'assets/posts_screen_assets/share_button.png',
+                    width: 20,
+                    height: 20,
+                    color: isLightMode ? Colors.grey[600] : Colors.grey[400],
+                  ),
+                ),
+                const Spacer(),
+
+                // 4. Save Button
+                GestureDetector(
+                  onTap: () {
+                    Get.snackbar(
+                      'Saved',
+                      'Post saved to your bookmarks!',
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: brandColor,
+                      colorText: Colors.white,
+                      duration: const Duration(seconds: 2),
+                    );
+                  },
+                  child: Image.asset(
+                    'assets/posts_screen_assets/save_icon.png',
+                    width: 20,
+                    height: 20,
+                    color: brandColor,
                   ),
                 ),
               ],

@@ -34,7 +34,8 @@ class FirebaseAuthRepo implements AuthRepo {
         'isOnline': true,
       });
 
-      final userDoc = await firestore.collection('users').doc(firebaseUser.uid).get();
+      final userDoc =
+          await firestore.collection('users').doc(firebaseUser.uid).get();
       String userName = '';
       String collegeId = _extractCollegeId(email);
       bool isOnline = true;
@@ -143,10 +144,7 @@ class FirebaseAuthRepo implements AuthRepo {
 
       if (!userDoc.exists) {
         final collegeId = _extractCollegeId(email);
-        await firestore
-            .collection('users')
-            .doc(currentFirebaseUser.uid)
-            .set({
+        await firestore.collection('users').doc(currentFirebaseUser.uid).set({
           'uid': currentFirebaseUser.uid,
           'name': currentFirebaseUser.displayName ?? '',
           'email': email,
@@ -160,10 +158,11 @@ class FirebaseAuthRepo implements AuthRepo {
         });
       }
 
-      final data =
-          (await firestore.collection('users').doc(currentFirebaseUser.uid)
-                  .get())
-              .data()!;
+      final data = (await firestore
+              .collection('users')
+              .doc(currentFirebaseUser.uid)
+              .get())
+          .data()!;
 
       return AppUser(
         uid: currentFirebaseUser.uid,
@@ -204,13 +203,10 @@ class FirebaseAuthRepo implements AuthRepo {
           'createdAt': FieldValue.serverTimestamp(),
         });
       } else {
-        await firestore
-            .collection('users')
-            .doc(firebaseUser.uid)
-            .update({
-              'isOnline': true,
-              'collegeId': collegeId,
-            });
+        await firestore.collection('users').doc(firebaseUser.uid).update({
+          'isOnline': true,
+          'collegeId': collegeId,
+        });
       }
 
       final data =
