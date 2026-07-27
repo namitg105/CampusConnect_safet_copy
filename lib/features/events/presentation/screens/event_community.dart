@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../domain/entities/event.dart' as entity;
-import '../../domain/repo/eventrepo.dart';
 
 // ==================== DESIGN TOKENS ====================
 
@@ -15,17 +14,18 @@ const Color _primaryText = Color(0xFF1E1F24);
 const Color _secondaryText = Color(0xFF6E717C);
 const Color _borderColor = Color(0xFFEBEBF0);
 
-// ==================== 1. UPCOMING EVENTS SECTION ====================
 
 class UpcomingEventsSection extends StatefulWidget {
   final String groupId;
   final bool isCurrentUserAdmin;
 
-  const UpcomingEventsSection({
-    super.key,
+  const UpcomingEventsSection(
+    {
+  super.key,
     required this.groupId,
     required this.isCurrentUserAdmin,
-  });
+  }
+  );
 
   @override
   State<UpcomingEventsSection> createState() => _UpcomingEventsSectionState();

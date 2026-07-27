@@ -2,16 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:noteswap/features/community/presentation/pages/create_group_page.dart';
-import 'package:noteswap/features/events/presentation/screens/create_event.dart';
 import 'package:noteswap/features/group_chat/presentation/pages/groups_page.dart';
 import 'package:noteswap/features/home/presentation/pages/home_page.dart';
 import 'package:noteswap/features/profile/presentation/pages/profile_page.dart';
-import 'package:noteswap/features/private_chat/page_controller.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../community/presentation/cubits/group_cubit.dart';
 import '../../../community/presentation/pages/groups_page.dart';
-import '../../../group_chat/presentation/pages/new_group.dart';
 
 class MainPageController extends GetxController {
   var currentIndex = 0.obs;
