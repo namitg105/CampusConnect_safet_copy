@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
+import 'package:noteswap/features/admin_events/presentation/screens/AdminEvent.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
+import 'package:noteswap/features/events/presentation/screens/create_event.dart';
+import 'package:noteswap/features/events/presentation/screens/event%20detail%20page.dart';
 import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
 import 'package:noteswap/features/posts/presentation/pages/campus_feed_screen.dart';
@@ -29,6 +32,31 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
   List<PostEntity> newestDiscussions = [];
   bool isLoading = true;
   String? _loadedUid;
+
+  // Motivation Quote State
+  int _currentQuoteIndex = 0;
+  final List<Map<String, String>> _quotes = const [
+    {
+      'quote': 'The expert in anything was once a beginner.',
+      'author': 'Helen Hayes'
+    },
+    {
+      'quote': 'Push yourself, because no one else is going to do it for you.',
+      'author': 'Unknown'
+    },
+    {
+      'quote': 'Small daily improvements over time lead to stunning results.',
+      'author': 'Robin Sharma'
+    },
+    {
+      'quote': 'Your future is created by what you do today, not tomorrow.',
+      'author': 'Robert Kiyosaki'
+    },
+    {
+      'quote': 'Focus on being productive instead of busy.',
+      'author': 'Tim Ferriss'
+    },
+  ];
 
   @override
   void initState() {
@@ -171,12 +199,41 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                             padding: const EdgeInsets.all(16),
                             children: [
                               // Greeting
-                              Text(
-                                'Hey $displayName! 👋',
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: textColor,
+                              RichText(
+                                text: TextSpan(
+                                  style: TextStyle(
+                                    fontSize: 25,
+                                    fontWeight: FontWeight.w600,
+                                    color:
+                                        textColor, // Base color for standard text
+                                  ),
+                                  children: [
+                                    const TextSpan(
+                                        text: 'Hey, ',
+                                        style: TextStyle(fontSize: 22)),
+                                    WidgetSpan(
+                                      child: ShaderMask(
+                                        shaderCallback: (bounds) =>
+                                            const LinearGradient(
+                                          colors: [
+                                            Color(0xFF6366F1),
+                                            Color(0xFFA855F7)
+                                          ], // Indigo to Purple
+                                        ).createShader(bounds),
+                                        child: Text(
+                                          displayName,
+                                          style: const TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors
+                                                .white, // Required for ShaderMask
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const TextSpan(text: ' '),
+                                    const TextSpan(text: '👋'),
+                                  ],
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -189,36 +246,11 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                               ),
                               const SizedBox(height: 16),
 
-                              // Search Bar
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: cardColor,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.04),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: TextField(
-                                  decoration: InputDecoration(
-                                    hintText:
-                                        'Search for communities, people, discussions...',
-                                    hintStyle: TextStyle(
-                                        color: subTextColor, fontSize: 13),
-                                    prefixIcon: Icon(Icons.search,
-                                        color: subTextColor, size: 20),
-                                    suffixIcon: Icon(Icons.filter_list,
-                                        color: brandColor, size: 20),
-                                    border: InputBorder.none,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        vertical: 14),
-                                  ),
-                                ),
-                              ),
+                              // Motivational Quotes Card (Replaces Search Bar)
+                              _buildQuoteCard(cardColor, textColor,
+                                  subTextColor, brandColor),
                               const SizedBox(height: 24),
+
                               // Quick Access Section
                               _buildHeader('Quick Access', showViewAll: false),
                               const SizedBox(height: 12),
@@ -229,16 +261,17 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                   physics: const BouncingScrollPhysics(),
                                   children: [
                                     _buildQuickAccessItem(
-                                        Icons.groups,
-                                        'Community chat',
-                                        brandColor,
-                                        cardColor,
-                                        textColor,
-                                        onTap: () => Get.to(() => const GroupsDisplayPage()),
+                                      Icons.groups,
+                                      'Group Chat',
+                                      brandColor,
+                                      cardColor,
+                                      textColor,
+                                      onTap: () => Get.to(
+                                          () => const GroupsDisplayPage()),
                                     ),
                                     _buildQuickAccessItem(
                                       Icons.chat_bubble,
-                                      'Discussions',
+                                      'Feed Discussions',
                                       brandColor,
                                       cardColor,
                                       textColor,
@@ -250,6 +283,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                         'Events',
                                         brandColor,
                                         cardColor,
+                                        onTap: () =>
+                                            Get.to(() => EventDetailsPage()),
                                         textColor),
                                   ],
                                 ),
@@ -291,7 +326,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                               ),
                               const SizedBox(height: 24),
 
-                              // Recent Discussions Section (Full Width, below Announcements)
+                              // Recent Discussions Section
                               Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(16),
@@ -310,7 +345,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
                                           'Recent Discussions',
@@ -321,7 +357,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                           ),
                                         ),
                                         GestureDetector(
-                                          onTap: () => Get.to(() => const CampusFeedScreen()),
+                                          onTap: () => Get.to(
+                                              () => const CampusFeedScreen()),
                                           child: Text(
                                             'View all',
                                             style: TextStyle(
@@ -336,7 +373,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                     const Divider(height: 24),
                                     if (newestDiscussions.isEmpty)
                                       Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 24.0),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 24.0),
                                         child: Center(
                                           child: Text(
                                             'No discussions yet',
@@ -350,8 +388,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                       for (int i = 0;
                                           i < newestDiscussions.length;
                                           i++) ...[
-                                        if (i > 0)
-                                          const Divider(height: 16),
+                                        if (i > 0) const Divider(height: 16),
                                         _buildDiscussionItem(
                                           newestDiscussions[i],
                                           brandColor,
@@ -430,6 +467,153 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildQuoteCard(
+      Color cardColor, Color textColor, Color? subTextColor, Color brandColor) {
+    final currentQuote = _quotes[_currentQuoteIndex];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        // Vibrant gradient background
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6139ED), Color(0xFF8B5CF6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6139ED).withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top Header Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.auto_awesome,
+                      color: Colors.amberAccent,
+                      size: 14,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'DAILY MOTIVATION',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.1,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              // Next Quote Button
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    _currentQuoteIndex =
+                        (_currentQuoteIndex + 1) % _quotes.length;
+                  });
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.25),
+                    ),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.refresh_rounded,
+                          size: 12, color: Colors.white),
+                      SizedBox(width: 4),
+                      Text(
+                        'Next',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Quote Content with Decorative Large Quote Mark
+          Stack(
+            children: [
+              Positioned(
+                right: 0,
+                bottom: -10,
+                child: Text(
+                  '”',
+                  style: TextStyle(
+                    fontSize: 70,
+                    fontFamily: 'Serif',
+                    color: Colors.white.withOpacity(0.15),
+                    height: 1,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 12.0),
+                child: Text(
+                  '"${currentQuote['quote']}"',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                    height: 1.45,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Author
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              '— ${currentQuote['author']}',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Colors.white.withOpacity(0.9),
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -608,33 +792,6 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
             ),
           ),
         ],
-      ],
-    );
-  }
-
-  Widget _buildAnnouncementItem(
-      String title, String subtitle, Color textColor, Color? subTextColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 11,
-            color: textColor,
-          ),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          subtitle,
-          style: TextStyle(
-            fontSize: 9,
-            color: subTextColor,
-          ),
-        ),
       ],
     );
   }

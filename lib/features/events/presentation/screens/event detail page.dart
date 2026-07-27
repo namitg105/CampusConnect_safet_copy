@@ -1,17 +1,17 @@
-/*import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class CreateEventPage extends StatefulWidget {
+class AdminEventCreationPage extends StatefulWidget {
   final String? groupId; // Optional: Link event to a specific community group
 
-  const CreateEventPage({Key? key, this.groupId}) : super(key: key);
+  const AdminEventCreationPage({Key? key, this.groupId}) : super(key: key);
 
   @override
-  State<CreateEventPage> createState() => _CreateEventPageState();
+  State<AdminEventCreationPage> createState() => _AdminEventCreationPageState();
 }
 
-class _CreateEventPageState extends State<CreateEventPage> {
+class _AdminEventCreationPageState extends State<AdminEventCreationPage> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _titleController = TextEditingController();
@@ -398,4 +398,3 @@ class _CreateEventPageState extends State<CreateEventPage> {
     );
   }
 }
-*/

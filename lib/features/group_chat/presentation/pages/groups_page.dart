@@ -57,14 +57,14 @@ class _GroupsDisplayPageState extends State<GroupsDisplayPage> {
             icon: const Icon(
               Icons.add_circle_outline_rounded,
               color: Colors.white,
-              size: 20,
+              size: 18, // Reduced icon size
             ),
             label: const Text(
               "New Chat",
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
-                fontSize: 14,
+                fontSize: 12, // Reduced from 14
                 letterSpacing: -0.2,
               ),
             ),
@@ -95,7 +95,7 @@ class _GroupsDisplayPageState extends State<GroupsDisplayPage> {
                       style: TextStyle(
                         color: textDark,
                         fontWeight: FontWeight.w900,
-                        fontSize: 24,
+                        fontSize: 20, // Reduced from 24
                         letterSpacing: -0.5,
                       ),
                     ),
@@ -235,13 +235,13 @@ class _GroupsDisplayPageState extends State<GroupsDisplayPage> {
                       color: Colors.black.withOpacity(0.02), blurRadius: 20)
                 ],
               ),
-              child: Icon(icon, size: 44, color: color.withOpacity(0.6)),
+              child: Icon(icon, size: 40, color: color.withOpacity(0.6)),
             ),
             const SizedBox(height: 20),
             Text(
               title,
               style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 15, // Reduced from 18
                   color: Color(0xFF0F172A),
                   fontWeight: FontWeight.w700),
             ),
@@ -250,7 +250,7 @@ class _GroupsDisplayPageState extends State<GroupsDisplayPage> {
               subtitle,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 12, // Reduced from 14
                   color: Color(0xFF64748B),
                   fontWeight: FontWeight.w400,
                   height: 1.4),
@@ -342,7 +342,7 @@ class _ActiveChatCard extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 15,
+                                fontSize: 13, // Reduced from 15
                                 fontWeight: FontWeight.w700,
                                 color: Color(0xFF0F172A),
                                 letterSpacing: -0.1,
@@ -353,7 +353,7 @@ class _ActiveChatCard extends StatelessWidget {
                           const Text(
                             "Active",
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 10, // Reduced from 11
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF22C55E),
                             ),
@@ -393,7 +393,7 @@ class _ActiveChatCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: Color(0xFF64748B),
-                              fontSize: 13,
+                              fontSize: 11, // Reduced from 13
                               fontWeight: FontWeight.w400,
                             ),
                           );
