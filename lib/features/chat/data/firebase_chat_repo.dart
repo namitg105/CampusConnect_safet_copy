@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:noteswap/features/events/notifications/services/notification_service.dart';
+import 'package:noteswap/features/events/notifications/models/notification_model.dart';
 import '../domain/entities/message.dart';
 import '../domain/repos/chat_repo.dart';
 
@@ -46,6 +47,34 @@ class FirebaseChatRepo implements ChatRepo {
         .doc(groupId)
         .collection("messages")
         .add(data);
+
+    // Send Notification to group members
+    try {
+      final senderName = userDoc.data()?['name'] ?? 'Someone';
+      final groupDoc = await firestore.collection('groups').doc(groupId).get();
+      final groupName = groupDoc.data()?['name'] ?? 'Community';
+      
+      final membersSnapshot = await firestore
+          .collection('groups')
+          .doc(groupId)
+          .collection('members')
+          .get();
+          
+      for (var memberDoc in membersSnapshot.docs) {
+        final recipientId = memberDoc.id;
+        if (recipientId != message.senderId) {
+          await NotificationService.createNotification(
+            recipientId: recipientId,
+            type: NotificationType.requestChatGroup,
+            title: '$groupName: New message',
+            description: '$senderName: ${message.text}',
+            subtitle: groupId,
+          );
+        }
+      }
+    } catch (e) {
+      print("Failed to send group message notification: $e");
+    }
   }
 
   @override

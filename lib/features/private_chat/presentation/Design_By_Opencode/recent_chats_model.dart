@@ -13,7 +13,8 @@ class ConversationData {
   final int unreadCount;
   final bool isBlocked;
 
-  const ConversationData({
+  const ConversationData(
+    {
     required this.uid,
     required this.name,
     required this.initials,

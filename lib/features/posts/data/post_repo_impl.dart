@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:noteswap/features/posts/domain/entities/comment_entity.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
 import 'package:noteswap/features/posts/domain/repos/post_repo.dart';
+import 'package:noteswap/features/events/notifications/services/notification_service.dart';
+import 'package:noteswap/features/events/notifications/models/notification_model.dart';
 
 class PostRepoImpl implements PostRepo {
   final FirebaseFirestore firestore;
@@ -15,7 +17,21 @@ class PostRepoImpl implements PostRepo {
   @override
   Future<void> createPost(PostEntity post) async {
     final postsCollection = firestore.collection('posts');
-    await postsCollection.add(post.toJson());
+    final docRef = await postsCollection.add(post.toJson());
+
+    // Dispatch notification
+    try {
+      final authorDoc = await firestore.collection('users').doc(post.authorId).get();
+      final authorName = authorDoc.data()?['name'] ?? 'Someone';
+      await NotificationService.notifyAllUsers(
+        type: NotificationType.postCommented,
+        title: '$authorName posted a new update',
+        description: post.title,
+        targetId: docRef.id,
+      );
+    } catch (e) {
+      print('Failed to send notification for post: $e');
+    }
   }
 
   // Day 1-2: Fetch all posts from user's college, newest first

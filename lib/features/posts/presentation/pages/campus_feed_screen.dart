@@ -235,10 +235,14 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                         child: Container(
                           height: 48,
                           decoration: BoxDecoration(
-                            color: isLightMode ? Colors.white : const Color(0xFF1E1E1E),
+                            color: isLightMode
+                                ? Colors.white
+                                : const Color(0xFF1E1E1E),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isLightMode ? const Color(0xFFEBEBF0) : const Color(0xFF2D2D2D),
+                              color: isLightMode
+                                  ? const Color(0xFFEBEBF0)
+                                  : const Color(0xFF2D2D2D),
                               width: 1,
                             ),
                           ),
@@ -260,8 +264,9 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                                       fontSize: 14,
                                       fontWeight: FontWeight.w400,
                                       height: 1.0,
-                                      color: isLightMode 
-                                          ? const Color(0xFF1A1A2E).withOpacity(0.5)
+                                      color: isLightMode
+                                          ? const Color(0xFF1A1A2E)
+                                              .withOpacity(0.5)
                                           : Colors.white.withOpacity(0.5),
                                     ),
                                     border: InputBorder.none,
@@ -272,7 +277,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                                     fontSize: 14,
                                     fontWeight: FontWeight.w400,
                                     height: 1.0,
-                                    color: isLightMode 
+                                    color: isLightMode
                                         ? const Color(0xFF1A1A2E)
                                         : Colors.white,
                                   ),
@@ -302,178 +307,42 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                if (_searchQuery.value.isNotEmpty) ...[
+                  // Search Results View
+                  _buildHeaderSection('Search Results'),
+                  const SizedBox(height: 12),
+                  ...(() {
+                    final query = _searchQuery.value.toLowerCase();
+                    final filteredPosts = postController.posts.where((post) {
+                      return post.title.toLowerCase().contains(query) ||
+                          post.body.toLowerCase().contains(query) ||
+                          post.tag.toLowerCase().contains(query);
+                    }).toList();
 
-                // 3. Trending Discussions Block
-                _buildHeaderSection(
-                  'Trending Discussions',
-                  onTap: () => Get.to(() => AllPostsScreen(
-                        title: 'Trending Discussions',
-                        postsSelector: () => postController.posts.toList()
-                          ..sort((a, b) => b.upvotes.compareTo(a.upvotes)),
-                        controller: postController,
-                        currentUser: currentUser,
-                      )),
-                ),
-                const SizedBox(height: 12),
-                if (postController.trendingPosts.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'No trending posts yet',
-                          style: TextStyle(color: subTextColor, fontSize: 13),
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  Column(
-                    children: postController.trendingPosts.map((post) {
-                      return _buildTrendingDiscussionCard(
-                          post,
-                          cardColor,
-                          textColor,
-                          subTextColor,
-                          brandColor,
-                          isLightMode,
-                          currentUser);
-                    }).toList(),
-                  ),
-                const SizedBox(height: 20),
-
-                // 4. Announcements Block
-                _buildHeaderSection(
-                  'Announcements',
-                  onTap: () => Get.to(() => AllAnnouncementsScreen(
-                        controller: postController,
-                        currentUser: currentUser,
-                      )),
-                ),
-                const SizedBox(height: 12),
-                () {
-                  final announcementPosts = postController.posts
-                      .where((p) => p.tag.toLowerCase() == 'announcement')
-                      .toList();
-
-                  if (announcementPosts.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Container(
-                        height: 80,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: cardColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isLightMode
-                                ? Colors.grey[100]!
-                                : Colors.grey[850]!,
-                            width: 0.5,
+                    if (filteredPosts.isEmpty) {
+                      return [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: cardColor,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Center(
+                              child: Text(
+                                "No posts found matching '${_searchQuery.value}'",
+                                style: TextStyle(
+                                    color: subTextColor, fontSize: 13),
+                              ),
+                            ),
                           ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            'No announcements yet',
-                            style: TextStyle(color: subTextColor, fontSize: 13),
-                          ),
-                        ),
-                      ),
-                    );
-                  }
+                        )
+                      ];
+                    }
 
-                  return SizedBox(
-                    height: 130,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.only(left: 16, right: 4),
-                      itemCount: announcementPosts.length,
-                      itemBuilder: (context, index) {
-                        final post = announcementPosts[index];
-                        final bgColors = [
-                          const Color(0xFFECE7FF),
-                          const Color(0xFFFEF9C3),
-                          const Color(0xFFE0F2FE),
-                          const Color(0xFFDCFCE7),
-                        ];
-                        final themeColors = [
-                          const Color(0xFF6139ED),
-                          const Color(0xFFD97706),
-                          const Color(0xFF0369A1),
-                          const Color(0xFF15803D),
-                        ];
-                        final icons = [
-                          Icons.campaign_outlined,
-                          Icons.announcement_outlined,
-                          Icons.notifications_none,
-                          Icons.info_outline,
-                        ];
-                        final bgColor = bgColors[index % bgColors.length];
-                        final themeColor =
-                            themeColors[index % themeColors.length];
-                        final icon = icons[index % icons.length];
-
-                        return GestureDetector(
-                          onTap: () => Get.to(() => PostDetailPage(
-                                post: post,
-                                controller: postController,
-                                currentUser: currentUser,
-                              )),
-                          child: _buildAnnouncementCard(
-                            post.title,
-                            post.body,
-                            formatTimeAgo(post.createdAt),
-                            bgColor,
-                            themeColor,
-                            icon,
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                }(),
-                const SizedBox(height: 24),
-
-                // 5. Latest Posts Block
-                _buildHeaderSection(
-                  'Latest Posts',
-                  onTap: () => Get.to(() => AllPostsScreen(
-                        title: 'Latest Posts',
-                        postsSelector: () => postController.posts.toList()
-                          ..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
-                        controller: postController,
-                        currentUser: currentUser,
-                      )),
-                ),
-                const SizedBox(height: 12),
-                if (postController.posts.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'No posts yet. Be the first to share!',
-                          style: TextStyle(color: subTextColor, fontSize: 13),
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  Column(
-                    children: postController.posts.take(3).map((post) {
+                    return filteredPosts.map((post) {
                       return PostCard(
                         post: post,
                         onTap: () => Get.to(() => PostDetailPage(
@@ -505,8 +374,227 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                         isUpvoted: postController.getUserVote(post.id) == 1,
                         isDownvoted: postController.getUserVote(post.id) == -1,
                       );
-                    }).toList(),
+                    }).toList();
+                  }()),
+                ] else ...[
+                  // 3. Trending Discussions Block
+                  _buildHeaderSection(
+                    'Trending Discussions',
+                    onTap: () => Get.to(() => AllPostsScreen(
+                          title: 'Trending Discussions',
+                          postsSelector: () => postController.posts.toList()
+                            ..sort((a, b) => b.upvotes.compareTo(a.upvotes)),
+                          controller: postController,
+                          currentUser: currentUser,
+                        )),
                   ),
+                  const SizedBox(height: 12),
+                  if (postController.trendingPosts.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: cardColor,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'No trending posts yet',
+                            style: TextStyle(color: subTextColor, fontSize: 13),
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    Column(
+                      children:
+                          postController.trendingPosts.take(3).map((post) {
+                        return PostCard(
+                          post: post,
+                          onTap: () => Get.to(() => PostDetailPage(
+                                post: post,
+                                controller: postController,
+                                currentUser: currentUser,
+                              )),
+                          onProfileTap: () => Get.to(() => UserProfileScreen(
+                                  user: AppUser(
+                                uid: post.authorId,
+                                email: '',
+                                name: post.authorName,
+                                collegeId: post.collegeId,
+                              ))),
+                          onUpvote: () => postController.toggleUpvote(
+                            post.id,
+                            currentUser.uid,
+                            currentUser,
+                          ),
+                          onDownvote: () => postController.toggleDownvote(
+                            post.id,
+                            currentUser.uid,
+                            currentUser,
+                          ),
+                          onDelete: post.authorId == currentUser.uid
+                              ? () => _confirmDeletePost(post.id, currentUser)
+                              : null,
+                          isLightMode: isLightMode,
+                          isUpvoted: postController.getUserVote(post.id) == 1,
+                          isDownvoted:
+                              postController.getUserVote(post.id) == -1,
+                        );
+                      }).toList(),
+                    ),
+                  const SizedBox(height: 24),
+
+                  // 4. Announcements Block
+                  _buildHeaderSection(
+                    'Announcements',
+                    onTap: () => Get.to(() => AllAnnouncementsScreen(
+                          title: 'Announcements',
+                          postsSelector: () => postController.posts.toList()
+                            ..sort(
+                                (a, b) => b.createdAt.compareTo(a.createdAt)),
+                          controller: postController,
+                          currentUser: currentUser,
+                        )),
+                  ),
+                  const SizedBox(height: 12),
+                  (() {
+                    final announcements = postController.posts
+                        .where(
+                            (post) => post.tag.toLowerCase() == 'announcement')
+                        .toList();
+
+                    if (announcements.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: cardColor,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'No announcements yet.',
+                              style:
+                                  TextStyle(color: subTextColor, fontSize: 13),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return Column(
+                      children: announcements.take(3).map((post) {
+                        return PostCard(
+                          post: post,
+                          onTap: () => Get.to(() => PostDetailPage(
+                                post: post,
+                                controller: postController,
+                                currentUser: currentUser,
+                              )),
+                          onProfileTap: () => Get.to(() => UserProfileScreen(
+                                  user: AppUser(
+                                uid: post.authorId,
+                                email: '',
+                                name: post.authorName,
+                                collegeId: post.collegeId,
+                              ))),
+                          onUpvote: () => postController.toggleUpvote(
+                            post.id,
+                            currentUser.uid,
+                            currentUser,
+                          ),
+                          onDownvote: () => postController.toggleDownvote(
+                            post.id,
+                            currentUser.uid,
+                            currentUser,
+                          ),
+                          onDelete: post.authorId == currentUser.uid
+                              ? () => _confirmDeletePost(post.id, currentUser)
+                              : null,
+                          isLightMode: isLightMode,
+                          isUpvoted: postController.getUserVote(post.id) == 1,
+                          isDownvoted:
+                              postController.getUserVote(post.id) == -1,
+                        );
+                      }).toList(),
+                    );
+                  }()),
+                  const SizedBox(height: 24),
+
+                  // 5. Latest Posts Block
+                  _buildHeaderSection(
+                    'Latest Posts',
+                    onTap: () => Get.to(() => AllPostsScreen(
+                          title: 'Latest Posts',
+                          postsSelector: () => postController.posts.toList()
+                            ..sort(
+                                (a, b) => b.createdAt.compareTo(a.createdAt)),
+                          controller: postController,
+                          currentUser: currentUser,
+                        )),
+                  ),
+                  const SizedBox(height: 12),
+                  if (postController.posts.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: cardColor,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'No posts yet. Be the first to share!',
+                            style: TextStyle(color: subTextColor, fontSize: 13),
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    Column(
+                      children: postController.posts.take(3).map((post) {
+                        return PostCard(
+                          post: post,
+                          onTap: () => Get.to(() => PostDetailPage(
+                                post: post,
+                                controller: postController,
+                                currentUser: currentUser,
+                              )),
+                          onProfileTap: () => Get.to(() => UserProfileScreen(
+                                  user: AppUser(
+                                uid: post.authorId,
+                                email: '',
+                                name: post.authorName,
+                                collegeId: post.collegeId,
+                              ))),
+                          onUpvote: () => postController.toggleUpvote(
+                            post.id,
+                            currentUser.uid,
+                            currentUser,
+                          ),
+                          onDownvote: () => postController.toggleDownvote(
+                            post.id,
+                            currentUser.uid,
+                            currentUser,
+                          ),
+                          onDelete: post.authorId == currentUser.uid
+                              ? () => _confirmDeletePost(post.id, currentUser)
+                              : null,
+                          isLightMode: isLightMode,
+                          isUpvoted: postController.getUserVote(post.id) == 1,
+                          isDownvoted:
+                              postController.getUserVote(post.id) == -1,
+                        );
+                      }).toList(),
+                    ),
+                ],
                 const SizedBox(height: 100), // extra padding for nav bar
               ],
             );
@@ -535,13 +623,22 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildNavItem(
-                    Icons.home, 'Home', true, brandColor, subTextColor),
                 GestureDetector(
-                   onTap: () => Get.to(() => const GroupsPage()),
-                   child: _buildNavItem(Icons.people_outline, 'Communities', false,
-                       brandColor, subTextColor),
-                 ),
+                  onTap: () {
+                    Get.offAll(() => const MainPage());
+                    Get.find<MainPageController>().changeIndex(0);
+                  },
+                  child: _buildNavItem(
+                      Icons.home, 'Home', true, brandColor, subTextColor),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Get.offAll(() => const MainPage());
+                    Get.find<MainPageController>().changeIndex(1);
+                  },
+                  child: _buildNavItem(Icons.people_outline, 'Communities',
+                      false, brandColor, subTextColor),
+                ),
                 // Floating center button
                 GestureDetector(
                   onTap: () => Get.to(() => CreatePostPage(
@@ -565,13 +662,19 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                     child: const Icon(Icons.add, color: Colors.white, size: 28),
                   ),
                 ),
-                 GestureDetector(
-                   onTap: () => Get.to(() => const PrivateChatPageController()),
-                   child: _buildNavItem(Icons.chat_bubble_outline, 'Messages', false,
-                       brandColor, subTextColor),
-                 ),
                 GestureDetector(
-                  onTap: () => Get.to(() => const ProfileSettingsPage()),
+                  onTap: () {
+                    Get.offAll(() => const MainPage());
+                    Get.find<MainPageController>().changeIndex(2);
+                  },
+                  child: _buildNavItem(Icons.chat_bubble_outline, 'Messages',
+                      false, brandColor, subTextColor),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Get.offAll(() => const MainPage());
+                    Get.find<MainPageController>().changeIndex(3);
+                  },
                   child: _buildNavItem(Icons.person_outline, 'Profile', false,
                       brandColor, subTextColor),
                 ),
@@ -883,7 +986,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
             ],
           ),
           const SizedBox(height: 8),
-           Text(
+          Text(
             title,
             style: GoogleFonts.poppins(
               fontSize: 12,

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
 
@@ -250,17 +251,32 @@ class _CreatePostPageState extends State<CreatePostPage> {
                         children: [
                           Row(
                             children: [
-                              CircleAvatar(
-                                radius: 18,
-                                backgroundColor: brandColor.withOpacity(0.15),
-                                child: Text(
-                                  userInitials,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: brandColor,
-                                  ),
-                                ),
+                              StreamBuilder<DocumentSnapshot>(
+                                stream: FirebaseFirestore.instance
+                                    .collection('users')
+                                    .doc(widget.currentUser.uid)
+                                    .snapshots(),
+                                builder: (context, snapshot) {
+                                  final data = snapshot.data?.data() as Map<String, dynamic>?;
+                                  final profileImageUrl = data?['profileImage'] as String?;
+                                  final hasImage = profileImageUrl != null && profileImageUrl.isNotEmpty;
+
+                                  return CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor: brandColor.withOpacity(0.15),
+                                    backgroundImage: hasImage ? NetworkImage(profileImageUrl) : null,
+                                    child: hasImage
+                                        ? null
+                                        : Text(
+                                            userInitials,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: brandColor,
+                                            ),
+                                          ),
+                                  );
+                                },
                               ),
                               const SizedBox(width: 12),
                               Expanded(

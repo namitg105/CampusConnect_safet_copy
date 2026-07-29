@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'recent_chats_model.dart';
 
 const Color _primaryPurple = Color(0xFF6D4CFF);
@@ -86,6 +88,7 @@ class ProfileAvatarButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -103,14 +106,40 @@ class ProfileAvatarButton extends StatelessWidget {
           ],
         ),
         child: ClipOval(
-          child: Image.network(
-            'https://picsum.photos/id/1027/200/200',
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
-              color: _lightPurple,
-              child: const Icon(Icons.person, color: _primaryPurple, size: 24),
-            ),
+          child: StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData && snapshot.data!.exists) {
+                final data = snapshot.data!.data() as Map<String, dynamic>?;
+                final imgUrl = data?['profileImage'] as String?;
+                if (imgUrl != null && imgUrl.isNotEmpty) {
+                  return Image.network(
+                    imgUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _buildPlaceholder(data?['name'] ?? ''),
+                  );
+                }
+                return _buildPlaceholder(data?['name'] ?? '');
+              }
+              return _buildPlaceholder('');
+            },
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder(String name) {
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    return Container(
+      color: _lightPurple,
+      alignment: Alignment.center,
+      child: Text(
+        initial,
+        style: const TextStyle(
+          color: _primaryPurple,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
         ),
       ),
     );

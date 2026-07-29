@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/notification_model.dart';
 import 'notification_avatar.dart';
 import 'notification_rich_content.dart';
@@ -10,6 +12,7 @@ class NotificationCard extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onAccept;
   final VoidCallback? onDecline;
+  final VoidCallback? onTap;
 
   const NotificationCard({
     super.key,
@@ -17,32 +20,46 @@ class NotificationCard extends StatelessWidget {
     this.onDelete,
     this.onAccept,
     this.onDecline,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 18,
-            spreadRadius: 0,
-            offset: const Offset(0, 8),
-            color: Colors.black.withValues(alpha: 0.06),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(18),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          NotificationAvatar(
-            appUser: notification.appUser,
-            actionIcon: notification.actionIcon,
-            actionColor: notification.actionColor,
-            fallbackColor: notification.avatarColor,
+    return GestureDetector(
+      onTap: () {
+        final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+        if (uid.isNotEmpty) {
+          FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .collection('notifications')
+              .doc(notification.id)
+              .update({'isRead': true});
+        }
+        onTap?.call();
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 18,
+              spreadRadius: 0,
+              offset: const Offset(0, 8),
+              color: Colors.black.withValues(alpha: 0.06),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(18),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            NotificationAvatar(
+              appUser: notification.appUser,
+              actionIcon: notification.actionIcon,
+              actionColor: notification.actionColor,
+              fallbackColor: notification.avatarColor,
             fallbackInitials: notification.initials,
           ),
           const SizedBox(width: 14),
@@ -165,6 +182,7 @@ class NotificationCard extends StatelessWidget {
           ),
         ),
       ],
+    ),
     );
   }
 

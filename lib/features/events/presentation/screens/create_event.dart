@@ -1,7 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
+import 'package:noteswap/features/events/notifications/services/notification_service.dart';
+import 'package:noteswap/features/events/notifications/models/notification_model.dart';
 
 class CreateEventPage extends StatefulWidget {
   final String? groupId; // Optional: Link event to a specific community group
@@ -139,7 +142,25 @@ class _CreateEventPageState extends State<CreateEventPage> {
         'createdAt': Timestamp.now(),
       };
 
-      await FirebaseFirestore.instance.collection('events').add(eventData);
+      final eventRef = await FirebaseFirestore.instance.collection('events').add(eventData);
+
+      // Notify all users about the new event
+      try {
+        final currentUser = FirebaseAuth.instance.currentUser;
+        final creatorName = (currentUser != null && currentUser.displayName != null && currentUser.displayName!.isNotEmpty)
+            ? currentUser.displayName!
+            : (currentUser != null && currentUser.email != null
+                ? currentUser.email!.split('@').first
+                : 'Someone');
+        await NotificationService.notifyAllUsers(
+          type: NotificationType.event,
+          title: 'New Event: ${eventData['title']}',
+          description: '$creatorName created an event: ${eventData['about'] ?? ''}',
+          targetId: eventRef.id,
+        );
+      } catch (e) {
+        print('Event notification failed: $e');
+      }
 
       if (!mounted) return;
 

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:noteswap/features/admin_events/presentation/screens/AdminEvent.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
 import 'package:noteswap/features/events/presentation/screens/create_event.dart';
 import 'package:noteswap/features/events/presentation/screens/event%20detail%20page.dart';
+import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
 import 'package:noteswap/features/posts/presentation/pages/campus_feed_screen.dart';
@@ -17,6 +19,7 @@ import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
 import 'package:noteswap/utils/time_formatter.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/group_chat/presentation/pages/groups_page.dart';
+import 'package:noteswap/features/events/notifications/notifications_screen.dart';
 
 class DashboardPageOne extends StatefulWidget {
   const DashboardPageOne({super.key});
@@ -32,6 +35,20 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
   List<PostEntity> newestDiscussions = [];
   bool isLoading = true;
   String? _loadedUid;
+  bool _isRefreshing = false;
+
+  Future<void> _handleRefresh() async {
+    final authState = context.read<AuthCubit>().state;
+    if (authState is Authenticated) {
+      setState(() {
+        _isRefreshing = true;
+      });
+      await _loadProfileForUser(authState.user, forceRefresh: true);
+      setState(() {
+        _isRefreshing = false;
+      });
+    }
+  }
 
   // Motivation Quote State
   int _currentQuoteIndex = 0;
@@ -77,8 +94,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
     });
   }
 
-  Future<void> _loadProfileForUser(AppUser user) async {
-    if (_loadedUid == user.uid && !isLoading) return;
+  Future<void> _loadProfileForUser(AppUser user, {bool forceRefresh = false}) async {
+    if (_loadedUid == user.uid && !isLoading && !forceRefresh) return;
 
     if (mounted) {
       setState(() {
@@ -153,10 +170,23 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        IconButton(
-                          onPressed: () {},
-                          icon: Icon(Icons.menu, color: textColor),
-                        ),
+                        _isRefreshing
+                            ? const Padding(
+                                padding: EdgeInsets.all(12.0),
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Color(0xFF6139ED)),
+                                  ),
+                                ),
+                              )
+                            : IconButton(
+                                onPressed: _handleRefresh,
+                                icon: Icon(Icons.refresh, color: textColor),
+                              ),
                         Row(
                           children: [
                             Container(
@@ -179,10 +209,38 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                             ),
                           ],
                         ),
-                        IconButton(
-                          onPressed: () {},
-                          icon:
-                              Icon(Icons.notifications_none, color: textColor),
+                        StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(user.uid)
+                              .collection('notifications')
+                              .where('isRead', isEqualTo: false)
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            final hasUnread = snapshot.hasData && snapshot.data!.docs.isNotEmpty;
+                            return Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                IconButton(
+                                  onPressed: () => Get.to(() => const NotificationsScreen()),
+                                  icon: Icon(Icons.notifications_none, color: textColor),
+                                ),
+                                if (hasUnread)
+                                  Positioned(
+                                    top: 12,
+                                    right: 12,
+                                    child: Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.redAccent,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -254,22 +312,25 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                               // Quick Access Section
                               _buildHeader('Quick Access', showViewAll: false),
                               const SizedBox(height: 12),
-                              SizedBox(
-                                height: 110,
-                                child: ListView(
-                                  scrollDirection: Axis.horizontal,
-                                  physics: const BouncingScrollPhysics(),
-                                  children: [
-                                    _buildQuickAccessItem(
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildQuickAccessItem(
                                       Icons.groups,
                                       'Group Chat',
                                       brandColor,
                                       cardColor,
                                       textColor,
-                                      onTap: () => Get.to(
-                                          () => const GroupsDisplayPage()),
+                                      onTap: () {
+                                        if (Get.isRegistered<MainPageController>()) {
+                                          Get.find<MainPageController>().changeIndex(1);
+                                        }
+                                      },
                                     ),
-                                    _buildQuickAccessItem(
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildQuickAccessItem(
                                       Icons.chat_bubble,
                                       'Feed Discussions',
                                       brandColor,
@@ -278,16 +339,20 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                       onTap: () => Get.to(
                                           () => const CampusFeedScreen()),
                                     ),
-                                    _buildQuickAccessItem(
-                                        Icons.calendar_month,
-                                        'Events',
-                                        brandColor,
-                                        cardColor,
-                                        onTap: () =>
-                                            Get.to(() => EventDetailsPage()),
-                                        textColor),
-                                  ],
-                                ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildQuickAccessItem(
+                                      Icons.calendar_month,
+                                      'Events',
+                                      brandColor,
+                                      cardColor,
+                                      textColor,
+                                      onTap: () => Get.to(
+                                          () => EventDetailsPage()),
+                                    ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 24),
 
@@ -404,63 +469,6 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                               const SizedBox(height: 100), // bottom nav space
                             ],
                           ),
-                  ),
-                ],
-              ),
-            ),
-            // Premium floating navigation bar layout
-            bottomNavigationBar: Container(
-              margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: BorderRadius.circular(30),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildNavItem(
-                      Icons.home, 'Home', true, brandColor, subTextColor),
-                  _buildNavItem(Icons.people_outline, 'Communities', false,
-                      brandColor, subTextColor),
-                  // Floating center button
-                  Container(
-                    height: 48,
-                    width: 48,
-                    decoration: BoxDecoration(
-                      color: brandColor,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: brandColor.withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(Icons.add, color: Colors.white, size: 28),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      final authState = context.read<AuthCubit>().state;
-                      if (authState is Authenticated) {
-                        Get.to(() => const PrivateChatPageController());
-                      }
-                    },
-                    child: _buildNavItem(Icons.chat_bubble_outline, 'Messages',
-                        false, brandColor, subTextColor),
-                  ),
-                  GestureDetector(
-                    onTap: () => Get.to(() => const ProfileSettingsPage()),
-                    child: _buildNavItem(Icons.person_outline, 'Profile', false,
-                        brandColor, subTextColor),
                   ),
                 ],
               ),
@@ -648,9 +656,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 90,
-        margin: const EdgeInsets.only(right: 12),
-        padding: const EdgeInsets.all(12),
+        height: 96,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
         decoration: BoxDecoration(
           color: cardColor,
           borderRadius: BorderRadius.circular(16),

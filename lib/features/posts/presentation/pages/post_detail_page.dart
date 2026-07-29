@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
@@ -319,17 +320,32 @@ class _PostDetailPageState extends State<PostDetailPage> {
                         // Post Header row
                         Row(
                           children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundColor: brandColor.withOpacity(0.15),
-                              child: Text(
-                                authorInitials,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: brandColor,
-                                ),
-                              ),
+                            StreamBuilder<DocumentSnapshot>(
+                              stream: FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(widget.post.authorId)
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                final data = snapshot.data?.data() as Map<String, dynamic>?;
+                                final profileImageUrl = data?['profileImage'] as String?;
+                                final hasImage = profileImageUrl != null && profileImageUrl.isNotEmpty;
+
+                                return CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: brandColor.withOpacity(0.15),
+                                  backgroundImage: hasImage ? NetworkImage(profileImageUrl) : null,
+                                  child: hasImage
+                                      ? null
+                                      : Text(
+                                          authorInitials,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                            color: brandColor,
+                                          ),
+                                        ),
+                                );
+                              },
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -605,17 +621,34 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                     // Row with Avatar, Name, Time, Menu
                                     Row(
                                       children: [
-                                        CircleAvatar(
-                                          radius: depth == 0 ? 16 : 13,
-                                          backgroundColor: _getAvatarColor(comment.authorName),
-                                          child: Text(
-                                            commentInitials,
-                                            style: TextStyle(
-                                              fontSize: depth == 0 ? 11 : 9,
-                                              fontWeight: FontWeight.bold,
-                                              color: _getAvatarTextColor(comment.authorName),
-                                            ),
-                                          ),
+                                        StreamBuilder<DocumentSnapshot>(
+                                          stream: FirebaseFirestore.instance
+                                              .collection('users')
+                                              .doc(comment.authorId)
+                                              .snapshots(),
+                                          builder: (context, snapshot) {
+                                            final data = snapshot.data?.data() as Map<String, dynamic>?;
+                                            final profileImageUrl = data?['profileImage'] as String?;
+                                            final hasImage = profileImageUrl != null && profileImageUrl.isNotEmpty;
+
+                                            return CircleAvatar(
+                                              radius: depth == 0 ? 16 : 13,
+                                              backgroundColor: hasImage 
+                                                  ? Colors.transparent 
+                                                  : _getAvatarColor(comment.authorName),
+                                              backgroundImage: hasImage ? NetworkImage(profileImageUrl) : null,
+                                              child: hasImage
+                                                  ? null
+                                                  : Text(
+                                                      commentInitials,
+                                                      style: TextStyle(
+                                                        fontSize: depth == 0 ? 11 : 9,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: _getAvatarTextColor(comment.authorName),
+                                                      ),
+                                                    ),
+                                            );
+                                          },
                                         ),
                                         const SizedBox(width: 8),
                                         Text(
@@ -815,19 +848,34 @@ class _PostDetailPageState extends State<PostDetailPage> {
               ),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: brandColor.withOpacity(0.15),
-                    child: Text(
-                      getInitials(widget.currentUser.name.isNotEmpty
-                          ? widget.currentUser.name
-                          : widget.currentUser.email),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: brandColor,
-                      ),
-                    ),
+                  StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(widget.currentUser.uid)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      final data = snapshot.data?.data() as Map<String, dynamic>?;
+                      final profileImageUrl = data?['profileImage'] as String?;
+                      final hasImage = profileImageUrl != null && profileImageUrl.isNotEmpty;
+
+                      return CircleAvatar(
+                        radius: 16,
+                        backgroundColor: brandColor.withOpacity(0.15),
+                        backgroundImage: hasImage ? NetworkImage(profileImageUrl) : null,
+                        child: hasImage
+                            ? null
+                            : Text(
+                                getInitials(widget.currentUser.name.isNotEmpty
+                                    ? widget.currentUser.name
+                                    : widget.currentUser.email),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: brandColor,
+                                ),
+                              ),
+                      );
+                    },
                   ),
                   const SizedBox(width: 12),
                   Expanded(

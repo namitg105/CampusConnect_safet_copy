@@ -11,6 +11,7 @@ import 'presentation/Design_By_Opencode/recent_chats_screen.dart';
 import 'presentation/Design_By_Opencode/recent_chats_components.dart';
 import 'package:noteswap/features/events/notifications/notifications_screen.dart';
 import 'package:noteswap/features/events/announcements/announcements_screen.dart';
+import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 
 class PrivateChatPageController extends StatefulWidget {
   const PrivateChatPageController({Key? key}) : super(key: key);
@@ -21,11 +22,10 @@ class PrivateChatPageController extends StatefulWidget {
 }
 
 class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
+  late TextEditingController _searchController;
+  late UserController _userController;
   int _selectedTab = 0;
   String _searchQuery = '';
-  late TextEditingController _searchController;
-
-  late UserController _userController;
 
   @override
   void initState() {
@@ -34,6 +34,9 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
     Get.put(ChatController());
     Get.put(UserController());
     _userController = Get.find<UserController>();
+    if (Get.isRegistered<MainPageController>()) {
+      _selectedTab = Get.find<MainPageController>().privateChatSelectedTab.value;
+    }
   }
 
   @override
@@ -52,10 +55,16 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
   }
 
   void _onTabSelected(int index) {
+    if (Get.isRegistered<MainPageController>()) {
+      Get.find<MainPageController>().privateChatSelectedTab.value = index;
+    }
     setState(() => _selectedTab = index);
   }
 
   void _switchToRequestTab() {
+    if (Get.isRegistered<MainPageController>()) {
+      Get.find<MainPageController>().privateChatSelectedTab.value = 2;
+    }
     setState(() => _selectedTab = 2);
   }
 
@@ -63,18 +72,22 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
   Widget build(BuildContext context) {
     return DefaultTextStyle(
       style: const TextStyle(fontFamily: 'Quicksand'),
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF8F8FC),
-        body: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
-              Divider(height: 1, thickness: 1, color: const Color(0xFFECECEC)),
-              ChatsTabBar(
-                selectedIndex: _selectedTab,
-                onTabSelected: _onTabSelected,
-              ),
+      child: Obx(() {
+        if (Get.isRegistered<MainPageController>()) {
+          _selectedTab = Get.find<MainPageController>().privateChatSelectedTab.value;
+        }
+        return Scaffold(
+          backgroundColor: const Color(0xFFF8F8FC),
+          body: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(),
+                Divider(height: 1, thickness: 1, color: const Color(0xFFECECEC)),
+                ChatsTabBar(
+                  selectedIndex: _selectedTab,
+                  onTabSelected: _onTabSelected,
+                ),
               Divider(height: 1, thickness: 1, color: const Color(0xFFECECEC)),
               SearchPeopleBar(
                 controller: _searchController,
@@ -116,9 +129,10 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
             ],
           ),
         ),
-      ),
-    );
-  }
+      );
+    }),
+  );
+}
 
   int _getOnlineCount() {
     return _userController.friendStatuses.values.where((v) => v == true).length;

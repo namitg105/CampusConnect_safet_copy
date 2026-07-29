@@ -1,11 +1,15 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
-import 'package:noteswap/features/private_chat/page_controller.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
+import 'package:noteswap/features/auth/presentation/pages/SplashScreen.dart';
 import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/update_profile_usecase.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class ProfileSettingsPage extends StatefulWidget {
   const ProfileSettingsPage({super.key});
@@ -16,13 +20,16 @@ class ProfileSettingsPage extends StatefulWidget {
 
 class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
   late final GetProfileUseCase profileUseCase;
+  late final UpdateProfileUseCase updateProfileUseCase;
   Map<String, dynamic>? profileData;
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    profileUseCase = GetProfileUseCase(repository: ProfileRepoImpl());
+    final repo = ProfileRepoImpl();
+    profileUseCase = GetProfileUseCase(repository: repo);
+    updateProfileUseCase = UpdateProfileUseCase(repository: repo);
     _loadProfile();
   }
 
@@ -172,15 +179,23 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                     children: [
                                       CircleAvatar(
                                         radius: 36,
-                                        backgroundColor: brandColor.withOpacity(0.15),
-                                        child: Text(
-                                          initials,
-                                          style: TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
-                                            color: brandColor,
-                                          ),
-                                        ),
+                                        backgroundColor:
+                                            brandColor.withOpacity(0.15),
+                                        backgroundImage: (profileData?['profileImage'] != null &&
+                                                (profileData?['profileImage'] as String).isNotEmpty)
+                                            ? NetworkImage(profileData?['profileImage'])
+                                            : null,
+                                        child: (profileData?['profileImage'] != null &&
+                                                (profileData?['profileImage'] as String).isNotEmpty)
+                                            ? null
+                                            : Text(
+                                                initials,
+                                                style: TextStyle(
+                                                  fontSize: 24,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: brandColor,
+                                                ),
+                                              ),
                                       ),
                                       Positioned(
                                         bottom: 0,
@@ -225,11 +240,15 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          'Mtech Software engineer, 4th year',
+                                          (profileData != null && profileData!['bio'] != null && profileData!['bio'].toString().trim().isNotEmpty)
+                                              ? profileData!['bio'].toString()
+                                              : 'No bio added yet',
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: textColor.withOpacity(0.8),
                                           ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                         const SizedBox(height: 8),
                                         // Email label
@@ -266,7 +285,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                   ),
                                   // Edit profile button
                                   IconButton(
-                                    onPressed: () {},
+                                    onPressed: () => _showEditProfileModal(),
                                     icon: Icon(Icons.edit_outlined,
                                         color: brandColor, size: 22),
                                   ),
@@ -369,8 +388,9 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                 ],
                               ),
                               child: GestureDetector(
-                                onTap: () {
-                                  context.read<AuthCubit>().logout();
+                                onTap: () async {
+                                  await context.read<AuthCubit>().logout();
+                                  Get.offAll(() => const SplashScreen());
                                 },
                                 child: _buildSettingItem(
                                   Icons.logout_outlined,
@@ -387,58 +407,6 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                           ],
                         ),
                 ),
-              ],
-            ),
-          ),
-          // Premium floating navigation bar layout
-          bottomNavigationBar: Container(
-            margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                GestureDetector(
-                  onTap: () => Navigator.maybePop(context),
-                  child: _buildNavItem(
-                      Icons.home, 'Home', false, brandColor, subTextColor),
-                ),
-                _buildNavItem(Icons.people_outline, 'Communities', false,
-                    brandColor, subTextColor),
-                // Floating center button
-                Container(
-                  height: 48,
-                  width: 48,
-                  decoration: BoxDecoration(
-                    color: brandColor,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: brandColor.withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(Icons.add, color: Colors.white, size: 28),
-                ),
-                 GestureDetector(
-                   onTap: () => Get.to(() => const PrivateChatPageController()),
-                   child: _buildNavItem(Icons.chat_bubble_outline, 'Messages', false,
-                       brandColor, subTextColor),
-                 ),
-                _buildNavItem(Icons.person, 'Profile', true, brandColor,
-                    subTextColor),
               ],
             ),
           ),
@@ -499,26 +467,295 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, bool isSelected,
-      Color brandColor, Color? unselectedColor) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          color: isSelected ? brandColor : unselectedColor,
-          size: 24,
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 9,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            color: isSelected ? brandColor : unselectedColor,
-          ),
-        ),
-      ],
+
+
+  void _showEditProfileModal() {
+    final isLightMode = Theme.of(context).brightness == Brightness.light;
+    final primaryColor = const Color(0xFF6139ED);
+    final cardBg = isLightMode ? Colors.white : const Color(0xFF1E1E1E);
+    final inputBg = isLightMode ? Colors.grey[100] : const Color(0xFF2A2A2A);
+    final textColor = isLightMode ? Colors.black87 : Colors.white;
+
+    final authState = context.read<AuthCubit>().state;
+    if (authState is! Authenticated) return;
+    final userId = authState.user.uid;
+
+    File? pickedImage;
+    bool resetToDefault = false;
+    bool isSaving = false;
+    final bioController =
+        TextEditingController(text: profileData?['bio'] ?? '');
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final String name = profileData?['name'] ?? authState.user.name;
+            final String email = profileData?['email'] ?? authState.user.email;
+            final String initials = getInitials(name, email);
+
+            ImageProvider? avatarImage;
+            if (!resetToDefault) {
+              if (pickedImage != null) {
+                avatarImage = FileImage(pickedImage!);
+              } else if (profileData?['profileImage'] != null &&
+                  (profileData?['profileImage'] as String).isNotEmpty) {
+                avatarImage = NetworkImage(profileData?['profileImage']);
+              }
+            }
+
+            return Container(
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+              ),
+              padding: EdgeInsets.only(
+                top: 24,
+                left: 24,
+                right: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Pull bar
+                  Center(
+                    child: Container(
+                      width: 48,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[400],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Edit Profile',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  // Image selection UI
+                  Center(
+                    child: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: primaryColor.withOpacity(0.15),
+                          backgroundImage: avatarImage,
+                          child: avatarImage != null
+                              ? null
+                              : Text(
+                                  initials,
+                                  style: TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                    color: primaryColor,
+                                  ),
+                                ),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: CircleAvatar(
+                            backgroundColor: primaryColor,
+                            radius: 18,
+                            child: IconButton(
+                              icon: const Icon(Icons.camera_alt,
+                                  size: 16, color: Colors.white),
+                              onPressed: () async {
+                                final picker = ImagePicker();
+                                final image = await picker.pickImage(
+                                  source: ImageSource.gallery,
+                                  imageQuality: 70,
+                                );
+                                if (image != null) {
+                                  setModalState(() {
+                                    pickedImage = File(image.path);
+                                    resetToDefault = false;
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          setModalState(() {
+                            pickedImage = null;
+                            resetToDefault = true;
+                          });
+                        },
+                        child: const Text(
+                          'Use Default Avatar',
+                          style: TextStyle(
+                              color: Colors.redAccent,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Bio Edit Input
+                  Text(
+                    'Bio',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: textColor.withOpacity(0.8),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: bioController,
+                    maxLines: 3,
+                    style: TextStyle(color: textColor),
+                    decoration: InputDecoration(
+                      hintText: 'Tell us about yourself...',
+                      hintStyle: TextStyle(color: Colors.grey[500]),
+                      filled: true,
+                      fillColor: inputBg,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.all(16),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: BorderSide(color: Colors.grey[400]!),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(color: textColor),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: isSaving
+                              ? null
+                              : () async {
+                                  setModalState(() {
+                                    isSaving = true;
+                                  });
+
+                                  try {
+                                    String? profileImageUrl =
+                                        profileData?['profileImage'];
+
+                                    if (resetToDefault) {
+                                      profileImageUrl = "";
+                                      try {
+                                        final storageRef = FirebaseStorage
+                                            .instance
+                                            .ref()
+                                            .child(
+                                                'profile_pictures/$userId.jpg');
+                                        await storageRef.delete();
+                                      } catch (_) {}
+                                    } else if (pickedImage != null) {
+                                      final storageRef =
+                                          FirebaseStorage.instance.ref().child(
+                                              'profile_pictures/$userId.jpg');
+                                      await storageRef.putFile(pickedImage!);
+                                      profileImageUrl =
+                                          await storageRef.getDownloadURL();
+                                    }
+
+                                    await updateProfileUseCase.call(userId, {
+                                      'bio': bioController.text.trim(),
+                                      'profileImage': profileImageUrl ?? "",
+                                    });
+
+                                    // Close the sheet safely
+                                    if (context.mounted) Navigator.pop(context);
+
+                                    _loadProfile();
+
+                                    Get.snackbar(
+                                      'Success',
+                                      'Profile updated successfully',
+                                      snackPosition: SnackPosition.BOTTOM,
+                                      backgroundColor: const Color(0xFF6139ED),
+                                      colorText: Colors.white,
+                                    );
+                                  } catch (e) {
+                                    setModalState(() {
+                                      isSaving = false;
+                                    });
+                                    Get.snackbar(
+                                      'Error',
+                                      'Failed to update profile: $e',
+                                      snackPosition: SnackPosition.BOTTOM,
+                                      backgroundColor: Colors.redAccent,
+                                      colorText: Colors.white,
+                                    );
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: isSaving
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
+                                  'Save',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

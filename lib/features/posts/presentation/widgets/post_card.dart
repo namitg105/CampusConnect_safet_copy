@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/src/extension_navigation.dart';
@@ -117,17 +118,32 @@ class PostCard extends StatelessWidget {
               children: [
                 GestureDetector(
                   onTap: onProfileTap,
-                  child: CircleAvatar(
-                    radius: 18,
-                    backgroundColor: brandColor.withOpacity(0.15),
-                    child: Text(
-                      initials,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: brandColor,
-                      ),
-                    ),
+                  child: StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(post.authorId)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      final data = snapshot.data?.data() as Map<String, dynamic>?;
+                      final profileImageUrl = data?['profileImage'] as String?;
+                      final hasImage = profileImageUrl != null && profileImageUrl.isNotEmpty;
+
+                      return CircleAvatar(
+                        radius: 18,
+                        backgroundColor: brandColor.withOpacity(0.15),
+                        backgroundImage: hasImage ? NetworkImage(profileImageUrl) : null,
+                        child: hasImage
+                            ? null
+                            : Text(
+                                initials,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: brandColor,
+                                ),
+                              ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -307,30 +323,38 @@ class PostCard extends StatelessWidget {
                 const SizedBox(width: 16),
 
                 // Comment Count Capsule
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/posts_screen_assets/comment_view.png',
-                      height: 22,
-                      fit: BoxFit.contain,
-                    ),
-                    Positioned(
-                      right: 5,
-                      child: Container(
-                        color: const Color(0xFFF5F2FD),
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                        child: Text(
-                          post.commentCount.toString(),
-                          style: GoogleFonts.poppins(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF6139ED),
-                          ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: isLightMode
+                        ? const Color(0xFFF3F4F6)
+                        : const Color(0xFF2D2D2D),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SvgPicture.string(
+                        commentSvg,
+                        width: 14,
+                        height: 14,
+                        colorFilter: ColorFilter.mode(
+                          isLightMode ? Colors.grey[600]! : Colors.grey[400]!,
+                          BlendMode.srcIn,
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 6),
+                      Text(
+                        post.commentCount.toString(),
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const Spacer(),
 

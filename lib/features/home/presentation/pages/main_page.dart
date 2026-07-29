@@ -2,9 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:noteswap/features/community/presentation/pages/create_group_page.dart';
-import 'package:noteswap/features/group_chat/presentation/pages/groups_page.dart';
-import 'package:noteswap/features/home/presentation/pages/home_page.dart';
-import 'package:noteswap/features/profile/presentation/pages/profile_page.dart';
+import 'package:noteswap/features/dashboard/presentation/pages/dashboard_page_one.dart';
+import 'package:noteswap/features/private_chat/page_controller.dart';
+import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
+import 'package:noteswap/features/posts/presentation/pages/create_post_page.dart';
+import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
+import 'package:noteswap/features/posts/data/post_repo_impl.dart';
+import 'package:noteswap/features/posts/domain/usecases/add_comment_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/create_post_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/delete_comment_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/downvote_post_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/get_comments_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/get_feed_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/get_feed_by_tag_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/get_top_voted_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/toggle_comment_like_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/upvote_post_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/get_user_votes_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/delete_post_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/get_user_liked_comments_usecase.dart';
+import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
+import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../community/presentation/cubits/group_cubit.dart';
@@ -12,6 +30,7 @@ import '../../../community/presentation/pages/groups_page.dart';
 
 class MainPageController extends GetxController {
   var currentIndex = 0.obs;
+  var privateChatSelectedTab = 0.obs;
 
   void changeIndex(int index) {
     currentIndex.value = index;
@@ -28,8 +47,38 @@ class MainPage extends StatelessWidget {
     const Color textDark = Color(0xFF0F172A);
     const Color textMuted = Color(0xFF64748B);
 
-    void navigateToCreateGroup() {
-      Get.to(() => const CreateGroupPage(collegeId: ""));
+    void handleCenterButtonTap() {
+      final index = controller.currentIndex.value;
+      if (index == 0) {
+        final authState = context.read<AuthCubit>().state;
+        if (authState is Authenticated) {
+          final currentUser = authState.user;
+          final postRepo = PostRepoImpl();
+          final postController = PostController(
+            createPostUseCase: CreatePostUseCase(repository: postRepo),
+            getFeedUseCase: GetFeedUseCase(repository: postRepo),
+            getFeedByTagUseCase: GetFeedByTagUseCase(repository: postRepo),
+            getTopVotedPostsUseCase: GetTopVotedPostsUseCase(repository: postRepo),
+            upvotePostUseCase: UpvotePostUseCase(repository: postRepo),
+            downvotePostUseCase: DownvotePostUseCase(repository: postRepo),
+            addCommentUseCase: AddCommentUseCase(repository: postRepo),
+            getCommentsUseCase: GetCommentsUseCase(repository: postRepo),
+            deleteCommentUseCase: DeleteCommentUseCase(repository: postRepo),
+            toggleCommentLikeUseCase: ToggleCommentLikeUseCase(repository: postRepo),
+            getUserVotesUseCase: GetUserVotesUseCase(repository: postRepo),
+            deletePostUseCase: DeletePostUseCase(repository: postRepo),
+            getUserLikedCommentsUseCase: GetUserLikedCommentsUseCase(repository: postRepo),
+          );
+          Get.to(() => CreatePostPage(
+                controller: postController,
+                currentUser: currentUser,
+              ));
+        }
+      } else if (index == 1) {
+        Get.to(() => const CreateGroupPage(collegeId: ""));
+      } else if (index == 2) {
+        controller.privateChatSelectedTab.value = 3;
+      }
     }
 
     return BlocProvider<GroupCubit>(
@@ -40,10 +89,10 @@ class MainPage extends StatelessWidget {
           body: IndexedStack(
             index: controller.currentIndex.value,
             children: [
-              const HomePage(),
+              const DashboardPageOne(),
               const GroupsPage(),
-              const GroupsDisplayPage(), // Restore group chat community messages
-              UserProfilePage()
+              const PrivateChatPageController(),
+              const ProfileSettingsPage(),
             ],
           ),
           bottomNavigationBar: SafeArea(
@@ -112,12 +161,11 @@ class MainPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    // Elevated center create button, popping above the bar.
                     Positioned(
                       top: 0,
                       child: _CreateButton(
                         color: brandPrimary,
-                        onTap: navigateToCreateGroup,
+                        onTap: handleCenterButtonTap,
                       ),
                     ),
                   ],

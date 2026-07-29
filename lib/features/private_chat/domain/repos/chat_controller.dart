@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:get/get.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:noteswap/features/private_chat/domain/entities/pinned_message.dart';
+import 'package:noteswap/features/events/notifications/services/notification_service.dart';
+import 'package:noteswap/features/events/notifications/models/notification_model.dart';
 import '../../data/private-chat-services/chat_service.dart';
 import '../entities/chat_message.dart';
 
@@ -97,6 +100,22 @@ class ChatController extends GetxController {
       repliedMessageType: repliedMessageType,
       skipUnreadIncrement: skipUnreadIncrement,
     );
+
+    // Send Notification
+    try {
+      final senderDoc = await FirebaseFirestore.instance.collection('users').doc(senderId).get();
+      final senderName = senderDoc.data()?['name'] ?? 'Someone';
+      
+      await NotificationService.createNotification(
+        recipientId: receiverId,
+        type: NotificationType.requestChatPrivate,
+        title: 'New message from $senderName',
+        description: message.trim().isNotEmpty ? message.trim() : 'Sent an attachment',
+        subtitle: roomId,
+      );
+    } catch (e) {
+      print('Failed to send private chat notification: $e');
+    }
   }
 
   void listenToMessages(String roomId) {

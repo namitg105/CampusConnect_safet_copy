@@ -13,4 +13,9 @@ class ProfileRepoImpl implements ProfileRepo {
     if (!doc.exists) return null;
     return doc.data();
   }
+
+  @override
+  Future<void> updateUserProfile(String userId, Map<String, dynamic> data) async {
+    await firestore.collection('users').doc(userId).set(data, SetOptions(merge: true));
+  }
 }
