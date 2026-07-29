@@ -224,157 +224,142 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                   ),
                 ),
 
-                // 2. Search Bar and filter icon
+                // 2. Search Bar (no filter icon)
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: isLightMode
-                                ? Colors.white
-                                : const Color(0xFF1E1E1E),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
+                  child: Container(
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: isLightMode
+                          ? Colors.white
+                          : const Color(0xFF1E1E1E),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isLightMode
+                            ? const Color(0xFFEBEBF0)
+                            : const Color(0xFF2D2D2D),
+                        width: 1,
+                      ),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        Image.asset(
+                          'assets/posts_screen_assets/serach_icon.png',
+                          width: 20,
+                          height: 20,
+                          fit: BoxFit.contain,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            onChanged: (val) => _searchQuery.value = val,
+                            decoration: InputDecoration(
+                              hintText: 'Search posts, people, topics...',
+                              hintStyle: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                height: 1.0,
+                                color: isLightMode
+                                    ? const Color(0xFF1A1A2E)
+                                        .withOpacity(0.5)
+                                    : Colors.white.withOpacity(0.5),
+                              ),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              height: 1.0,
                               color: isLightMode
-                                  ? const Color(0xFFEBEBF0)
-                                  : const Color(0xFF2D2D2D),
-                              width: 1,
-                            ),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            children: [
-                              Image.asset(
-                                'assets/posts_screen_assets/serach_icon.png',
-                                width: 20,
-                                height: 20,
-                                fit: BoxFit.contain,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: TextField(
-                                  onChanged: (val) => _searchQuery.value = val,
-                                  decoration: InputDecoration(
-                                    hintText: 'Search posts, people, topics...',
-                                    hintStyle: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400,
-                                      height: 1.0,
-                                      color: isLightMode
-                                          ? const Color(0xFF1A1A2E)
-                                              .withOpacity(0.5)
-                                          : Colors.white.withOpacity(0.5),
-                                    ),
-                                    border: InputBorder.none,
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.zero,
-                                  ),
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                    height: 1.0,
-                                    color: isLightMode
-                                        ? const Color(0xFF1A1A2E)
-                                        : Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: () {},
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: SizedBox(
-                            width: 44,
-                            height: 44,
-                            child: Image.asset(
-                              'assets/posts_screen_assets/filter_icon.png',
-                              fit: BoxFit.cover,
-                              alignment: Alignment.bottomRight,
+                                  ? const Color(0xFF1A1A2E)
+                                  : Colors.white,
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
                 if (_searchQuery.value.isNotEmpty) ...[
-                  // Search Results View
+                  // Search Results — use a shrink-wrapped ListView.builder for
+                  // efficiency when there are many matching posts
                   _buildHeaderSection('Search Results'),
                   const SizedBox(height: 12),
-                  ...(() {
+                  (() {
                     final query = _searchQuery.value.toLowerCase();
                     final filteredPosts = postController.posts.where((post) {
                       return post.title.toLowerCase().contains(query) ||
                           post.body.toLowerCase().contains(query) ||
-                          post.tag.toLowerCase().contains(query);
+                          post.tag.toLowerCase().contains(query) ||
+                          post.authorName.toLowerCase().contains(query);
                     }).toList();
 
                     if (filteredPosts.isEmpty) {
-                      return [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: cardColor,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Center(
-                              child: Text(
-                                "No posts found matching '${_searchQuery.value}'",
-                                style: TextStyle(
-                                    color: subTextColor, fontSize: 13),
-                              ),
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: cardColor,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Center(
+                            child: Text(
+                              "No posts found matching '${_searchQuery.value}'",
+                              style:
+                                  TextStyle(color: subTextColor, fontSize: 13),
                             ),
                           ),
-                        )
-                      ];
+                        ),
+                      );
                     }
 
-                    return filteredPosts.map((post) {
-                      return PostCard(
-                        post: post,
-                        onTap: () => Get.to(() => PostDetailPage(
-                              post: post,
-                              controller: postController,
-                              currentUser: currentUser,
-                            )),
-                        onProfileTap: () => Get.to(() => UserProfileScreen(
-                                user: AppUser(
-                              uid: post.authorId,
-                              email: '',
-                              name: post.authorName,
-                              collegeId: post.collegeId,
-                            ))),
-                        onUpvote: () => postController.toggleUpvote(
-                          post.id,
-                          currentUser.uid,
-                          currentUser,
-                        ),
-                        onDownvote: () => postController.toggleDownvote(
-                          post.id,
-                          currentUser.uid,
-                          currentUser,
-                        ),
-                        onDelete: post.authorId == currentUser.uid
-                            ? () => _confirmDeletePost(post.id, currentUser)
-                            : null,
-                        isLightMode: isLightMode,
-                        isUpvoted: postController.getUserVote(post.id) == 1,
-                        isDownvoted: postController.getUserVote(post.id) == -1,
-                      );
-                    }).toList();
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: filteredPosts.length,
+                      itemBuilder: (context, index) {
+                        final post = filteredPosts[index];
+                        return PostCard(
+                          post: post,
+                          onTap: () => Get.to(() => PostDetailPage(
+                                post: post,
+                                controller: postController,
+                                currentUser: currentUser,
+                              )),
+                          onProfileTap: () => Get.to(() => UserProfileScreen(
+                                  user: AppUser(
+                                uid: post.authorId,
+                                email: '',
+                                name: post.authorName,
+                                collegeId: post.collegeId,
+                              ))),
+                          onUpvote: () => postController.toggleUpvote(
+                            post.id,
+                            currentUser.uid,
+                            currentUser,
+                          ),
+                          onDownvote: () => postController.toggleDownvote(
+                            post.id,
+                            currentUser.uid,
+                            currentUser,
+                          ),
+                          onDelete: post.authorId == currentUser.uid
+                              ? () => _confirmDeletePost(post.id, currentUser)
+                              : null,
+                          isLightMode: isLightMode,
+                          isUpvoted: postController.getUserVote(post.id) == 1,
+                          isDownvoted:
+                              postController.getUserVote(post.id) == -1,
+                        );
+                      },
+                    );
                   }()),
                 ] else ...[
                   // 3. Trending Discussions Block
@@ -595,86 +580,114 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
               ],
             );
           }),
-          // Premium bottom navigation bar
-          bottomNavigationBar: Container(
-            margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: isLightMode
-                  ? [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ]
-                  : [],
-              border: Border.all(
-                color: isLightMode ? Colors.grey[100]! : Colors.grey[850]!,
-                width: 0.5,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    Get.offAll(() => const MainPage());
-                    Get.find<MainPageController>().changeIndex(0);
-                  },
-                  child: _buildNavItem(
-                      Icons.home, 'Home', true, brandColor, subTextColor),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Get.offAll(() => const MainPage());
-                    Get.find<MainPageController>().changeIndex(1);
-                  },
-                  child: _buildNavItem(Icons.people_outline, 'Communities',
-                      false, brandColor, subTextColor),
-                ),
-                // Floating center button
-                GestureDetector(
-                  onTap: () => Get.to(() => CreatePostPage(
-                        controller: postController,
-                        currentUser: currentUser,
-                      )),
-                  child: Container(
-                    height: 48,
-                    width: 48,
-                    decoration: BoxDecoration(
-                      color: brandColor,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: brandColor.withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+          // Consistent pill-shaped nav bar — same style as main_page.dart
+          bottomNavigationBar: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              child: SizedBox(
+                height: 70,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.topCenter,
+                  children: [
+                    Positioned.fill(
+                      top: 14,
+                      child: Container(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F1FE),
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0F172A).withOpacity(0.06),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
-                      ],
+                        child: Obx(() {
+                          final mc = Get.isRegistered<MainPageController>()
+                              ? Get.find<MainPageController>()
+                              : null;
+                          final idx = mc?.currentIndex.value ?? 0;
+                          return Row(
+                            mainAxisAlignment:
+                                MainAxisAlignment.spaceBetween,
+                            children: [
+                              _FeedNavIcon(
+                                assetPath: 'assets/community/home_nav.png',
+                                label: 'Home',
+                                isSelected: idx == 0,
+                                onTap: () {
+                                  mc?.changeIndex(0);
+                                  Navigator.of(context).maybePop();
+                                },
+                              ),
+                              _FeedNavIcon(
+                                assetPath: 'assets/community/comm_nav.png',
+                                label: 'Community',
+                                isSelected: idx == 1,
+                                onTap: () {
+                                  mc?.changeIndex(1);
+                                  Navigator.of(context).maybePop();
+                                },
+                              ),
+                              // Gap for floating + button
+                              const SizedBox(width: 56),
+                              _FeedNavIcon(
+                                assetPath: 'assets/community/msg_nav.png',
+                                label: 'Messages',
+                                isSelected: idx == 2,
+                                onTap: () {
+                                  mc?.changeIndex(2);
+                                  Navigator.of(context).maybePop();
+                                },
+                              ),
+                              _FeedNavIcon(
+                                assetPath: 'assets/community/prof_nav.png',
+                                label: 'Profile',
+                                isSelected: idx == 3,
+                                onTap: () {
+                                  mc?.changeIndex(3);
+                                  Navigator.of(context).maybePop();
+                                },
+                              ),
+                            ],
+                          );
+                        }),
+                      ),
                     ),
-                    child: const Icon(Icons.add, color: Colors.white, size: 28),
-                  ),
+                    // Floating + button
+                    Positioned(
+                      top: 0,
+                      child: GestureDetector(
+                        onTap: () => Get.to(() => CreatePostPage(
+                              controller: postController,
+                              currentUser: currentUser,
+                            )),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: brandColor,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: brandColor.withOpacity(0.35),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(Icons.add_rounded,
+                              color: Colors.white, size: 26),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                GestureDetector(
-                  onTap: () {
-                    Get.offAll(() => const MainPage());
-                    Get.find<MainPageController>().changeIndex(2);
-                  },
-                  child: _buildNavItem(Icons.chat_bubble_outline, 'Messages',
-                      false, brandColor, subTextColor),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Get.offAll(() => const MainPage());
-                    Get.find<MainPageController>().changeIndex(3);
-                  },
-                  child: _buildNavItem(Icons.person_outline, 'Profile', false,
-                      brandColor, subTextColor),
-                ),
-              ],
+              ),
             ),
           ),
         );
@@ -1075,6 +1088,76 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
           ],
         );
       },
+    );
+  }
+}
+
+/// Nav-bar icon matching the pill-shaped bar in main_page.dart
+class _FeedNavIcon extends StatelessWidget {
+  final String assetPath;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _FeedNavIcon({
+    required this.assetPath,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const Color brandPrimary = Color(0xFF6366F1);
+    const Color textMuted = Color(0xFF64748B);
+    final currentColor = isSelected ? brandPrimary : textMuted;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: brandPrimary.withOpacity(0.15),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              assetPath,
+              width: 20,
+              height: 20,
+              color: currentColor,
+              errorBuilder: (_, __, ___) => Icon(
+                Icons.circle,
+                size: 20,
+                color: currentColor,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w700,
+                color: currentColor,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
