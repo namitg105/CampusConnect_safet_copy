@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
+import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
 import 'package:noteswap/features/posts/presentation/pages/create_post_page.dart';
 import 'package:noteswap/features/posts/presentation/pages/post_detail_page.dart';
@@ -12,10 +13,7 @@ import 'package:noteswap/features/posts/presentation/widgets/post_card.dart';
 import 'package:noteswap/features/posts/presentation/pages/all_posts_screen.dart';
 import 'package:noteswap/features/posts/presentation/pages/all_announcements_screen.dart';
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
-import 'package:noteswap/features/private_chat/page_controller.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
-import 'package:noteswap/features/community/presentation/pages/groups_page.dart';
 import 'package:noteswap/features/posts/data/post_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/add_comment_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/create_post_usecase.dart';
@@ -44,6 +42,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
   late PostController postController;
   final LightModeController lightModeController =
       Get.find<LightModeController>();
+  final _searchQuery = ''.obs;
 
   @override
   void initState() {
@@ -258,6 +257,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: TextField(
+                                  onChanged: (val) => _searchQuery.value = val,
                                   decoration: InputDecoration(
                                     hintText: 'Search posts, people, topics...',
                                     hintStyle: GoogleFonts.poppins(
@@ -451,10 +451,6 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                   _buildHeaderSection(
                     'Announcements',
                     onTap: () => Get.to(() => AllAnnouncementsScreen(
-                          title: 'Announcements',
-                          postsSelector: () => postController.posts.toList()
-                            ..sort(
-                                (a, b) => b.createdAt.compareTo(a.createdAt)),
                           controller: postController,
                           currentUser: currentUser,
                         )),

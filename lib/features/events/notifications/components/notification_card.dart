@@ -70,8 +70,9 @@ class NotificationCard extends StatelessWidget {
           _buildTrailing(),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildContent() {
     switch (notification.type) {
@@ -182,7 +183,6 @@ class NotificationCard extends StatelessWidget {
           ),
         ),
       ],
-    ),
     );
   }
 

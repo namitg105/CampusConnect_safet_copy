@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:noteswap/features/admin_events/presentation/screens/AdminEvent.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
@@ -212,7 +213,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                         StreamBuilder<QuerySnapshot>(
                           stream: FirebaseFirestore.instance
                               .collection('users')
-                              .doc(user.uid)
+                              .doc(FirebaseAuth.instance.currentUser?.uid ?? '')
                               .collection('notifications')
                               .where('isRead', isEqualTo: false)
                               .snapshots(),

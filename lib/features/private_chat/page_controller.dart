@@ -23,7 +23,7 @@ class PrivateChatPageController extends StatefulWidget {
 
 class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
   late TextEditingController _searchController;
-  late UserController _userController;
+  UserController? _userController;
   int _selectedTab = 0;
   String _searchQuery = '';
 
@@ -31,8 +31,12 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
-    Get.put(ChatController());
-    Get.put(UserController());
+    if (!Get.isRegistered<ChatController>()) {
+      Get.put(ChatController(), permanent: true);
+    }
+    if (!Get.isRegistered<UserController>()) {
+      Get.put(UserController(), permanent: true);
+    }
     _userController = Get.find<UserController>();
     if (Get.isRegistered<MainPageController>()) {
       _selectedTab = Get.find<MainPageController>().privateChatSelectedTab.value;
@@ -94,9 +98,9 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
                 onChanged: _onSearchChanged,
               ),
               Obx(() {
-                final friendsCount = _userController.friendsList.length;
+                final friendsCount = _userController?.friendsList.length ?? 0;
                 final onlineCount = _getOnlineCount();
-                final blockedCount = _userController.blockedUids.length;
+                final blockedCount = _userController?.blockedUids.length ?? 0;
                 return ChatStatisticsCard(
                   friendsCount: friendsCount,
                   onlineCount: onlineCount,
@@ -135,7 +139,7 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
 }
 
   int _getOnlineCount() {
-    return _userController.friendStatuses.values.where((v) => v == true).length;
+    return _userController?.friendStatuses.values.where((v) => v == true).length ?? 0;
   }
 
   Widget _buildHeader() {
@@ -158,8 +162,8 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Obx(() {
-                  final friendsCount = _userController.friendsList.length;
+                  Obx(() {
+                  final friendsCount = _userController?.friendsList.length ?? 0;
                   final onlineCount = _getOnlineCount();
                   return Row(
                     mainAxisSize: MainAxisSize.min,
