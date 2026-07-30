@@ -9,7 +9,6 @@ import 'presentation/Design_By_Opencode_3/directory_screen.dart';
 import 'presentation/Design_By_Opencode_5/chat_request_screen.dart';
 import 'presentation/Design_By_Opencode/recent_chats_screen.dart';
 import 'presentation/Design_By_Opencode/recent_chats_components.dart';
-import 'package:noteswap/features/events/notifications/notifications_screen.dart';
 import 'package:noteswap/features/events/announcements/announcements_screen.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 

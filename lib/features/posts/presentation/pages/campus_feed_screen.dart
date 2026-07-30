@@ -31,6 +31,7 @@ import 'package:noteswap/features/posts/domain/usecases/upvote_post_usecase.dart
 import 'package:noteswap/features/posts/domain/usecases/get_user_votes_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/delete_post_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_user_liked_comments_usecase.dart';
+import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
 import 'package:noteswap/utils/time_formatter.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
 
@@ -131,10 +132,6 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
           appBar: AppBar(
             backgroundColor: backgroundColor,
             elevation: 0,
-            leading: IconButton(
-              icon: Icon(Icons.menu, color: textColor),
-              onPressed: () {},
-            ),
             title: Text(
               'uniConnect',
               style: TextStyle(
@@ -154,13 +151,16 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                     .where('isRead', isEqualTo: false)
                     .snapshots(),
                 builder: (context, snapshot) {
-                  final hasUnread = snapshot.hasData && snapshot.data!.docs.isNotEmpty;
+                  final hasUnread =
+                      snapshot.hasData && snapshot.data!.docs.isNotEmpty;
                   return Stack(
                     alignment: Alignment.center,
                     children: [
                       IconButton(
-                        icon: Icon(Icons.notifications_none, color: textColor),
-                        onPressed: () => Get.to(() => const NotificationsScreen()),
+                        onPressed: () {
+                          Get.to(ProfileSettingsPage());
+                        },
+                        icon: Icon(Icons.person_outline),
                       ),
                       if (hasUnread)
                         Positioned(
@@ -246,9 +246,8 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                   child: Container(
                     height: 48,
                     decoration: BoxDecoration(
-                      color: isLightMode
-                          ? Colors.white
-                          : const Color(0xFF1E1E1E),
+                      color:
+                          isLightMode ? Colors.white : const Color(0xFF1E1E1E),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isLightMode
@@ -277,8 +276,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                                 fontWeight: FontWeight.w400,
                                 height: 1.0,
                                 color: isLightMode
-                                    ? const Color(0xFF1A1A2E)
-                                        .withOpacity(0.5)
+                                    ? const Color(0xFF1A1A2E).withOpacity(0.5)
                                     : Colors.white.withOpacity(0.5),
                               ),
                               border: InputBorder.none,
@@ -306,12 +304,11 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                   _buildHeaderSection('Search Results'),
                   const SizedBox(height: 12),
                   (() {
-                    final query = _searchQuery.value.toLowerCase();
+                    final query = _searchQuery.value.trim().toLowerCase();
                     final filteredPosts = postController.posts.where((post) {
-                      return post.title.toLowerCase().contains(query) ||
-                          post.body.toLowerCase().contains(query) ||
-                          post.tag.toLowerCase().contains(query) ||
-                          post.authorName.toLowerCase().contains(query);
+                      final titleMatch = post.title.toLowerCase().contains(query);
+                      final bodyMatch = post.body.toLowerCase().contains(query);
+                      return titleMatch || bodyMatch;
                     }).toList();
 
                     if (filteredPosts.isEmpty) {
@@ -608,8 +605,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                     Positioned.fill(
                       top: 14,
                       child: Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF3F1FE),
                           borderRadius: BorderRadius.circular(30),
@@ -627,8 +623,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                               : null;
                           final idx = mc?.currentIndex.value ?? 0;
                           return Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               _FeedNavIcon(
                                 assetPath: 'assets/community/home_nav.png',

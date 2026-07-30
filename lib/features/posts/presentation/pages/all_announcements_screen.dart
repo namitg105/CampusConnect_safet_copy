@@ -7,7 +7,7 @@ import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
 import 'package:noteswap/utils/time_formatter.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class AllAnnouncementsScreen extends StatelessWidget {
+class AllAnnouncementsScreen extends StatefulWidget {
   final PostController controller;
   final AppUser currentUser;
 
@@ -17,6 +17,11 @@ class AllAnnouncementsScreen extends StatelessWidget {
     required this.currentUser,
   });
 
+  @override
+  State<AllAnnouncementsScreen> createState() => _AllAnnouncementsScreenState();
+}
+
+class _AllAnnouncementsScreenState extends State<AllAnnouncementsScreen> {
   // Dynamic asset configuration cycles
   static const List<Color> bgColors = [
     Color(0xFFECE7FF), // light purple
@@ -40,6 +45,16 @@ class AllAnnouncementsScreen extends StatelessWidget {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.controller.posts.isEmpty) {
+        widget.controller.loadFeed(widget.currentUser);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final LightModeController lightModeController =
         Get.find<LightModeController>();
@@ -55,7 +70,7 @@ class AllAnnouncementsScreen extends StatelessWidget {
       final cardColor = isLightMode ? Colors.white : const Color(0xFF1E1E22);
 
       // Filter posts that have the tag "Announcement"
-      final announcementPosts = controller.posts
+      final announcementPosts = widget.controller.posts
           .where((p) => p.tag.toLowerCase() == 'announcement')
           .toList();
 
@@ -78,114 +93,120 @@ class AllAnnouncementsScreen extends StatelessWidget {
           ),
           centerTitle: true,
         ),
-        body: announcementPosts.isEmpty
-            ? Center(
-                child: Text(
-                  'No announcements yet',
-                  style: TextStyle(color: subTextColor, fontSize: 14),
+        body: widget.controller.isLoading.value
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFF6139ED),
                 ),
               )
-            : ListView.builder(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                itemCount: announcementPosts.length,
-                itemBuilder: (context, index) {
-                  final post = announcementPosts[index];
-                  final bgColor = bgColors[index % bgColors.length];
-                  final themeColor = themeColors[index % themeColors.length];
-                  final icon = icons[index % icons.length];
-                  final date = formatTimeAgo(post.createdAt);
+            : announcementPosts.isEmpty
+                ? Center(
+                    child: Text(
+                      'No announcements yet',
+                      style: TextStyle(color: subTextColor, fontSize: 14),
+                    ),
+                  )
+                : ListView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    itemCount: announcementPosts.length,
+                    itemBuilder: (context, index) {
+                      final post = announcementPosts[index];
+                      final bgColor = bgColors[index % bgColors.length];
+                      final themeColor = themeColors[index % themeColors.length];
+                      final icon = icons[index % icons.length];
+                      final date = formatTimeAgo(post.createdAt);
 
-                  return GestureDetector(
-                    onTap: () => Get.to(() => PostDetailPage(
-                          post: post,
-                          controller: controller,
-                          currentUser: currentUser,
-                        )),
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: isLightMode
-                            ? [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.03),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ]
-                            : [],
-                        border: Border.all(
-                          color: isLightMode
-                              ? Colors.grey[100]!
-                              : Colors.grey[850]!,
-                          width: 0.5,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                      return GestureDetector(
+                        onTap: () => Get.to(() => PostDetailPage(
+                              post: post,
+                              controller: widget.controller,
+                              currentUser: widget.currentUser,
+                            )),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: cardColor,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: isLightMode
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.03),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ]
+                                : [],
+                            border: Border.all(
+                              color: isLightMode
+                                  ? Colors.grey[100]!
+                                  : Colors.grey[850]!,
+                              width: 0.5,
+                            ),
+                          ),
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: bgColor,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  icon,
-                                  color: themeColor,
-                                  size: 20,
-                                ),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: bgColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      icon,
+                                      color: themeColor,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          post.title,
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w400,
+                                            height: 1.45,
+                                            color: textColor,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          date,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: themeColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      post.title,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w400,
-                                        height: 1.45,
-                                        color: textColor,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      date,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: themeColor,
-                                      ),
-                                    ),
-                                  ],
+                              const SizedBox(height: 12),
+                              Text(
+                                post.body,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w400,
+                                  height: 1.5,
+                                  color: subTextColor,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            post.body,
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                              height: 1.5,
-                              color: subTextColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+                        ),
+                      );
+                    },
+                  ),
       );
     });
   }
