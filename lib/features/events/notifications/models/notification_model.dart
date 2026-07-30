@@ -46,12 +46,17 @@ class NotificationData {
   });
 
   String get initials {
-    if (appUser == null || appUser!.name.isEmpty) return '?';
-    final parts = appUser!.name.split(' ');
-    if (parts.length >= 2) {
+    final nameToUse = (appUser != null && appUser!.name.isNotEmpty)
+        ? appUser!.name
+        : (title.startsWith('New message from ')
+            ? title.replaceFirst('New message from ', '')
+            : (title.isNotEmpty ? title : '?'));
+    if (nameToUse.isEmpty || nameToUse == '?') return '?';
+    final parts = nameToUse.trim().split(' ');
+    if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
-    return appUser!.name[0].toUpperCase();
+    return nameToUse[0].toUpperCase();
   }
 
   Color get avatarColor {

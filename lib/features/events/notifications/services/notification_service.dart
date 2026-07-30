@@ -5,6 +5,7 @@ import '../models/notification_model.dart';
 class NotificationService {
   static Future<void> createNotification({
     required String recipientId,
+    String? senderId,
     required NotificationType type,
     required String title,
     String? subtitle,
@@ -12,9 +13,13 @@ class NotificationService {
     String? targetId,
     Map<String, dynamic>? extraData,
   }) async {
-    final senderUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final senderUid = (senderId != null && senderId.isNotEmpty)
+        ? senderId
+        : (FirebaseAuth.instance.currentUser?.uid ?? '');
+
+    if (recipientId.isEmpty) return;
     // Prevent self-notifications
-    if (senderUid == recipientId) return;
+    if (senderUid.isNotEmpty && senderUid == recipientId) return;
 
     final docRef = FirebaseFirestore.instance
         .collection('users')
@@ -28,8 +33,13 @@ class NotificationService {
       try {
         final senderDoc = await FirebaseFirestore.instance.collection('users').doc(senderUid).get();
         if (senderDoc.exists) {
-          senderName = senderDoc.data()?['name'] ?? '';
-          senderImage = senderDoc.data()?['profileImage'] ?? '';
+          final sData = senderDoc.data() ?? {};
+          senderName = sData['name'] ??
+              sData['username'] ??
+              (sData['email'] is String && sData['email'].contains('@')
+                  ? sData['email'].split('@').first
+                  : '');
+          senderImage = sData['profileImage'] ?? sData['photoURL'] ?? sData['imageURL'] ?? '';
         }
       } catch (_) {}
     }

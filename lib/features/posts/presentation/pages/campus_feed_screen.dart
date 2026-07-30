@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:noteswap/ViewModels/NotificationController.dart';
 import 'package:noteswap/features/events/notifications/notifications_screen.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';

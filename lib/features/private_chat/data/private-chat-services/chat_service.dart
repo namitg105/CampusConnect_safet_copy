@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:noteswap/features/events/notifications/models/notification_model.dart';
+import 'package:noteswap/features/events/notifications/services/notification_service.dart';
 import 'package:noteswap/features/private_chat/data/private-chat-storage-service/storage_service.dart';
 import 'package:noteswap/features/private_chat/domain/entities/pinned_message.dart';
 import '../../domain/entities/chat_message.dart';
@@ -110,6 +112,24 @@ class ChatService {
     }
 
     await _firestore.collection('chat_rooms').doc(roomId).update(roomUpdate);
+
+    // Dispatch Notification to recipient
+    try {
+      final senderDoc = await _firestore.collection('users').doc(senderId).get();
+      final sData = senderDoc.data() ?? {};
+      final senderName = sData['name'] ?? sData['username'] ?? 'Someone';
+
+      await NotificationService.createNotification(
+        recipientId: receiverId,
+        senderId: senderId,
+        type: NotificationType.requestChatPrivate,
+        title: 'New message from $senderName',
+        description: summary.isNotEmpty ? summary : 'Sent a message',
+        subtitle: roomId,
+      );
+    } catch (e) {
+      print('Failed to send notification in ChatService: $e');
+    }
   }
 
   // Add this method inside your ChatService class
