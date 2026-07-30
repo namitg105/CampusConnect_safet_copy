@@ -342,7 +342,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       'Update your personal information',
                                       brandColor,
                                       textColor,
-                                      subTextColor),
+                                      subTextColor,
+                                      onTap: () => _showComingSoonDialog('Account')),
                                   _buildDivider(isLightMode),
                                   _buildSettingItem(
                                       Icons.palette_outlined,
@@ -350,7 +351,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       'Choose your preferred theme',
                                       brandColor,
                                       textColor,
-                                      subTextColor),
+                                      subTextColor,
+                                      onTap: () => _showComingSoonDialog('Theme')),
                                   _buildDivider(isLightMode),
                                   _buildSettingItem(
                                       Icons.notifications_none,
@@ -358,7 +360,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       'Manage your notification preferences',
                                       brandColor,
                                       textColor,
-                                      subTextColor),
+                                      subTextColor,
+                                      onTap: () => _showComingSoonDialog('Notifications')),
                                   _buildDivider(isLightMode),
                                   _buildSettingItem(
                                       Icons.security_outlined,
@@ -366,7 +369,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       'Manage your privacy and security settings',
                                       brandColor,
                                       textColor,
-                                      subTextColor),
+                                      subTextColor,
+                                      onTap: () => _showComingSoonDialog('Privacy & Security')),
                                   _buildDivider(isLightMode),
                                   _buildSettingItem(
                                       Icons.help_outline,
@@ -374,7 +378,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       'Get help and contact support',
                                       brandColor,
                                       textColor,
-                                      subTextColor),
+                                      subTextColor,
+                                      onTap: () => _showComingSoonDialog('Help & Support')),
                                   _buildDivider(isLightMode),
                                   _buildSettingItem(
                                       Icons.info_outline,
@@ -382,7 +387,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       'Learn more about app',
                                       brandColor,
                                       textColor,
-                                      subTextColor),
+                                      subTextColor,
+                                      onTap: () => _showComingSoonDialog('About UniConnect')),
                                 ],
                               ),
                             ),
@@ -429,46 +435,112 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     );
   }
 
-  Widget _buildSettingItem(IconData icon, String title, String subtitle,
-      Color iconColor, Color textColor, Color? subTextColor) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: iconColor, size: 22),
+  void _showComingSoonDialog(String settingName) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
+          title: Row(
+            children: [
+              const Icon(
+                Icons.stars_rounded,
+                color: Color(0xFF6139ED),
+                size: 26,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  settingName,
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: textColor,
+                    fontSize: 18,
+                    color: Color(0xFF1A1A1A),
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: subTextColor,
-                  ),
-                ),
-              ],
+              ),
+            ],
+          ),
+          content: Text(
+            "This $settingName feature will be working in the next update!",
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF555555),
+              height: 1.4,
             ),
           ),
-          Icon(Icons.chevron_right, color: Colors.grey[400], size: 24),
-        ],
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6139ED),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                "OK",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSettingItem(IconData icon, String title, String subtitle,
+      Color iconColor, Color textColor, Color? subTextColor,
+      {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 22),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: subTextColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.grey[400], size: 24),
+          ],
+        ),
       ),
     );
   }
