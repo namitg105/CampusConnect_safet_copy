@@ -24,9 +24,10 @@ class PostRepoImpl implements PostRepo {
       final authorDoc = await firestore.collection('users').doc(post.authorId).get();
       final authorName = authorDoc.data()?['name'] ?? 'Someone';
       await NotificationService.notifyAllUsers(
-        type: NotificationType.postCommented,
+        type: NotificationType.newPost,
         title: '$authorName posted a new update',
         description: post.title,
+        subtitle: docRef.id,
         targetId: docRef.id,
       );
     } catch (e) {
@@ -226,6 +227,25 @@ class PostRepoImpl implements PostRepo {
         await postRef.collection('comments').add(comment.toJson());
     await postRef.update({'commentCount': FieldValue.increment(1)});
     await commentRef.update({'id': commentRef.id});
+
+    // Notify the post author about the new comment
+    try {
+      final postDoc = await postRef.get();
+      final postAuthorId = postDoc.data()?['authorId'] ?? '';
+      if (postAuthorId.isNotEmpty && postAuthorId != comment.authorId) {
+        final commenterDoc = await firestore.collection('users').doc(comment.authorId).get();
+        final commenterName = commenterDoc.data()?['name'] ?? 'Someone';
+        await NotificationService.createNotification(
+          recipientId: postAuthorId,
+          type: NotificationType.postCommented,
+          title: '$commenterName commented on your post',
+          description: comment.text,
+          subtitle: comment.postId,
+        );
+      }
+    } catch (e) {
+      print('Failed to send comment notification: $e');
+    }
   }
 
   @override

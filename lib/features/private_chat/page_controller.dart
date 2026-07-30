@@ -211,17 +211,6 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
                 ),
               ),
               const SizedBox(width: 12),
-              HeaderIconButton(
-                icon: Icons.notifications_none,
-                hasBadge: true,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const NotificationsScreen(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
               ProfileAvatarButton(
                 onTap: () => _showLogoutDialog(),
               ),

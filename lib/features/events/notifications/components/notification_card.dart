@@ -80,6 +80,7 @@ class NotificationCard extends StatelessWidget {
       case NotificationType.requestChatGroup:
         return _buildRequestContent();
       case NotificationType.postCommented:
+      case NotificationType.newPost:
         return _buildSocialContent();
       case NotificationType.event:
       case NotificationType.announcement:

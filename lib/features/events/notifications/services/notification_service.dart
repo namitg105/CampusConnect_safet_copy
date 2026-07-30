@@ -40,6 +40,7 @@ class NotificationService {
     required NotificationType type,
     required String title,
     required String description,
+    String? subtitle,
     String? targetId,
   }) async {
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
@@ -52,6 +53,7 @@ class NotificationService {
             type: type,
             title: title,
             description: description,
+            subtitle: subtitle,
             targetId: targetId,
           );
         }

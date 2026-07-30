@@ -142,12 +142,15 @@ class _CreateEventPageState extends State<CreateEventPage> {
         'createdAt': Timestamp.now(),
       };
 
-      final eventRef = await FirebaseFirestore.instance.collection('events').add(eventData);
+      final eventRef =
+          await FirebaseFirestore.instance.collection('events').add(eventData);
 
       // Notify all users about the new event
       try {
         final currentUser = FirebaseAuth.instance.currentUser;
-        final creatorName = (currentUser != null && currentUser.displayName != null && currentUser.displayName!.isNotEmpty)
+        final creatorName = (currentUser != null &&
+                currentUser.displayName != null &&
+                currentUser.displayName!.isNotEmpty)
             ? currentUser.displayName!
             : (currentUser != null && currentUser.email != null
                 ? currentUser.email!.split('@').first
@@ -155,7 +158,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
         await NotificationService.notifyAllUsers(
           type: NotificationType.event,
           title: 'New Event: ${eventData['title']}',
-          description: '$creatorName created an event: ${eventData['about'] ?? ''}',
+          description:
+              '$creatorName created an event: ${eventData['about'] ?? ''}',
+          subtitle: eventRef.id,
           targetId: eventRef.id,
         );
       } catch (e) {

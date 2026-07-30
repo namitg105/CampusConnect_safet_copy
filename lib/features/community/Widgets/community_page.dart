@@ -207,14 +207,6 @@ class _Header extends StatelessWidget {
                 ),
               ],
             ),
-            _NotificationButton(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const NotificationPage()),
-                );
-              },
-            ),
           ],
         ),
         const SizedBox(height: 16),

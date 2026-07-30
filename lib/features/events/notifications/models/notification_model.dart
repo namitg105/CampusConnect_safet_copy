@@ -5,6 +5,7 @@ enum NotificationType {
   requestChatPrivate,
   requestChatGroup,
   postCommented,
+  newPost,
   event,
   announcement,
 }

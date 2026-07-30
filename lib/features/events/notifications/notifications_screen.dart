@@ -217,7 +217,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ),
       );
-    } else if (notification.type == NotificationType.postCommented) {
+    } else if (notification.type == NotificationType.postCommented ||
+               notification.type == NotificationType.newPost) {
       final postId = notification.subtitle ?? '';
       if (postId.isEmpty) return;
       

@@ -133,10 +133,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                       ),
                       Row(
                         children: [
-                          IconButton(
-                            onPressed: () {},
-                            icon: Icon(Icons.notifications_none, color: textColor),
-                          ),
+                          
                           IconButton(
                             onPressed: () {},
                             icon: Icon(Icons.settings_outlined, color: textColor),
