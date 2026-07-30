@@ -143,39 +143,32 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
             ),
             centerTitle: true,
             actions: [
-              StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(FirebaseAuth.instance.currentUser?.uid ?? '')
-                    .collection('notifications')
-                    .where('isRead', isEqualTo: false)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  final hasUnread =
-                      snapshot.hasData && snapshot.data!.docs.isNotEmpty;
-                  return Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          Get.to(ProfileSettingsPage());
-                        },
-                        icon: Icon(Icons.person_outline),
-                      ),
-                      if (hasUnread)
-                        Positioned(
-                          top: 12,
-                          right: 12,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: Colors.redAccent,
-                              shape: BoxShape.circle,
+              Builder(
+                builder: (context) {
+                  final notifCtrl = Get.put(NotificationController());
+                  return Obx(
+                    () => Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        IconButton(
+                          onPressed: () => Get.to(() => const NotificationsScreen()),
+                          icon: Icon(Icons.notifications_none, color: textColor),
+                        ),
+                        if (notifCtrl.unreadCount.value > 0)
+                          Positioned(
+                            top: 12,
+                            right: 12,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Colors.redAccent,
+                                shape: BoxShape.circle,
+                              ),
                             ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   );
                 },
               ),

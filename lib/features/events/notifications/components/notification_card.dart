@@ -112,10 +112,11 @@ class NotificationCard extends StatelessWidget {
             ),
           ),
         ],
-        FriendRequestActions(
-          onAccept: onAccept,
-          onDecline: onDecline,
-        ),
+        if (onAccept != null || onDecline != null)
+          FriendRequestActions(
+            onAccept: onAccept,
+            onDecline: onDecline,
+          ),
       ],
     );
   }

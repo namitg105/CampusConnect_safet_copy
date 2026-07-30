@@ -50,6 +50,30 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void initState() {
     super.initState();
     _listenToNotifications();
+    _markNotificationsAsRead();
+  }
+
+  void _markNotificationsAsRead() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    if (uid.isEmpty) return;
+    try {
+      final unreadSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('notifications')
+          .where('isRead', isEqualTo: false)
+          .get();
+
+      final batch = FirebaseFirestore.instance.batch();
+      for (var doc in unreadSnapshot.docs) {
+        batch.update(doc.reference, {'isRead': true});
+      }
+      if (unreadSnapshot.docs.isNotEmpty) {
+        await batch.commit();
+      }
+    } catch (e) {
+      print("Failed to mark notifications as read: $e");
+    }
   }
 
   void _listenToNotifications() {
