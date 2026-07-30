@@ -36,7 +36,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(64);
 
-  Widget _buildInitialsAvatar(String name) {
+  Widget _buildInitialsAvatar(String name, double size) {
     final cleanName = name.trim();
     String initials = "AI";
     if (cleanName.isNotEmpty) {
@@ -48,19 +48,19 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
       }
     }
     return Container(
-      width: 38,
-      height: 38,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         color: ChatTheme.primary,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(size * 0.26),
       ),
       child: Center(
         child: Text(
           initials,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
-            fontSize: 14,
+            fontSize: size * 0.36,
           ),
         ),
       ),
@@ -69,6 +69,12 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+
+    // Scale avatar size based on mobile width constraints
+    final double avatarSize = (screenWidth * 0.095).clamp(32.0, 42.0);
+
     return AppBar(
       backgroundColor: ChatTheme.cardBg,
       elevation: 0,
@@ -80,116 +86,116 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       title: Row(
         children: [
-          const SizedBox(width: 8),
+          SizedBox(width: screenWidth * 0.02),
           IconButton(
             icon: const Icon(Icons.arrow_back, color: ChatTheme.dark),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             onPressed: () => Navigator.maybePop(context),
           ),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => GroupProfilePage(groupId: groupId),
-                ),
-              );
-            },
-            child: Row(
-              children: [
-                (groupImage != null && groupImage!.trim().isNotEmpty)
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.network(
-                          groupImage!.trim(),
-                          width: 38,
-                          height: 38,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              _buildInitialsAvatar(groupName),
+          SizedBox(width: screenWidth * 0.02),
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => GroupProfilePage(groupId: groupId),
+                  ),
+                );
+              },
+              child: Row(
+                children: [
+                  (groupImage != null && groupImage!.trim().isNotEmpty)
+                      ? ClipRRect(
+                          borderRadius:
+                              BorderRadius.circular(avatarSize * 0.26),
+                          child: Image.network(
+                            groupImage!.trim(),
+                            width: avatarSize,
+                            height: avatarSize,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                _buildInitialsAvatar(groupName, avatarSize),
+                          ),
+                        )
+                      : _buildInitialsAvatar(groupName, avatarSize),
+                  SizedBox(width: screenWidth * 0.025),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          groupName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: (screenWidth * 0.04).clamp(14.0, 18.0),
+                            fontWeight: FontWeight.bold,
+                            color: ChatTheme.dark,
+                          ),
                         ),
-                      )
-                    : _buildInitialsAvatar(groupName),
-                const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      groupName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: ChatTheme.dark,
-                      ),
+                        const SizedBox(height: 2),
+                        BlocBuilder<ChatCubit, ChatState>(
+                          builder: (context, state) {
+                            String subTitleText = "Connecting...";
+                            bool isOnline = false;
+
+                            if (state is ChatLoaded) {
+                              final int onlineCount = 1;
+                              isOnline = onlineCount > 0;
+
+                              if (onlineCount <= 1) {
+                                subTitleText = "Online · Only you";
+                              } else {
+                                subTitleText = "Online · $onlineCount active";
+                              }
+                            } else if (state is ChatError) {
+                              subTitleText = "Disconnected";
+                            }
+
+                            return Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    color: isOnline
+                                        ? ChatTheme.online
+                                        : ChatTheme.muted,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                Flexible(
+                                  child: Text(
+                                    subTitleText,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: (screenWidth * 0.028)
+                                          .clamp(10.0, 12.0),
+                                      color: ChatTheme.subText,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 2),
-                    BlocBuilder<ChatCubit, ChatState>(
-                      builder: (context, state) {
-                        String subTitleText = "Connecting...";
-                        bool isOnline = false;
-
-                        if (state is ChatLoaded) {
-                          final int onlineCount = 1;
-                          isOnline = onlineCount > 0;
-
-                          if (onlineCount <= 1) {
-                            subTitleText = "Online · Only you";
-                          } else {
-                            subTitleText = "Online · $onlineCount active";
-                          }
-                        } else if (state is ChatError) {
-                          subTitleText = "Disconnected";
-                        }
-
-                        return Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                color: isOnline
-                                    ? ChatTheme.online
-                                    : ChatTheme.muted,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              subTitleText,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: ChatTheme.subText,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
       actions: [
-        IconButton(
-          icon: Image.asset(
-            'assets/chat_assets/Notified bell.png',
-            width: 24,
-            height: 24,
-            errorBuilder: (context, error, stackTrace) =>
-                const Icon(Icons.notifications_none, color: ChatTheme.dark),
-          ),
-          onPressed: () {},
-        ),
         PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert_rounded, color: ChatTheme.dark),
           onSelected: (value) {
@@ -214,7 +220,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
           ],
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: screenWidth * 0.02),
       ],
     );
   }
@@ -234,7 +240,8 @@ class ChatMessageList extends StatelessWidget {
     required this.currentUserId,
   });
 
-  Widget _buildCircularAvatar(String? imagePath, String senderName) {
+  Widget _buildCircularAvatar(
+      String? imagePath, String senderName, double size) {
     final String initials = senderName.isNotEmpty
         ? senderName.trim().split(' ').map((e) => e[0]).take(2).join()
         : 'U';
@@ -243,34 +250,34 @@ class ChatMessageList extends StatelessWidget {
       child: imagePath != null && imagePath.trim().isNotEmpty
           ? Image.network(
               imagePath.trim(),
-              width: 38,
-              height: 38,
+              width: size,
+              height: size,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _avatarFallback(initials),
+              errorBuilder: (_, __, ___) => _avatarFallback(initials, size),
             )
-          : _avatarFallback(initials),
+          : _avatarFallback(initials, size),
     );
   }
 
-  Widget _avatarFallback(String initials) {
+  Widget _avatarFallback(String initials, double size) {
     return CircleAvatar(
-      radius: 19,
+      radius: size / 2,
       backgroundColor: const Color(0xFFECE7FF),
       child: Text(
         initials,
-        style: const TextStyle(
+        style: TextStyle(
           color: ChatTheme.primary,
-          fontSize: 12,
+          fontSize: size * 0.32,
           fontWeight: FontWeight.bold,
         ),
       ),
     );
   }
 
-  Widget _buildResourceCard(String text, String? mediaUrl) {
+  Widget _buildResourceCard(String text, String? mediaUrl, double screenWidth) {
     return Container(
       margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(screenWidth * 0.03),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -279,8 +286,8 @@ class ChatMessageList extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 48,
+            width: (screenWidth * 0.1).clamp(36.0, 48.0),
+            height: (screenWidth * 0.12).clamp(42.0, 54.0),
             decoration: BoxDecoration(
               color: const Color(0xFFFFECEB),
               borderRadius: BorderRadius.circular(8),
@@ -296,7 +303,7 @@ class ChatMessageList extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: screenWidth * 0.03),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,8 +312,8 @@ class ChatMessageList extends StatelessWidget {
                   text.isNotEmpty
                       ? text
                       : "Fine - tuning LLM's\nA complete guide.",
-                  style: const TextStyle(
-                    fontSize: 13,
+                  style: TextStyle(
+                    fontSize: (screenWidth * 0.032).clamp(12.0, 14.0),
                     fontWeight: FontWeight.bold,
                     color: ChatTheme.dark,
                     height: 1.3,
@@ -443,6 +450,10 @@ class ChatMessageList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final double avatarSize = (screenWidth * 0.095).clamp(32.0, 40.0);
+
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
           .collection("groups")
@@ -508,8 +519,10 @@ class ChatMessageList extends StatelessWidget {
               return ListView.builder(
                 controller: scrollController,
                 physics: const BouncingScrollPhysics(),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding: EdgeInsets.symmetric(
+                  horizontal: screenWidth * 0.04,
+                  vertical: 16,
+                ),
                 itemCount: state.messages.length + 1,
                 itemBuilder: (_, index) {
                   if (index == 0) {
@@ -543,8 +556,8 @@ class ChatMessageList extends StatelessWidget {
                       (msg.mediaUrl != null &&
                           msg.mediaUrl.toString().isNotEmpty);
 
-                  final avatar =
-                      _buildCircularAvatar(msg.senderImage, msg.senderName);
+                  final avatar = _buildCircularAvatar(
+                      msg.senderImage, msg.senderName, avatarSize);
 
                   final dynamic rawTimestamp = msg.timestamp;
                   final DateTime? dateTime = rawTimestamp is Timestamp
@@ -560,22 +573,28 @@ class ChatMessageList extends StatelessWidget {
                               style: const TextStyle(
                                   fontSize: 11, color: ChatTheme.muted)),
                           const SizedBox(width: 8),
-                          Text(
-                            msg.senderName,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: ChatTheme.dark,
+                          Flexible(
+                            child: Text(
+                              msg.senderName,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: ChatTheme.dark,
+                              ),
                             ),
                           ),
                         ]
                       : [
-                          Text(
-                            msg.senderName,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: ChatTheme.dark,
+                          Flexible(
+                            child: Text(
+                              msg.senderName,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: ChatTheme.dark,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -589,15 +608,15 @@ class ChatMessageList extends StatelessWidget {
                     children: [
                       Text(
                         msg.text,
-                        style: const TextStyle(
-                          fontSize: 14,
+                        style: TextStyle(
+                          fontSize: (screenWidth * 0.036).clamp(13.0, 16.0),
                           color: ChatTheme.dark,
                           height: 1.4,
                         ),
                       ),
                       if (hasAttachment) ...[
                         const SizedBox(height: 8),
-                        _buildResourceCard(msg.text, msg.mediaUrl),
+                        _buildResourceCard(msg.text, msg.mediaUrl, screenWidth),
                       ]
                     ],
                   );
@@ -632,6 +651,9 @@ class ChatMessageList extends StatelessWidget {
                                           horizontal: 16,
                                           vertical: 12,
                                         ),
+                                        constraints: BoxConstraints(
+                                          maxWidth: screenWidth * 0.72,
+                                        ),
                                         decoration: const BoxDecoration(
                                           color: ChatTheme.bubbleBg,
                                           borderRadius: BorderRadius.only(
@@ -645,12 +667,12 @@ class ChatMessageList extends StatelessWidget {
                                     ],
                                   ),
                                 ),
-                                const SizedBox(width: 10),
+                                SizedBox(width: screenWidth * 0.025),
                                 avatar,
                               ]
                             : [
                                 avatar,
-                                const SizedBox(width: 10),
+                                SizedBox(width: screenWidth * 0.025),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -665,6 +687,9 @@ class ChatMessageList extends StatelessWidget {
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 16,
                                           vertical: 12,
+                                        ),
+                                        constraints: BoxConstraints(
+                                          maxWidth: screenWidth * 0.72,
                                         ),
                                         decoration: const BoxDecoration(
                                           color: ChatTheme.bubbleBg,
@@ -720,11 +745,19 @@ class _ChatInputBarState extends State<ChatInputBar> {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.only(
+            left: screenWidth * 0.04,
+            right: screenWidth * 0.04,
+            top: 12,
+            bottom: 12 + mediaQuery.viewInsets.bottom,
+          ),
           decoration: const BoxDecoration(
             color: ChatTheme.cardBg,
             border: Border(
@@ -754,7 +787,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: screenWidth * 0.03),
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -767,8 +800,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
                       Expanded(
                         child: TextField(
                           controller: widget.controller,
-                          style: const TextStyle(
-                            fontSize: 13,
+                          style: TextStyle(
+                            fontSize: (screenWidth * 0.034).clamp(12.0, 15.0),
                             color: ChatTheme.dark,
                           ),
                           decoration: const InputDecoration(
@@ -798,7 +831,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: screenWidth * 0.03),
               GestureDetector(
                 onTap: widget.onSend,
                 child: Container(
@@ -834,7 +867,10 @@ class _ChatInputBarState extends State<ChatInputBar> {
                 top: BorderSide(color: ChatTheme.border, width: 0.5),
               ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            padding: EdgeInsets.symmetric(
+              horizontal: screenWidth * 0.04,
+              vertical: 20,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -842,6 +878,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
                   iconPath: 'assets/chat_assets/Frame.png',
                   label: 'Photo',
                   bgColor: const Color(0xFFF0ECFC),
+                  screenWidth: screenWidth,
                   onTap: () {
                     setState(() => showAttachmentPanel = false);
                     widget.onPickImage();
@@ -851,6 +888,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
                   iconPath: 'assets/chat_assets/Frame_camera.png',
                   label: 'Video',
                   bgColor: const Color(0xFFFDF2F8),
+                  screenWidth: screenWidth,
                   onTap: () {
                     setState(() => showAttachmentPanel = false);
                     widget.onPickVideo();
@@ -860,6 +898,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
                   iconPath: 'assets/chat_assets/Frame_document.png',
                   label: 'Document',
                   bgColor: const Color(0xFFECFDF5),
+                  screenWidth: screenWidth,
                   onTap: () {
                     setState(() => showAttachmentPanel = false);
                     widget.onPickDocument();
@@ -876,16 +915,19 @@ class _ChatInputBarState extends State<ChatInputBar> {
     required String iconPath,
     required String label,
     required Color bgColor,
+    required double screenWidth,
     required VoidCallback onTap,
   }) {
+    final double iconContainerSize = (screenWidth * 0.14).clamp(48.0, 60.0);
+
     return GestureDetector(
       onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: iconContainerSize,
+            height: iconContainerSize,
             decoration: BoxDecoration(
               color: bgColor,
               shape: BoxShape.circle,
@@ -893,8 +935,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
             child: Center(
               child: Image.asset(
                 iconPath,
-                width: 24,
-                height: 24,
+                width: iconContainerSize * 0.42,
+                height: iconContainerSize * 0.42,
                 color: ChatTheme.primary,
                 errorBuilder: (context, error, stackTrace) =>
                     const Icon(Icons.attach_file, color: ChatTheme.primary),
@@ -904,8 +946,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
           const SizedBox(height: 8),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 12,
+            style: TextStyle(
+              fontSize: (screenWidth * 0.03).clamp(11.0, 13.0),
               fontWeight: FontWeight.w600,
               color: ChatTheme.dark,
             ),

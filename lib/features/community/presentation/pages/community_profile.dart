@@ -54,6 +54,12 @@ class _GroupProfilePageState extends State<GroupProfilePage>
   String creatorName = "Admin";
   int memberCount = 0;
 
+  // --- RATING STATE ---
+  double averageRating = 0.0;
+  int ratingCount = 0;
+  int userExistingRating = 0;
+  String userExistingReview = "";
+
   // --- DYNAMIC PINNED ANNOUNCEMENT STATE ---
   Map<String, dynamic> pinnedAnnouncement = {};
 
@@ -137,6 +143,14 @@ class _GroupProfilePageState extends State<GroupProfilePage>
           .doc(currentUserId)
           .get();
 
+      // Fetch user's existing review if present
+      final reviewDoc = await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(widget.groupId)
+          .collection('reviews')
+          .doc(currentUserId)
+          .get();
+
       final data = groupDoc.data()!;
       creatorUid =
           (data["createdBy"] ?? data["adminId"] ?? "").toString().trim();
@@ -166,6 +180,16 @@ class _GroupProfilePageState extends State<GroupProfilePage>
         rulesList = List<String>.from(data["rules"] ?? []);
 
         location = data["location"] ?? "VIT Vellore";
+
+        // Aggregate ratings
+        averageRating = (data["averageRating"] ?? 0.0).toDouble();
+        ratingCount = data["ratingCount"] ?? 0;
+
+        if (reviewDoc.exists) {
+          final reviewData = reviewDoc.data();
+          userExistingRating = (reviewData?['rating'] ?? 0).toInt();
+          userExistingReview = reviewData?['review'] ?? "";
+        }
 
         // Fetch Pinned Announcement map from Firestore
         pinnedAnnouncement = Map<String, dynamic>.from(
@@ -217,6 +241,171 @@ class _GroupProfilePageState extends State<GroupProfilePage>
       'Dec'
     ];
     return months[month - 1];
+  }
+
+  // --- MEMBER FUNCTION: RATE COMMUNITY DIALOG ---
+  void _showRateCommunityDialog() {
+    if (!isCurrentMember) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Only members can rate this community.')),
+      );
+      return;
+    }
+
+    int selectedRating = userExistingRating > 0 ? userExistingRating : 5;
+    final reviewController = TextEditingController(text: userExistingReview);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              title: const Text('Rate this Community',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      final starVal = index + 1;
+                      return IconButton(
+                        icon: Icon(
+                          starVal <= selectedRating
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          color: Colors.amber,
+                          size: 32,
+                        ),
+                        onPressed: () {
+                          setDialogState(() {
+                            selectedRating = starVal;
+                          });
+                        },
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: reviewController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'Write a short review (optional)...',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel',
+                      style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6366F1),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await _submitRating(
+                        selectedRating, reviewController.text.trim());
+                  },
+                  child: const Text('Submit',
+                      style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // --- ATOMIC RATING SUBMISSION VIA FIRESTORE TRANSACTION ---
+  Future<void> _submitRating(int newRating, String reviewText) async {
+    try {
+      final groupRef =
+          FirebaseFirestore.instance.collection('groups').doc(widget.groupId);
+      final reviewRef = groupRef.collection('reviews').doc(currentUserId);
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUserId)
+          .get();
+
+      String userName = 'User';
+      String userPhoto = '';
+      if (userDoc.exists) {
+        final userData = userDoc.data();
+        userName = userData?['name'] ?? userData?['displayName'] ?? 'User';
+        userPhoto = userData?['imageUrl'] ?? userData?['photoUrl'] ?? '';
+      }
+
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final groupSnapshot = await transaction.get(groupRef);
+        final reviewSnapshot = await transaction.get(reviewRef);
+
+        if (!groupSnapshot.exists) return;
+
+        double currentAvg =
+            (groupSnapshot.data()?['averageRating'] ?? 0.0).toDouble();
+        int currentCount = groupSnapshot.data()?['ratingCount'] ?? 0;
+
+        double newAvg;
+        int newCount;
+
+        if (reviewSnapshot.exists) {
+          int oldRating = (reviewSnapshot.data()?['rating'] ?? 0).toInt();
+          double totalSum = (currentAvg * currentCount) - oldRating + newRating;
+          newCount = currentCount;
+          newAvg = newCount > 0 ? totalSum / newCount : 0.0;
+        } else {
+          double totalSum = (currentAvg * currentCount) + newRating;
+          newCount = currentCount + 1;
+          newAvg = totalSum / newCount;
+        }
+
+        transaction.set(reviewRef, {
+          'rating': newRating,
+          'review': reviewText,
+          'userId': currentUserId,
+          'userName': userName,
+          'userPhoto': userPhoto,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+
+        transaction.update(groupRef, {
+          'averageRating': double.parse(newAvg.toStringAsFixed(1)),
+          'ratingCount': newCount,
+        });
+      });
+
+      setState(() {
+        userExistingRating = newRating;
+        userExistingReview = reviewText;
+      });
+
+      await loadGroup();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Rating submitted successfully!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to submit rating: $e')),
+        );
+      }
+    }
   }
 
   // --- ADMIN FUNCTION: EDIT DESCRIPTION ---
@@ -413,7 +602,7 @@ class _GroupProfilePageState extends State<GroupProfilePage>
     );
   }
 
-  // --- SUBMIT JOIN REQUEST (ADMIN APPROVAL FLOW) ---
+  // --- SUBMIT JOIN REQUEST ---
   Future<void> requestToJoinGroup() async {
     if (currentUserId.isEmpty || isCurrentMember || hasPendingRequest) return;
 
@@ -511,8 +700,36 @@ class _GroupProfilePageState extends State<GroupProfilePage>
     }
   }
 
+  // --- LEAVE GROUP / TRANSFER OWNERSHIP ---
   Future<void> leaveGroup() async {
     if (currentUserId.isEmpty || !isCurrentMember) return;
+
+    if (isCurrentUserAdmin) {
+      try {
+        final membersSnapshot = await FirebaseFirestore.instance
+            .collection('groups')
+            .doc(widget.groupId)
+            .collection('members')
+            .get();
+
+        final otherMembers = membersSnapshot.docs
+            .where((doc) => doc.id != currentUserId)
+            .toList();
+
+        if (otherMembers.isEmpty) {
+          await _showDeleteGroupConfirmation();
+        } else {
+          _showTransferOwnershipDialog(otherMembers);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to check members: $e')),
+          );
+        }
+      }
+      return;
+    }
 
     setState(() => isLoading = true);
     try {
@@ -542,6 +759,205 @@ class _GroupProfilePageState extends State<GroupProfilePage>
         setState(() => isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to leave group: $e')),
+        );
+      }
+    }
+  }
+
+  void _showTransferOwnershipDialog(List<QueryDocumentSnapshot> otherMembers) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          height: MediaQuery.of(context).size.height * 0.6,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Select New Community Admin',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'As the primary admin, you must transfer ownership to another member before leaving.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: otherMembers.length,
+                  itemBuilder: (context, index) {
+                    final memberUid = otherMembers[index].id;
+
+                    return FutureBuilder<DocumentSnapshot>(
+                      future: FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(memberUid)
+                          .get(),
+                      builder: (context, userSnap) {
+                        String name = 'User';
+                        String photo = '';
+
+                        if (userSnap.hasData && userSnap.data!.exists) {
+                          final data =
+                              userSnap.data!.data() as Map<String, dynamic>?;
+                          name =
+                              data?['name'] ?? data?['displayName'] ?? 'User';
+                          photo = data?['imageUrl'] ?? data?['photoUrl'] ?? '';
+                        }
+
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundImage:
+                                photo.isNotEmpty ? NetworkImage(photo) : null,
+                            child: photo.isEmpty
+                                ? Text(name.isNotEmpty
+                                    ? name[0].toUpperCase()
+                                    : 'U')
+                                : null,
+                          ),
+                          title: Text(
+                            name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          trailing: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF6366F1),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _transferOwnershipAndLeave(memberUid, name);
+                            },
+                            child: const Text(
+                              'Assign & Leave',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 11),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _transferOwnershipAndLeave(
+      String newAdminUid, String newAdminName) async {
+    setState(() => isLoading = true);
+    try {
+      final groupRef =
+          FirebaseFirestore.instance.collection('groups').doc(widget.groupId);
+      final currentAdminRef = groupRef.collection('members').doc(currentUserId);
+      final newAdminRef = groupRef.collection('members').doc(newAdminUid);
+
+      final batch = FirebaseFirestore.instance.batch();
+
+      batch.update(groupRef, {
+        'createdBy': newAdminUid,
+        'adminId': newAdminUid,
+        'memberCount': FieldValue.increment(-1),
+        'remainingSeats': FieldValue.increment(1),
+      });
+
+      batch.update(newAdminRef, {
+        'role': 'Admin',
+      });
+
+      batch.delete(currentAdminRef);
+
+      await batch.commit();
+
+      if (mounted) setState(() => isCurrentMember = false);
+      await loadGroup();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Transferred admin rights to $newAdminName and left community.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to transfer ownership: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _showDeleteGroupConfirmation() async {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete Community?'),
+          content: const Text(
+            'You are the only member left in this community. Leaving will permanently delete it.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE11D48),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+                _deleteGroup();
+              },
+              child: const Text('Delete & Leave',
+                  style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteGroup() async {
+    setState(() => isLoading = true);
+    try {
+      await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(widget.groupId)
+          .delete();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Community deleted successfully.')),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete community: $e')),
         );
       }
     }
@@ -580,10 +996,11 @@ class _GroupProfilePageState extends State<GroupProfilePage>
 
   void _shareGroupInfo() {
     final String shareText =
-        "Join '$groupName' on NoteSwap! Group ID: ${widget.groupId}";
+        "Check out '$groupName' on NoteSwap! Community Profile Link: noteswap://community/${widget.groupId}";
     Clipboard.setData(ClipboardData(text: shareText));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Group invite link copied to clipboard!')),
+      const SnackBar(
+          content: Text('Community profile link copied to clipboard!')),
     );
   }
 
@@ -602,8 +1019,7 @@ class _GroupProfilePageState extends State<GroupProfilePage>
       context,
       MaterialPageRoute(
         builder: (_) => BlocProvider(
-          create: (_) =>
-              sl<ChatCubit>(), // Provides ChatCubit instance to ChatPage
+          create: (_) => sl<ChatCubit>(),
           child: ChatPage(
             groupId: widget.groupId,
             groupName: groupName,
@@ -614,6 +1030,16 @@ class _GroupProfilePageState extends State<GroupProfilePage>
   }
 
   void _showAddMemberModal() {
+    if (!isCurrentUserAdmin) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Only community admins can invite members directly.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -780,7 +1206,7 @@ class _GroupProfilePageState extends State<GroupProfilePage>
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // --- DYNAMIC TOP BANNER WITH BACK BUTTON ---
+              // --- BANNER WITH BACK BUTTON ---
               Stack(
                 children: [
                   Container(
@@ -819,7 +1245,7 @@ class _GroupProfilePageState extends State<GroupProfilePage>
                 ],
               ),
 
-              // --- PROFILE PHOTO & DISPLAY NAME / BADGES ---
+              // --- PROFILE PHOTO & BADGES ---
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
@@ -908,22 +1334,68 @@ class _GroupProfilePageState extends State<GroupProfilePage>
 
               const SizedBox(height: 12),
 
-              // --- STATS ROW ---
+              // --- STATS ROW WITH STAR RATING ---
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 50),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
+                      InkWell(
+                        onTap:
+                            isCurrentMember ? _showRateCommunityDialog : null,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFFBEB),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFDE68A)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.star_rounded,
+                                  size: 16, color: Colors.amber),
+                              const SizedBox(width: 4),
+                              Text(
+                                averageRating > 0
+                                    ? "$averageRating ($ratingCount)"
+                                    : "Rate Us",
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFD97706),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
                       _buildStatItem(
                           Icons.people_outline, "$memberCount Members"),
                       const SizedBox(width: 16),
-                      _buildStatItem(Icons.circle, "1 Online",
-                          iconColor: Colors.green),
-                      const SizedBox(width: 16),
-                      _buildStatItem(Icons.article_outlined, "0 Posts"),
-                      const SizedBox(width: 16),
-                      _buildStatItem(Icons.calendar_today_outlined, "0 Events"),
+                      StreamBuilder<QuerySnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('groups')
+                            .doc(widget.groupId)
+                            .collection('members')
+                            .snapshots(),
+                        builder: (context, onlineSnap) {
+                          int onlineCount = 0;
+                          if (onlineSnap.hasData) {
+                            onlineCount = onlineSnap.data!.docs.where((doc) {
+                              final data = doc.data() as Map<String, dynamic>?;
+                              return data?['isOnline'] == true;
+                            }).length;
+                          }
+                          if (onlineCount == 0) onlineCount = 1;
+
+                          return _buildStatItem(
+                              Icons.circle, "$onlineCount Online",
+                              iconColor: Colors.green);
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -958,11 +1430,13 @@ class _GroupProfilePageState extends State<GroupProfilePage>
                       assetPath: 'assets/community/msg_1.png',
                       onTap: _navigateToChatPage,
                     ),
-                    const SizedBox(width: 8),
-                    _buildUniformActionButton(
-                      label: "Invite",
-                      onTap: _showAddMemberModal,
-                    ),
+                    if (isCurrentUserAdmin) ...[
+                      const SizedBox(width: 8),
+                      _buildUniformActionButton(
+                        label: "Invite",
+                        onTap: _showAddMemberModal,
+                      ),
+                    ],
                     const SizedBox(width: 8),
                     _buildUniformActionButton(
                       label: "Share",
@@ -1039,7 +1513,7 @@ class _GroupProfilePageState extends State<GroupProfilePage>
     );
   }
 
-  // --- RESTRICTED PLACEHOLDER FOR UNJOINED USERS ---
+  // --- RESTRICTED PLACEHOLDER ---
   Widget _buildRestrictedTabPlaceholder(String tabName) {
     return Center(
       child: Padding(
@@ -1125,7 +1599,7 @@ class _GroupProfilePageState extends State<GroupProfilePage>
         borderRadius: BorderRadius.circular(6),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF000000).withOpacity(0.5),
+            color: const Color(0xFF000000).withOpacity(0.05),
             blurRadius: 8,
             offset: const Offset(0, 3),
             spreadRadius: 0,
@@ -1182,7 +1656,97 @@ class _GroupProfilePageState extends State<GroupProfilePage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- DESCRIPTION CONTAINER (EDITABLE BY ADMIN) ---
+          // --- COMMUNITY STAR RATING SUMMARY ---
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFBEB),
+              border: Border.all(color: const Color(0xFFFDE68A)),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Community Rating',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Color(0xFF92400E),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Text(
+                              averageRating.toStringAsFixed(1),
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFD97706),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Row(
+                              children: List.generate(5, (index) {
+                                return Icon(
+                                  index < averageRating.floor()
+                                      ? Icons.star_rounded
+                                      : (index < averageRating
+                                          ? Icons.star_half_rounded
+                                          : Icons.star_outline_rounded),
+                                  color: Colors.amber,
+                                  size: 18,
+                                );
+                              }),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '($ratingCount)',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFFB45309),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    if (isCurrentMember)
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF59E0B),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                        ),
+                        onPressed: _showRateCommunityDialog,
+                        icon: const Icon(Icons.rate_review, size: 14),
+                        label: Text(
+                          userExistingRating > 0 ? 'Edit Rating' : 'Rate',
+                          style: const TextStyle(
+                              fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // --- DESCRIPTION CONTAINER ---
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(14),
@@ -1228,7 +1792,7 @@ class _GroupProfilePageState extends State<GroupProfilePage>
           ),
           const SizedBox(height: 16),
 
-          // --- PINNED ANNOUNCEMENT CONTAINER (EDITABLE BY ADMIN) ---
+          // --- PINNED ANNOUNCEMENT CONTAINER ---
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -1379,7 +1943,7 @@ class _GroupProfilePageState extends State<GroupProfilePage>
               ],
             ),
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1460,6 +2024,112 @@ class _GroupProfilePageState extends State<GroupProfilePage>
               ),
             ],
           ),
+
+          const SizedBox(height: 20),
+
+          // --- RECENT COMMUNITY REVIEWS FEED ---
+          const Text('Member Reviews',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          const SizedBox(height: 10),
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('groups')
+                .doc(widget.groupId)
+                .collection('reviews')
+                .orderBy('updatedAt', descending: true)
+                .limit(3)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'No reviews yet. Be the first to leave a review!',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                );
+              }
+
+              final reviewDocs = snapshot.data!.docs;
+
+              return Column(
+                children: reviewDocs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final rRating = data['rating'] ?? 5;
+                  final rReview = data['review'] ?? '';
+                  final rName = data['userName'] ?? 'Member';
+                  final rPhoto = data['userPhoto'] ?? '';
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade200),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundImage:
+                              rPhoto.isNotEmpty ? NetworkImage(rPhoto) : null,
+                          child: rPhoto.isEmpty
+                              ? Text(rName[0].toUpperCase())
+                              : null,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    rName,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12),
+                                  ),
+                                  Row(
+                                    children: List.generate(
+                                      5,
+                                      (i) => Icon(
+                                        i < rRating
+                                            ? Icons.star_rounded
+                                            : Icons.star_outline_rounded,
+                                        size: 14,
+                                        color: Colors.amber,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (rReview.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  rReview,
+                                  style: const TextStyle(
+                                      fontSize: 11, color: Colors.black87),
+                                ),
+                              ]
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -1502,7 +2172,6 @@ class _GroupProfilePageState extends State<GroupProfilePage>
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Column(
             children: [
-              // --- PENDING JOIN REQUESTS SECTION FOR ADMIN ---
               if (isCurrentUserAdmin) ...[
                 StreamBuilder<QuerySnapshot>(
                   stream: _requestsStream,
@@ -1603,7 +2272,6 @@ class _GroupProfilePageState extends State<GroupProfilePage>
                   },
                 ),
               ],
-
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
@@ -1676,36 +2344,54 @@ class _GroupProfilePageState extends State<GroupProfilePage>
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildStatColumn(
-                        assetPath: 'assets/community/a1_profile.png',
-                        value: "${memberDocs.length}",
-                        label: "",
-                        valueColor: Colors.black,
-                      ),
-                      const _VerticalDivider(),
-                      _buildStatColumn(
-                        assetPath: 'assets/community/a2_prof.png',
-                        iconColor: Colors.orange,
-                        value: "0",
-                        label: "online now",
-                        dotColor: Colors.green,
-                      ),
-                      const _VerticalDivider(),
-                      _buildStatColumn(
-                        assetPath: 'assets/community/a3_prof.png',
-                        value: "${memberDocs.length}",
-                        label: "active this week",
-                      ),
-                      const _VerticalDivider(),
-                      _buildStatColumn(
-                        assetPath: 'assets/community/a4_prof.png',
-                        value: "$newThisWeekCount",
-                        label: "new this week",
-                      ),
-                    ],
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('groups')
+                        .doc(widget.groupId)
+                        .collection('members')
+                        .snapshots(),
+                    builder: (context, onlineSnap) {
+                      int onlineCount = 0;
+                      if (onlineSnap.hasData) {
+                        onlineCount = onlineSnap.data!.docs.where((doc) {
+                          final data = doc.data() as Map<String, dynamic>?;
+                          return data?['isOnline'] == true;
+                        }).length;
+                      }
+                      if (onlineCount == 0) onlineCount = 1;
+
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildStatColumn(
+                            assetPath: 'assets/community/a1_profile.png',
+                            value: "${memberDocs.length}",
+                            label: "",
+                            valueColor: Colors.black,
+                          ),
+                          const _VerticalDivider(),
+                          _buildStatColumn(
+                            assetPath: 'assets/community/a2_prof.png',
+                            iconColor: Colors.orange,
+                            value: "$onlineCount",
+                            label: "online now",
+                            dotColor: Colors.green,
+                          ),
+                          const _VerticalDivider(),
+                          _buildStatColumn(
+                            assetPath: 'assets/community/a3_prof.png',
+                            value: "${memberDocs.length}",
+                            label: "active this week",
+                          ),
+                          const _VerticalDivider(),
+                          _buildStatColumn(
+                            assetPath: 'assets/community/a4_prof.png',
+                            value: "$newThisWeekCount",
+                            label: "new this week",
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ],
@@ -1743,31 +2429,33 @@ class _GroupProfilePageState extends State<GroupProfilePage>
                         );
                       },
                     ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    side:
-                        const BorderSide(color: Color(0xFF6366F1), width: 1.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              if (isCurrentUserAdmin) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(
+                          color: Color(0xFF6366F1), width: 1.5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                  ),
-                  onPressed: _showAddMemberModal,
-                  icon: const Icon(Icons.person_add_alt,
-                      color: Color(0xFF6366F1), size: 18),
-                  label: const Text(
-                    "Invite Members",
-                    style: TextStyle(
-                      color: Color(0xFF6366F1),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                    onPressed: _showAddMemberModal,
+                    icon: const Icon(Icons.person_add_alt,
+                        color: Color(0xFF6366F1), size: 18),
+                    label: const Text(
+                      "Invite Members",
+                      style: TextStyle(
+                        color: Color(0xFF6366F1),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         );

@@ -22,7 +22,6 @@ const List<String> categories = [
 const List<String> defaultRules = [
   'Be respectful and kind to everyone',
   'No spam and self promotion',
-  'Keep discussions relevant to AI & ML',
   'Help others and grow together',
 ];
 

@@ -90,82 +90,94 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         .where('recipientId', isEqualTo: uid)
         .snapshots()
         .listen((snapshot) {
-          final list = <NotificationData>[];
-          for (var doc in snapshot.docs) {
-            try {
-              final data = doc.data();
-              
-              NotificationType type;
-              try {
-                type = NotificationType.values.firstWhere(
-                  (e) => e.name == data['type'],
-                  orElse: () => NotificationType.postCommented,
-                );
-              } catch (_) {
-                type = NotificationType.postCommented;
-              }
+      final list = <NotificationData>[];
+      for (var doc in snapshot.docs) {
+        try {
+          final data = doc.data();
 
-              DateTime dt = DateTime.now();
-              final rawTs = data['timestamp'];
-              if (rawTs is Timestamp) {
-                dt = rawTs.toDate();
-              } else if (rawTs is String) {
-                dt = DateTime.tryParse(rawTs) ?? DateTime.now();
-              } else if (rawTs is int) {
-                dt = DateTime.fromMillisecondsSinceEpoch(rawTs);
-              }
-
-              final senderId = (data['senderId'] is String) ? data['senderId'] as String : '';
-              final senderName = (data['senderName'] is String) ? data['senderName'] as String : '';
-              final senderImage = (data['senderImage'] is String) ? data['senderImage'] as String : '';
-              final appUser = (senderName.isNotEmpty || senderId.isNotEmpty)
-                  ? AppUser(
-                      uid: senderId,
-                      email: '',
-                      name: senderName,
-                      collegeId: '',
-                      imageURL: senderImage,
-                    )
-                  : null;
-
-              final title = (data['title'] is String) ? data['title'] as String : '';
-              final description = (data['description'] is String) ? data['description'] as String : '';
-              final isRead = (data['isRead'] is bool) ? data['isRead'] as bool : false;
-              final societyName = (data['societyName'] is String) ? data['societyName'] as String : '';
-              final subtitle = (data['subtitle'] is String) ? data['subtitle'] as String : '';
-
-              list.add(NotificationData(
-                id: doc.id,
-                type: type,
-                title: title,
-                description: description,
-                timestamp: dt,
-                isRead: isRead,
-                societyName: societyName,
-                subtitle: subtitle,
-                appUser: appUser,
-              ));
-            } catch (e) {
-              print("Error parsing notification ${doc.id}: $e");
-            }
+          NotificationType type;
+          try {
+            type = NotificationType.values.firstWhere(
+              (e) => e.name == data['type'],
+              orElse: () => NotificationType.postCommented,
+            );
+          } catch (_) {
+            type = NotificationType.postCommented;
           }
 
-          list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+          DateTime dt = DateTime.now();
+          final rawTs = data['timestamp'];
+          if (rawTs is Timestamp) {
+            dt = rawTs.toDate();
+          } else if (rawTs is String) {
+            dt = DateTime.tryParse(rawTs) ?? DateTime.now();
+          } else if (rawTs is int) {
+            dt = DateTime.fromMillisecondsSinceEpoch(rawTs);
+          }
 
-          if (mounted) {
-            setState(() {
-              _notifications = list;
-              _isLoading = false;
-            });
-          }
-        }, onError: (err) {
-          print("Failed to listen to notifications: $err");
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-          }
+          final senderId =
+              (data['senderId'] is String) ? data['senderId'] as String : '';
+          final senderName = (data['senderName'] is String)
+              ? data['senderName'] as String
+              : '';
+          final senderImage = (data['senderImage'] is String)
+              ? data['senderImage'] as String
+              : '';
+          final appUser = (senderName.isNotEmpty || senderId.isNotEmpty)
+              ? AppUser(
+                  uid: senderId,
+                  email: '',
+                  name: senderName,
+                  collegeId: '',
+                  imageURL: senderImage,
+                )
+              : null;
+
+          final title =
+              (data['title'] is String) ? data['title'] as String : '';
+          final description = (data['description'] is String)
+              ? data['description'] as String
+              : '';
+          final isRead =
+              (data['isRead'] is bool) ? data['isRead'] as bool : false;
+          final societyName = (data['societyName'] is String)
+              ? data['societyName'] as String
+              : '';
+          final subtitle =
+              (data['subtitle'] is String) ? data['subtitle'] as String : '';
+
+          list.add(NotificationData(
+            id: doc.id,
+            type: type,
+            title: title,
+            description: description,
+            timestamp: dt,
+            isRead: isRead,
+            societyName: societyName,
+            subtitle: subtitle,
+            appUser: appUser,
+          ));
+        } catch (e) {
+          print("Error parsing notification ${doc.id}: $e");
+        }
+      }
+
+      list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+      if (mounted) {
+        setState(() {
+          _notifications = list;
+          _isLoading = false;
         });
+      }
+    }, onError: (err) {
+      print("Failed to listen to notifications: $err");
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    });
   }
 
   @override
@@ -228,33 +240,41 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (notification.type == NotificationType.requestChatPrivate) {
       final targetRoomId = notification.subtitle ?? '';
       if (targetRoomId.isEmpty) return;
-      
+
       final parts = targetRoomId.split('_');
-      final friendUid = parts.firstWhere((p) => p != currentUid, orElse: () => '');
+      final friendUid =
+          parts.firstWhere((p) => p != currentUid, orElse: () => '');
       if (friendUid.isEmpty) return;
-      
-      final friendDoc = await FirebaseFirestore.instance.collection('users').doc(friendUid).get();
+
+      final friendDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(friendUid)
+          .get();
       if (!friendDoc.exists) return;
       final friendData = friendDoc.data() ?? {};
       final friendName = friendData['name'] ?? 'Friend';
-      
+
       Get.to(() => ChatScreen(
-        roomId: targetRoomId,
-        currentUid: currentUid,
-        friendUid: friendUid,
-        friendName: friendName,
-        friendInitials: friendName.isNotEmpty ? friendName[0].toUpperCase() : '?',
-        friendAvatarColor: const Color(0xFF6139ED),
-        friendImageUrl: friendData['profileImage'],
-      ));
+            roomId: targetRoomId,
+            currentUid: currentUid,
+            friendUid: friendUid,
+            friendName: friendName,
+            friendInitials:
+                friendName.isNotEmpty ? friendName[0].toUpperCase() : '?',
+            friendAvatarColor: const Color(0xFF6139ED),
+            friendImageUrl: friendData['profileImage'],
+          ));
     } else if (notification.type == NotificationType.requestChatGroup) {
       final groupId = notification.subtitle ?? '';
       if (groupId.isEmpty) return;
-      
-      final groupDoc = await FirebaseFirestore.instance.collection('groups').doc(groupId).get();
+
+      final groupDoc = await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(groupId)
+          .get();
       if (!groupDoc.exists) return;
       final groupData = groupDoc.data() ?? {};
-      
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -268,15 +288,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ),
       );
     } else if (notification.type == NotificationType.postCommented ||
-               notification.type == NotificationType.newPost) {
+        notification.type == NotificationType.newPost) {
       final postId = notification.subtitle ?? '';
       if (postId.isEmpty) return;
-      
-      final postDoc = await FirebaseFirestore.instance.collection('posts').doc(postId).get();
+
+      final postDoc = await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(postId)
+          .get();
       if (!postDoc.exists) return;
-      
+
       final post = PostEntity.fromJson(postDoc.data()!, postDoc.id);
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUid).get();
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUid)
+          .get();
       final userData = userDoc.data() ?? {};
       final currentUser = AppUser(
         uid: currentUid,
@@ -284,7 +310,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         name: userData['name'] ?? '',
         collegeId: userData['collegeId'] ?? '',
       );
-      
+
       final postRepo = PostRepoImpl();
       final postController = PostController(
         createPostUseCase: CreatePostUseCase(repository: postRepo),
@@ -296,19 +322,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         addCommentUseCase: AddCommentUseCase(repository: postRepo),
         getCommentsUseCase: GetCommentsUseCase(repository: postRepo),
         deleteCommentUseCase: DeleteCommentUseCase(repository: postRepo),
-        toggleCommentLikeUseCase: ToggleCommentLikeUseCase(repository: postRepo),
+        toggleCommentLikeUseCase:
+            ToggleCommentLikeUseCase(repository: postRepo),
         getUserVotesUseCase: GetUserVotesUseCase(repository: postRepo),
         deletePostUseCase: DeletePostUseCase(repository: postRepo),
-        getUserLikedCommentsUseCase: GetUserLikedCommentsUseCase(repository: postRepo),
+        getUserLikedCommentsUseCase:
+            GetUserLikedCommentsUseCase(repository: postRepo),
       );
-      
+
       Get.to(() => PostDetailPage(
-        post: post,
-        controller: postController,
-        currentUser: currentUser,
-      ));
+            post: post,
+            controller: postController,
+            currentUser: currentUser,
+          ));
     } else if (notification.type == NotificationType.event) {
-      Get.to(() => EventDetailsPage());
+      Get.to(() => AllCommunityEventsPage());
     }
   }
 
@@ -331,7 +359,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               const SizedBox(height: 26),
               NotificationTitleSection(unreadCount: _unreadCount),
               const SizedBox(height: 26),
-              Expanded(child: _isLoading ? const Center(child: CircularProgressIndicator()) : _buildNotificationList()),
+              Expanded(
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _buildNotificationList()),
             ],
           ),
         ),

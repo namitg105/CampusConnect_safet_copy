@@ -68,30 +68,8 @@ class _GroupsPageState extends State<GroupsPage> {
             }
 
             if (state is GroupLoaded) {
-              if (state.groups.isEmpty) {
-                return Stack(
-                  children: [
-                    const Center(child: EmptyGroupsWidget()),
-                    // Allows pulling down to refresh even on empty states.
-                    Positioned.fill(
-                      child: RefreshIndicator(
-                        color: brandPrimary,
-                        backgroundColor: Colors.white,
-                        onRefresh: () async {
-                          context.read<GroupCubit>().loadGroups();
-                        },
-                        child: SingleChildScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          child: SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.8,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              }
-
+              // Always display CommunitiesPage regardless of whether state.groups is empty or not.
+              // CommunitiesPage handles empty states internally with neat cards and keeps full UI intact.
               return RefreshIndicator(
                 color: brandPrimary,
                 backgroundColor: Colors.white,

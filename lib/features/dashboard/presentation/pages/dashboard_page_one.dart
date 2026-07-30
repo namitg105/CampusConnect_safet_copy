@@ -70,7 +70,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
       toggleCommentLikeUseCase: ToggleCommentLikeUseCase(repository: postRepo),
       getUserVotesUseCase: GetUserVotesUseCase(repository: postRepo),
       deletePostUseCase: DeletePostUseCase(repository: postRepo),
-      getUserLikedCommentsUseCase: GetUserLikedCommentsUseCase(repository: postRepo),
+      getUserLikedCommentsUseCase:
+          GetUserLikedCommentsUseCase(repository: postRepo),
     );
   }
 
@@ -131,7 +132,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
     });
   }
 
-  Future<void> _loadProfileForUser(AppUser user, {bool forceRefresh = false}) async {
+  Future<void> _loadProfileForUser(AppUser user,
+      {bool forceRefresh = false}) async {
     if (_loadedUid == user.uid && !isLoading && !forceRefresh) return;
 
     if (mounted) {
@@ -148,9 +150,11 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
     if (collegeId.isNotEmpty) {
       try {
         feed = await feedUseCase.call(collegeId);
-        announcements = feed.where((p) => p.tag.toLowerCase() == 'announcement').toList();
+        announcements =
+            feed.where((p) => p.tag.toLowerCase() == 'announcement').toList();
         print("[DashboardOne] Resolved collegeId: '$collegeId'");
-        print("[DashboardOne] Fetched feed posts count: ${feed.length}, announcements count: ${announcements.length}");
+        print(
+            "[DashboardOne] Fetched feed posts count: ${feed.length}, announcements count: ${announcements.length}");
       } catch (e) {
         print("[DashboardOne] Error fetching feed: $e");
       }
@@ -257,8 +261,10 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                 alignment: Alignment.center,
                                 children: [
                                   IconButton(
-                                    onPressed: () => Get.to(() => const NotificationsScreen()),
-                                    icon: Icon(Icons.notifications_none, color: textColor),
+                                    onPressed: () => Get.to(
+                                        () => const NotificationsScreen()),
+                                    icon: Icon(Icons.notifications_none,
+                                        color: textColor),
                                   ),
                                   if (notifCtrl.unreadCount.value > 0)
                                     Positioned(
@@ -358,8 +364,10 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                       cardColor,
                                       textColor,
                                       onTap: () {
-                                        if (Get.isRegistered<MainPageController>()) {
-                                          Get.find<MainPageController>().changeIndex(1);
+                                        if (Get.isRegistered<
+                                            MainPageController>()) {
+                                          Get.find<MainPageController>()
+                                              .changeIndex(1);
                                         }
                                       },
                                     ),
@@ -385,7 +393,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                       cardColor,
                                       textColor,
                                       onTap: () => Get.to(
-                                          () => EventDetailsPage()),
+                                          () => AllCommunityEventsPage()),
                                     ),
                                   ),
                                 ],
@@ -397,7 +405,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                 'Announcements',
                                 onViewAll: () {
                                   if (authState is Authenticated) {
-                                    final postController = _createPostController();
+                                    final postController =
+                                        _createPostController();
                                     Get.to(() => AllAnnouncementsScreen(
                                           controller: postController,
                                           currentUser: authState.user,
@@ -417,20 +426,28 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                           final post = announcementPosts[index];
                                           final colorPalettes = [
                                             {
-                                              'iconColor': const Color(0xFF6139ED),
-                                              'bgColor': const Color(0xFFECE7FF),
+                                              'iconColor':
+                                                  const Color(0xFF6139ED),
+                                              'bgColor':
+                                                  const Color(0xFFECE7FF),
                                             },
                                             {
-                                              'iconColor': const Color(0xFF8B5CF6),
-                                              'bgColor': const Color(0xFFF3E8FF),
+                                              'iconColor':
+                                                  const Color(0xFF8B5CF6),
+                                              'bgColor':
+                                                  const Color(0xFFF3E8FF),
                                             },
                                             {
-                                              'iconColor': const Color(0xFF4F46E5),
-                                              'bgColor': const Color(0xFFE0E7FF),
+                                              'iconColor':
+                                                  const Color(0xFF4F46E5),
+                                              'bgColor':
+                                                  const Color(0xFFE0E7FF),
                                             },
                                           ];
-                                          final palette = colorPalettes[index % colorPalettes.length];
-                                          final authorName = post.authorName.contains('@')
+                                          final palette = colorPalettes[
+                                              index % colorPalettes.length];
+                                          final authorName = post.authorName
+                                                  .contains('@')
                                               ? post.authorName.split('@').first
                                               : post.authorName;
 
@@ -442,11 +459,14 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                             palette['bgColor']!,
                                             onTap: () {
                                               if (authState is Authenticated) {
-                                                final postController = _createPostController();
+                                                final postController =
+                                                    _createPostController();
                                                 Get.to(() => PostDetailPage(
                                                       post: post,
-                                                      controller: postController,
-                                                      currentUser: authState.user,
+                                                      controller:
+                                                          postController,
+                                                      currentUser:
+                                                          authState.user,
                                                     ));
                                               }
                                             },
@@ -704,7 +724,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
     );
   }
 
-  Widget _buildHeader(String title, {bool showViewAll = true, VoidCallback? onViewAll}) {
+  Widget _buildHeader(String title,
+      {bool showViewAll = true, VoidCallback? onViewAll}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -773,7 +794,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
   }
 
   Widget _buildTrendingCard(String title, String members, IconData icon,
-      Color iconColor, Color bgColor, {VoidCallback? onTap}) {
+      Color iconColor, Color bgColor,
+      {VoidCallback? onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(

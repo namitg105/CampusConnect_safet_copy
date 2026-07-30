@@ -65,6 +65,7 @@ dependencies:
   video_compress:
   intl: ^0.20.2
   google_fonts: ^6.2.1
+  add_2_calendar: ^3.0.1
 
 dev_dependencies:
   flutter_test:

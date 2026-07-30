@@ -36,12 +36,16 @@ class _SearchCommunitiesPageState extends State<SearchCommunitiesPage> {
   List<String> _filters = ["All"];
   List<String> _currentJoinedIds = [];
 
+  // Track group IDs with a pending join request
+  final Set<String> _pendingRequestGroupIds = {};
+
   @override
   void initState() {
     super.initState();
     _currentJoinedIds = widget.joinedGroupIds ?? [];
     _extractTrendingAndFilters();
     _listenToJoinedGroups();
+    _listenToPendingRequests();
   }
 
   void _listenToJoinedGroups() {
@@ -52,6 +56,31 @@ class _SearchCommunitiesPageState extends State<SearchCommunitiesPage> {
       if (mounted) {
         setState(() {
           _currentJoinedIds = joinedGroups.map((g) => g.id).toList();
+        });
+      }
+    });
+  }
+
+  // Listen to user's pending join requests from Firestore
+  void _listenToPendingRequests() {
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    if (currentUserId == null) return;
+
+    FirebaseFirestore.instance
+        .collectionGroup('join_requests')
+        .where('userId', isEqualTo: currentUserId)
+        .where('status', isEqualTo: 'pending')
+        .snapshots()
+        .listen((snapshot) {
+      if (mounted) {
+        setState(() {
+          _pendingRequestGroupIds.clear();
+          for (var doc in snapshot.docs) {
+            final groupId = doc.reference.parent.parent?.id;
+            if (groupId != null) {
+              _pendingRequestGroupIds.add(groupId);
+            }
+          }
         });
       }
     });
@@ -123,23 +152,98 @@ class _SearchCommunitiesPageState extends State<SearchCommunitiesPage> {
     );
   }
 
-  Future<void> _handleGroupAction(Group group, bool isJoined) async {
+  Future<void> _handleGroupAction(
+      Group group, bool isJoined, bool isPending) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return;
 
     try {
       if (isJoined) {
-        await _groupRepo.leaveGroup(group.id, userId);
+        // Check if user is creator/admin before leaving
+        final groupDoc = await FirebaseFirestore.instance
+            .collection('groups')
+            .doc(group.id)
+            .get();
+
+        if (groupDoc.exists) {
+          final data = groupDoc.data();
+          final creatorUid =
+              (data?["createdBy"] ?? data?["adminId"] ?? "").toString().trim();
+
+          if (creatorUid == userId) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                      'As community admin, please leave via the Community Profile page to transfer ownership.'),
+                ),
+              );
+            }
+            return;
+          }
+        }
+
+        // Standard Leave logic via Firestore batch
+        final groupRef =
+            FirebaseFirestore.instance.collection('groups').doc(group.id);
+        final memberRef = groupRef.collection('members').doc(userId);
+
+        final batch = FirebaseFirestore.instance.batch();
+        batch.delete(memberRef);
+        batch.update(groupRef, {
+          'memberCount': FieldValue.increment(-1),
+          'remainingSeats': FieldValue.increment(1),
+        });
+
+        await batch.commit();
+
+        setState(() {
+          _currentJoinedIds.remove(group.id);
+        });
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Left ${group.name}')),
           );
         }
-      } else {
-        await _groupRepo.joinGroup(group.id, userId);
+      } else if (isPending) {
+        // Cancel pending request
+        await FirebaseFirestore.instance
+            .collection('groups')
+            .doc(group.id)
+            .collection('join_requests')
+            .doc(userId)
+            .delete();
+
+        setState(() {
+          _pendingRequestGroupIds.remove(group.id);
+        });
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Joined ${group.name}!')),
+            SnackBar(content: Text('Cancelled request for ${group.name}')),
+          );
+        }
+      } else {
+        // Send Join Request
+        await FirebaseFirestore.instance
+            .collection('groups')
+            .doc(group.id)
+            .collection('join_requests')
+            .doc(userId)
+            .set({
+          'userId': userId,
+          'status': 'pending',
+          'requestedAt': FieldValue.serverTimestamp(),
+        });
+
+        setState(() {
+          _pendingRequestGroupIds.add(group.id);
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Request sent to join ${group.name}!')),
           );
         }
       }
@@ -233,7 +337,7 @@ class _SearchCommunitiesPageState extends State<SearchCommunitiesPage> {
             ),
             const SizedBox(height: 16),
 
-            // Recent Searches Section (Uses history asset & delete button)
+            // Recent Searches Section
             if (_recentSearches.isNotEmpty) ...[
               const Text(
                 "Recent Searches",
@@ -250,8 +354,7 @@ class _SearchCommunitiesPageState extends State<SearchCommunitiesPage> {
                 children: _recentSearches
                     .map((item) => _ChipWidget(
                           label: item,
-                          assetPath:
-                              "assets/community/history.png", // Separate recent asset
+                          assetPath: "assets/community/history.png",
                           fallbackIcon: Icons.history,
                           onTap: () {
                             _searchController.text = item;
@@ -265,7 +368,7 @@ class _SearchCommunitiesPageState extends State<SearchCommunitiesPage> {
               const SizedBox(height: 16),
             ],
 
-            // Trending Searches Section (Uses trending asset)
+            // Trending Searches Section
             if (_trendingSearches.isNotEmpty) ...[
               const Text(
                 "Trending Searches",
@@ -282,8 +385,7 @@ class _SearchCommunitiesPageState extends State<SearchCommunitiesPage> {
                 children: _trendingSearches
                     .map((item) => _ChipWidget(
                           label: item,
-                          assetPath:
-                              "assets/community/trend.png", // Separate trend asset
+                          assetPath: "assets/community/trend.png",
                           fallbackIcon: Icons.trending_up_rounded,
                           iconColor: const Color(0xFF6366F1),
                           onTap: () {
@@ -383,9 +485,12 @@ class _SearchCommunitiesPageState extends State<SearchCommunitiesPage> {
               ...filteredGroups.map(
                 (group) {
                   final isJoined = _currentJoinedIds.contains(group.id);
+                  final isPending = _pendingRequestGroupIds.contains(group.id);
+
                   return _CommunityCardTile(
                     group: group,
                     isJoined: isJoined,
+                    isPending: isPending,
                     activeFilter: _selectedFilter,
                     availableFilters: _filters,
                     onTap: () {
@@ -395,10 +500,11 @@ class _SearchCommunitiesPageState extends State<SearchCommunitiesPage> {
                       if (isJoined) {
                         _navigateToChat(context, group);
                       } else {
-                        _handleGroupAction(group, isJoined);
+                        _handleGroupAction(group, isJoined, isPending);
                       }
                     },
-                    onToggleJoin: () => _handleGroupAction(group, isJoined),
+                    onToggleJoin: () =>
+                        _handleGroupAction(group, isJoined, isPending),
                   );
                 },
               ),
@@ -486,6 +592,7 @@ class _ChipWidget extends StatelessWidget {
 class _CommunityCardTile extends StatelessWidget {
   final Group group;
   final bool isJoined;
+  final bool isPending;
   final String activeFilter;
   final List<String> availableFilters;
   final VoidCallback onTap;
@@ -494,6 +601,7 @@ class _CommunityCardTile extends StatelessWidget {
   const _CommunityCardTile({
     required this.group,
     required this.isJoined,
+    required this.isPending,
     required this.activeFilter,
     required this.availableFilters,
     required this.onTap,
@@ -518,6 +626,24 @@ class _CommunityCardTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final categoryTag = _determineCategoryTag();
+
+    String buttonText = "Join";
+    Color bgColor = Colors.white;
+    Color fgColor = const Color(0xFF6366F1);
+    BorderSide borderSide =
+        const BorderSide(color: Color(0xFF6366F1), width: 1.5);
+
+    if (isJoined) {
+      buttonText = "✓ Joined";
+      bgColor = const Color(0xFF6366F1);
+      fgColor = Colors.white;
+      borderSide = BorderSide.none;
+    } else if (isPending) {
+      buttonText = "Request Sent";
+      bgColor = const Color(0xFFF1F5F9);
+      fgColor = const Color(0xFF64748B);
+      borderSide = BorderSide(color: Colors.grey.shade300, width: 1);
+    }
 
     return Container(
       constraints: const BoxConstraints(minHeight: 90),
@@ -648,34 +774,28 @@ class _CommunityCardTile extends StatelessWidget {
           ),
           const SizedBox(width: 18),
 
-          // Dynamic Top-Right Button
+          // Dynamic Top-Right Action Button
           SizedBox(
             height: 28,
             child: ElevatedButton(
               onPressed: onToggleJoin,
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    isJoined ? const Color(0xFF6366F1) : Colors.white,
-                foregroundColor:
-                    isJoined ? Colors.white : const Color(0xFF6366F1),
+                backgroundColor: bgColor,
+                foregroundColor: fgColor,
                 elevation: 0,
-                side: isJoined
-                    ? BorderSide.none
-                    : const BorderSide(
-                        color: Color(0xFF6366F1),
-                        width: 1.5,
-                      ),
+                side: borderSide,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
               child: Text(
-                isJoined ? "✓ Joined" : "Join",
-                style: const TextStyle(
+                buttonText,
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
+                  color: fgColor,
                 ),
               ),
             ),

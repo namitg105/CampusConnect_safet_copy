@@ -58,16 +58,19 @@ class MainPage extends StatelessWidget {
             createPostUseCase: CreatePostUseCase(repository: postRepo),
             getFeedUseCase: GetFeedUseCase(repository: postRepo),
             getFeedByTagUseCase: GetFeedByTagUseCase(repository: postRepo),
-            getTopVotedPostsUseCase: GetTopVotedPostsUseCase(repository: postRepo),
+            getTopVotedPostsUseCase:
+                GetTopVotedPostsUseCase(repository: postRepo),
             upvotePostUseCase: UpvotePostUseCase(repository: postRepo),
             downvotePostUseCase: DownvotePostUseCase(repository: postRepo),
             addCommentUseCase: AddCommentUseCase(repository: postRepo),
             getCommentsUseCase: GetCommentsUseCase(repository: postRepo),
             deleteCommentUseCase: DeleteCommentUseCase(repository: postRepo),
-            toggleCommentLikeUseCase: ToggleCommentLikeUseCase(repository: postRepo),
+            toggleCommentLikeUseCase:
+                ToggleCommentLikeUseCase(repository: postRepo),
             getUserVotesUseCase: GetUserVotesUseCase(repository: postRepo),
             deletePostUseCase: DeletePostUseCase(repository: postRepo),
-            getUserLikedCommentsUseCase: GetUserLikedCommentsUseCase(repository: postRepo),
+            getUserLikedCommentsUseCase:
+                GetUserLikedCommentsUseCase(repository: postRepo),
           );
           Get.to(() => CreatePostPage(
                 controller: postController,

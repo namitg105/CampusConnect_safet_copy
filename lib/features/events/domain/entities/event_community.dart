@@ -6,15 +6,16 @@ class Event {
   final String description;
   final String location;
   final DateTime date;
-  final String groupId;
   final String? category;
   final String? format;
   final String? speakerName;
   final String? speakerDescription;
   final String? speakerAvatarUrl;
   final String? bannerUrl;
+  final String groupId;
+  final String createdBy;
+  final String status;
   final int filledSpots;
-  final String status; // <--- ADD THIS FIELD
 
   Event({
     required this.id,
@@ -22,15 +23,16 @@ class Event {
     required this.description,
     required this.location,
     required this.date,
-    required this.groupId,
     this.category,
     this.format,
     this.speakerName,
     this.speakerDescription,
     this.speakerAvatarUrl,
     this.bannerUrl,
-    this.filledSpots = 0,
-    this.status = 'active', // <--- ADD THIS INITIALIZER
+    required this.groupId,
+    required this.createdBy,
+    required this.status,
+    required this.filledSpots,
   });
 
   factory Event.fromMap(String id, Map<String, dynamic> map) {
@@ -39,16 +41,36 @@ class Event {
       title: map['title'] ?? '',
       description: map['description'] ?? '',
       location: map['location'] ?? '',
-      date: (map['date'] as Timestamp).toDate(),
-      groupId: map['groupId'] ?? '',
+      date: (map['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
       category: map['category'],
       format: map['format'],
       speakerName: map['speakerName'],
       speakerDescription: map['speakerDescription'],
       speakerAvatarUrl: map['speakerAvatarUrl'],
       bannerUrl: map['bannerUrl'],
+      groupId: map['groupId'] ?? '',
+      createdBy: map['createdBy'] ?? '',
+      status: map['status'] ?? 'active',
       filledSpots: map['filledSpots'] ?? 0,
-      status: map['status'] ?? 'active', // <--- MAP STATUS FROM FIRESTORE
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'description': description,
+      'location': location,
+      'date': Timestamp.fromDate(date),
+      'category': category,
+      'format': format,
+      'speakerName': speakerName,
+      'speakerDescription': speakerDescription,
+      'speakerAvatarUrl': speakerAvatarUrl,
+      'bannerUrl': bannerUrl,
+      'groupId': groupId,
+      'createdBy': createdBy,
+      'status': status,
+      'filledSpots': filledSpots,
+    };
   }
 }

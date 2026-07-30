@@ -1,3 +1,4 @@
+import 'package:add_2_calendar/add_2_calendar.dart' as calendar;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -14,18 +15,17 @@ const Color _primaryText = Color(0xFF1E1F24);
 const Color _secondaryText = Color(0xFF6E717C);
 const Color _borderColor = Color(0xFFEBEBF0);
 
+// Replace the UpcomingEventsSection in group_profile.dart with this updated implementation:
 
 class UpcomingEventsSection extends StatefulWidget {
   final String groupId;
   final bool isCurrentUserAdmin;
 
-  const UpcomingEventsSection(
-    {
-  super.key,
+  const UpcomingEventsSection({
+    super.key,
     required this.groupId,
     required this.isCurrentUserAdmin,
-  }
-  );
+  });
 
   @override
   State<UpcomingEventsSection> createState() => _UpcomingEventsSectionState();
@@ -41,7 +41,6 @@ class _UpcomingEventsSectionState extends State<UpcomingEventsSection> {
     super.dispose();
   }
 
-  // --- SHOW CREATE EVENT MODAL WITH DATE/TIME PICKER ---
   void _showCreateEventModal() {
     final titleController = TextEditingController();
     final descController = TextEditingController();
@@ -82,7 +81,7 @@ class _UpcomingEventsSectionState extends State<UpcomingEventsSection> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: _primaryText,
+                            color: Color(0xFF1E1F24),
                           ),
                         ),
                         IconButton(
@@ -120,8 +119,6 @@ class _UpcomingEventsSectionState extends State<UpcomingEventsSection> {
                       ),
                     ),
                     const SizedBox(height: 12),
-
-                    // DATE AND TIME PICKER TILE
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 8),
@@ -138,7 +135,7 @@ class _UpcomingEventsSectionState extends State<UpcomingEventsSection> {
                               const Text(
                                 "Event Date & Time",
                                 style: TextStyle(
-                                    fontSize: 11, color: _secondaryText),
+                                    fontSize: 11, color: Color(0xFF6E717C)),
                               ),
                               const SizedBox(height: 2),
                               Text(
@@ -147,18 +144,18 @@ class _UpcomingEventsSectionState extends State<UpcomingEventsSection> {
                                 style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
-                                  color: _primaryText,
+                                  color: Color(0xFF1E1F24),
                                 ),
                               ),
                             ],
                           ),
                           TextButton.icon(
                             icon: const Icon(Icons.calendar_month,
-                                size: 18, color: _primaryPurple),
+                                size: 18, color: Color(0xFF6C38FF)),
                             label: const Text(
                               "Change",
                               style: TextStyle(
-                                  color: _primaryPurple,
+                                  color: Color(0xFF6C38FF),
                                   fontWeight: FontWeight.bold),
                             ),
                             onPressed: () async {
@@ -193,7 +190,6 @@ class _UpcomingEventsSectionState extends State<UpcomingEventsSection> {
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -244,7 +240,7 @@ class _UpcomingEventsSectionState extends State<UpcomingEventsSection> {
                       height: 44,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _primaryPurple,
+                          backgroundColor: const Color(0xFF6C38FF),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -258,12 +254,30 @@ class _UpcomingEventsSectionState extends State<UpcomingEventsSection> {
                             return;
                           }
 
-                          final uid =
-                              FirebaseAuth.instance.currentUser?.uid ?? '';
+                          final user = FirebaseAuth.instance.currentUser;
+                          final uid = user?.uid ?? '';
 
-                          await FirebaseFirestore.instance
-                              .collection('groups')
-                              .doc(widget.groupId)
+                          String userName = 'Admin';
+                          String userAvatarUrl = '';
+
+                          if (uid.isNotEmpty) {
+                            final userDoc = await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(uid)
+                                .get();
+                            final userData = userDoc.data();
+
+                            userName = userData?['name'] ??
+                                userData?['displayName'] ??
+                                user?.email?.split('@').first ??
+                                'Admin';
+                            userAvatarUrl = userData?['imageUrl'] ??
+                                userData?['photoUrl'] ??
+                                userData?['profileImage'] ??
+                                '';
+                          }
+
+                          final eventDocRef = await FirebaseFirestore.instance
                               .collection('events')
                               .add({
                             'title': titleController.text.trim(),
@@ -275,17 +289,29 @@ class _UpcomingEventsSectionState extends State<UpcomingEventsSection> {
                             'speakerName': speakerNameController.text.trim(),
                             'speakerDescription':
                                 speakerDescController.text.trim(),
+                            'status': 'active',
+                            'groupId': widget.groupId,
                             'createdBy': uid,
                             'createdAt': FieldValue.serverTimestamp(),
-                            'filledSpots': 0,
+                            'filledSpots': uid.isNotEmpty ? 1 : 0,
                           });
+
+                          if (uid.isNotEmpty) {
+                            await eventDocRef.collection('rsvps').doc(uid).set({
+                              'userId': uid,
+                              'userEmail': user?.email ?? '',
+                              'userName': userName,
+                              'userAvatarUrl': userAvatarUrl,
+                              'registeredAt': FieldValue.serverTimestamp(),
+                            });
+                          }
 
                           if (context.mounted) {
                             Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text("Event created successfully!"),
-                              ),
+                                  content:
+                                      Text("Event created and registered!")),
                             );
                           }
                         },
@@ -313,21 +339,22 @@ class _UpcomingEventsSectionState extends State<UpcomingEventsSection> {
   Future<void> _deleteEvent(String eventId) async {
     try {
       await FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.groupId)
           .collection('events')
           .doc(eventId)
-          .delete();
+          .update({
+        'status': 'cancelled',
+        'cancelledAt': FieldValue.serverTimestamp(),
+      });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Event deleted successfully.")),
+          const SnackBar(content: Text("Event marked as cancelled.")),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to delete event: $e")),
+          SnackBar(content: Text("Failed to cancel event: $e")),
         );
       }
     }
@@ -335,8 +362,6 @@ class _UpcomingEventsSectionState extends State<UpcomingEventsSection> {
 
   @override
   Widget build(BuildContext context) {
-    const double verticalPad = 8.0;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -361,7 +386,7 @@ class _UpcomingEventsSectionState extends State<UpcomingEventsSection> {
               if (widget.isCurrentUserAdmin)
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _primaryPurple,
+                    backgroundColor: const Color(0xFF6C38FF),
                     foregroundColor: Colors.white,
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -385,17 +410,28 @@ class _UpcomingEventsSectionState extends State<UpcomingEventsSection> {
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
-                .collection('groups')
-                .doc(widget.groupId)
                 .collection('events')
-                .orderBy('date', descending: false)
+                .where('groupId', isEqualTo: widget.groupId)
                 .snapshots(),
             builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      "Error loading events: ${snapshot.error}",
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
+                );
+              }
+
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: _primaryPurple,
+                    color: Color(0xFF6C38FF),
                   ),
                 );
               }
@@ -404,7 +440,7 @@ class _UpcomingEventsSectionState extends State<UpcomingEventsSection> {
                 return const Center(
                   child: Text(
                     "No upcoming events found for this group.",
-                    style: TextStyle(color: _secondaryText, fontSize: 12),
+                    style: TextStyle(color: Color(0xFF6E717C), fontSize: 12),
                   ),
                 );
               }
@@ -415,6 +451,9 @@ class _UpcomingEventsSectionState extends State<UpcomingEventsSection> {
                   doc.data() as Map<String, dynamic>,
                 );
               }).toList();
+
+              // Sort chronologically by date
+              eventsList.sort((a, b) => a.date.compareTo(b.date));
 
               final filteredEvents = eventsList.where((e) {
                 if (_searchQuery.isEmpty) return true;
@@ -428,26 +467,27 @@ class _UpcomingEventsSectionState extends State<UpcomingEventsSection> {
                 return const Center(
                   child: Text(
                     "No matching events found",
-                    style: TextStyle(color: _secondaryText, fontSize: 12),
+                    style: TextStyle(color: Color(0xFF6E717C), fontSize: 12),
                   ),
                 );
               }
 
-              return ListView.separated(
-                padding: const EdgeInsets.only(
-                  left: 12,
-                  right: 12,
-                  bottom: verticalPad,
-                ),
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 itemCount: filteredEvents.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
                   final eventData = filteredEvents[index];
-                  return DynamicEventCard(
-                    event: eventData,
-                    groupId: widget.groupId,
-                    isCurrentUserAdmin: widget.isCurrentUserAdmin,
-                    onDelete: () => _deleteEvent(eventData.id),
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: DynamicEventCard(
+                      event: eventData,
+                      groupId: widget.groupId,
+                      isCurrentUserAdmin: widget.isCurrentUserAdmin,
+                      onDelete: () => _deleteEvent(eventData.id),
+                    ),
                   );
                 },
               );
@@ -459,7 +499,7 @@ class _UpcomingEventsSectionState extends State<UpcomingEventsSection> {
   }
 }
 
-// ==================== 2. LIST SECTION SUB-COMPONENTS ====================
+// ==================== SEARCH & DATE COMPONENTS ====================
 
 class SearchFilterBar extends StatelessWidget {
   final TextEditingController? controller;
@@ -475,16 +515,13 @@ class SearchFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const double barH = 36.0;
-    const double filterSize = 36.0;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
           Expanded(
             child: Container(
-              height: barH,
+              height: 36.0,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
@@ -523,8 +560,8 @@ class SearchFilterBar extends StatelessWidget {
           GestureDetector(
             onTap: onFilterTap,
             child: Container(
-              width: filterSize,
-              height: filterSize,
+              width: 36.0,
+              height: 36.0,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
@@ -693,7 +730,7 @@ class EventMetadataRow extends StatelessWidget {
   }
 }
 
-// ==================== 3. DYNAMIC EVENT CARD ====================
+// ==================== DYNAMIC EVENT CARD ====================
 
 class DynamicEventCard extends StatefulWidget {
   final entity.Event event;
@@ -738,11 +775,8 @@ class _DynamicEventCardState extends State<DynamicEventCard> {
           userData?['profileImage'] ??
           '';
 
-      final eventDocRef = FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.groupId)
-          .collection('events')
-          .doc(widget.event.id);
+      final eventDocRef =
+          FirebaseFirestore.instance.collection('events').doc(widget.event.id);
 
       final rsvpRef = eventDocRef.collection('rsvps').doc(user.uid);
 
@@ -792,6 +826,165 @@ class _DynamicEventCardState extends State<DynamicEventCard> {
     );
   }
 
+  void _showRegisteredUsersModal(int totalSpots) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.65,
+          maxChildSize: 0.85,
+          builder: (context, scrollController) {
+            return Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 10),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.event.title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: _primaryText,
+                            ),
+                          ),
+                          const Text(
+                            "Registered Attendees",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _secondaryText,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _lightPurpleBg,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          "$totalSpots Registered",
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: _primaryPurple,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(),
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('events')
+                        .doc(widget.event.id)
+                        .collection('rsvps')
+                        .orderBy('registeredAt', descending: true)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            color: _primaryPurple,
+                          ),
+                        );
+                      }
+
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            "No registrations for this event yet.",
+                            style:
+                                TextStyle(color: _secondaryText, fontSize: 13),
+                          ),
+                        );
+                      }
+
+                      final registrations = snapshot.data!.docs;
+
+                      return ListView.builder(
+                        controller: scrollController,
+                        itemCount: registrations.length,
+                        itemBuilder: (context, index) {
+                          final regData = registrations[index].data()
+                              as Map<String, dynamic>;
+                          final String userName = regData['userName'] ?? 'User';
+                          final String userEmail =
+                              regData['userEmail'] ?? 'No email';
+                          final String avatarUrl =
+                              regData['userAvatarUrl'] ?? '';
+
+                          return ListTile(
+                            leading: CircleAvatar(
+                              radius: 20,
+                              backgroundColor: _lightPurpleBg,
+                              backgroundImage: avatarUrl.isNotEmpty
+                                  ? NetworkImage(avatarUrl)
+                                  : null,
+                              child: avatarUrl.isEmpty
+                                  ? Text(
+                                      userName.isNotEmpty
+                                          ? userName[0].toUpperCase()
+                                          : 'U',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: _primaryPurple,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            title: Text(
+                              userName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13.5,
+                                color: _primaryText,
+                              ),
+                            ),
+                            subtitle: Text(
+                              userEmail,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: _secondaryText,
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
@@ -803,23 +996,22 @@ class _DynamicEventCardState extends State<DynamicEventCard> {
 
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.groupId)
           .collection('events')
           .doc(widget.event.id)
           .snapshots(),
       builder: (context, eventSnapshot) {
         int filledSpots = 0;
+        bool isCancelled = false;
+
         if (eventSnapshot.hasData && eventSnapshot.data!.exists) {
           final data = eventSnapshot.data!.data() as Map<String, dynamic>?;
           filledSpots = data?['filledSpots'] ?? 0;
+          isCancelled = data?['status'] == 'cancelled';
         }
 
         return StreamBuilder<DocumentSnapshot>(
           stream: currentUser != null
               ? FirebaseFirestore.instance
-                  .collection('groups')
-                  .doc(widget.groupId)
                   .collection('events')
                   .doc(widget.event.id)
                   .collection('rsvps')
@@ -835,9 +1027,12 @@ class _DynamicEventCardState extends State<DynamicEventCard> {
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isCancelled ? const Color(0xFFFFF5F5) : Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _borderColor, width: 1),
+                  border: Border.all(
+                    color: isCancelled ? Colors.red.shade200 : _borderColor,
+                    width: 1,
+                  ),
                   boxShadow: const [
                     BoxShadow(
                       blurRadius: 6,
@@ -854,10 +1049,12 @@ class _DynamicEventCardState extends State<DynamicEventCard> {
                       child: Container(
                         width: 44,
                         height: 56,
-                        color: _lightPurpleBg,
-                        child: const Icon(
-                          Icons.event,
-                          color: _primaryPurple,
+                        color:
+                            isCancelled ? Colors.red.shade50 : _lightPurpleBg,
+                        child: Icon(
+                          isCancelled ? Icons.event_busy : Icons.event,
+                          color:
+                              isCancelled ? Colors.redAccent : _primaryPurple,
                           size: 22,
                         ),
                       ),
@@ -877,20 +1074,32 @@ class _DynamicEventCardState extends State<DynamicEventCard> {
                             widget.event.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: _primaryText,
+                              color: isCancelled
+                                  ? Colors.red.shade900
+                                  : _primaryText,
+                              decoration: isCancelled
+                                  ? TextDecoration.lineThrough
+                                  : null,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            widget.event.description,
+                            isCancelled
+                                ? "This event has been cancelled by the admin."
+                                : widget.event.description,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10,
-                              color: _secondaryText,
+                              fontWeight: isCancelled
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                              color: isCancelled
+                                  ? Colors.redAccent
+                                  : _secondaryText,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -916,40 +1125,78 @@ class _DynamicEventCardState extends State<DynamicEventCard> {
                       children: [
                         Row(
                           children: [
-                            RegisterButton(
-                              isLoading: _isRegistering,
-                              isRegistered: isRegistered,
-                              onPressed: () async {
-                                if (isRegistered) {
-                                  _navigateToDetails();
-                                } else {
-                                  await _handleRSVP();
-                                  if (mounted) _navigateToDetails();
-                                }
-                              },
-                            ),
-                            if (widget.isCurrentUserAdmin) ...[
-                              const SizedBox(width: 4),
-                              GestureDetector(
-                                onTap: widget.onDelete,
-                                child: const Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.redAccent,
-                                  size: 18,
+                            if (isCancelled)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade100,
+                                  borderRadius: BorderRadius.circular(6),
                                 ),
+                                child: const Text(
+                                  'CANCELLED',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.redAccent,
+                                  ),
+                                ),
+                              )
+                            else ...[
+                              RegisterButton(
+                                isLoading: _isRegistering,
+                                isRegistered: isRegistered,
+                                onPressed: () async {
+                                  if (isRegistered) {
+                                    _navigateToDetails();
+                                  } else {
+                                    await _handleRSVP();
+                                    if (mounted) _navigateToDetails();
+                                  }
+                                },
                               ),
+                              if (widget.isCurrentUserAdmin) ...[
+                                const SizedBox(width: 4),
+                                GestureDetector(
+                                  onTap: widget.onDelete,
+                                  child: const Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.redAccent,
+                                    size: 18,
+                                  ),
+                                ),
+                              ],
                             ],
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          '+$filledSpots interested',
-                          style: const TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.w500,
-                            color: _primaryPurple,
+                        if (!isCancelled)
+                          GestureDetector(
+                            onTap: widget.isCurrentUserAdmin
+                                ? () => _showRegisteredUsersModal(filledSpots)
+                                : null,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '+$filledSpots interested',
+                                  style: const TextStyle(
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.w500,
+                                    color: _primaryPurple,
+                                  ),
+                                ),
+                                if (widget.isCurrentUserAdmin) ...[
+                                  const SizedBox(width: 2),
+                                  const Icon(
+                                    Icons.visibility_outlined,
+                                    size: 10,
+                                    color: _primaryPurple,
+                                  ),
+                                ],
+                              ],
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ],
@@ -963,7 +1210,7 @@ class _DynamicEventCardState extends State<DynamicEventCard> {
   }
 }
 
-// ==================== 4. EVENT DETAILS SCREEN ====================
+// ==================== EVENT DETAILS SCREEN ====================
 
 class EventDetailsScreen extends StatefulWidget {
   final entity.Event event;
@@ -982,6 +1229,32 @@ class EventDetailsScreen extends StatefulWidget {
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
   bool _isActionLoading = false;
 
+  void _addToCalendar() {
+    final calendar.Event calEvent = calendar.Event(
+      title: widget.event.title,
+      description: widget.event.description,
+      location: widget.event.location,
+      startDate: widget.event.date,
+      endDate: widget.event.date.add(const Duration(hours: 2)),
+      iosParams: const calendar.IOSParams(
+        reminder: Duration(minutes: 30),
+      ),
+      androidParams: const calendar.AndroidParams(
+        emailInvites: [],
+      ),
+    );
+
+    try {
+      calendar.Add2Calendar.addEvent2Cal(calEvent);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open calendar: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _handleRSVP(bool isCurrentlyRegistered) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -994,16 +1267,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     setState(() => _isActionLoading = true);
 
     try {
-      final eventDocRef = FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.groupId)
-          .collection('events')
-          .doc(widget.event.id);
+      final eventDocRef =
+          FirebaseFirestore.instance.collection('events').doc(widget.event.id);
 
       final rsvpRef = eventDocRef.collection('rsvps').doc(user.uid);
 
       if (isCurrentlyRegistered) {
-        // UNREGISTER / CANCEL RSVP
         await FirebaseFirestore.instance.runTransaction((transaction) async {
           final rsvpSnapshot = await transaction.get(rsvpRef);
           if (!rsvpSnapshot.exists) return;
@@ -1020,7 +1289,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           );
         }
       } else {
-        // REGISTER FOR EVENT
         final userDoc = await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
@@ -1077,84 +1345,122 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final user = FirebaseAuth.instance.currentUser;
     final DateTime eventDate = widget.event.date;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            EventDetailsHeader(onBack: () => Navigator.of(context).pop()),
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: EventHeroBanner(event: widget.event),
-                    ),
-                    const SizedBox(height: 12),
-                    StreamBuilder<DocumentSnapshot>(
-                      stream: user != null
-                          ? FirebaseFirestore.instance
-                              .collection('groups')
-                              .doc(widget.groupId)
-                              .collection('events')
-                              .doc(widget.event.id)
-                              .collection('rsvps')
-                              .doc(user.uid)
-                              .snapshots()
-                          : null,
-                      builder: (context, snapshot) {
-                        final isRegistered =
-                            snapshot.hasData && snapshot.data!.exists;
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('events')
+          .doc(widget.event.id)
+          .snapshots(),
+      builder: (context, eventSnapshot) {
+        bool isCancelled = false;
+        if (eventSnapshot.hasData && eventSnapshot.data!.exists) {
+          final data = eventSnapshot.data!.data() as Map<String, dynamic>?;
+          isCancelled = data?['status'] == 'cancelled';
+        }
 
-                        return EventActionButtons(
-                          isRegistered: isRegistered,
-                          isLoading: _isActionLoading,
-                          onRegister: () => _handleRSVP(isRegistered),
-                          onCalendar: () {},
-                        );
-                      },
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: Column(
+              children: [
+                EventDetailsHeader(onBack: () => Navigator.of(context).pop()),
+                if (isCancelled)
+                  Container(
+                    width: double.infinity,
+                    color: Colors.redAccent,
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.warning_amber_rounded,
+                            color: Colors.white, size: 18),
+                        SizedBox(width: 8),
+                        Text(
+                          'EVENT CANCELLED BY ADMIN',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    EventInfoGridHorizontal(
-                      dateStr: DateFormat('MMM dd, yyyy').format(eventDate),
-                      weekdayStr: DateFormat('EEEE').format(eventDate),
-                      timeStr:
-                          DateFormat('h.mm a').format(eventDate).toUpperCase(),
-                      venue: widget.event.location,
-                      format: widget.event.format ?? 'Hybrid event',
+                  ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          child: EventHeroBanner(event: widget.event),
+                        ),
+                        const SizedBox(height: 12),
+                        if (!isCancelled)
+                          StreamBuilder<DocumentSnapshot>(
+                            stream: user != null
+                                ? FirebaseFirestore.instance
+                                    .collection('events')
+                                    .doc(widget.event.id)
+                                    .collection('rsvps')
+                                    .doc(user.uid)
+                                    .snapshots()
+                                : null,
+                            builder: (context, snapshot) {
+                              final isRegistered =
+                                  snapshot.hasData && snapshot.data!.exists;
+
+                              return EventActionButtons(
+                                isRegistered: isRegistered,
+                                isLoading: _isActionLoading,
+                                onRegister: () => _handleRSVP(isRegistered),
+                                onCalendar: _addToCalendar,
+                              );
+                            },
+                          ),
+                        const SizedBox(height: 16),
+                        EventInfoGridHorizontal(
+                          dateStr: DateFormat('MMM dd, yyyy').format(eventDate),
+                          weekdayStr: DateFormat('EEEE').format(eventDate),
+                          timeStr: DateFormat('h.mm a')
+                              .format(eventDate)
+                              .toUpperCase(),
+                          venue: widget.event.location,
+                          format: widget.event.format ?? 'Hybrid event',
+                        ),
+                        const SizedBox(height: 16),
+                        AboutEventCard(
+                          description: widget.event.description,
+                        ),
+                        const SizedBox(height: 12),
+                        SpeakerCard(
+                          speakerName:
+                              widget.event.speakerName ?? 'Guest Speaker',
+                          speakerDescription: widget.event.speakerDescription ??
+                              'Event Host & Keynote Presenter',
+                          speakerAvatarUrl: widget.event.speakerAvatarUrl ??
+                              'https://picsum.photos/id/1027/200',
+                        ),
+                        const SizedBox(height: 12),
+                        RegisteredUsersFooter(
+                          groupId: widget.groupId,
+                          eventId: widget.event.id,
+                        ),
+                        const SizedBox(height: 20),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    AboutEventCard(
-                      description: widget.event.description,
-                    ),
-                    const SizedBox(height: 12),
-                    SpeakerCard(
-                      speakerName: widget.event.speakerName ?? 'Guest Speaker',
-                      speakerDescription: widget.event.speakerDescription ??
-                          'Event Host & Keynote Presenter',
-                      speakerAvatarUrl: widget.event.speakerAvatarUrl ??
-                          'https://picsum.photos/id/1027/200',
-                    ),
-                    const SizedBox(height: 12),
-                    RegisteredUsersFooter(
-                      groupId: widget.groupId,
-                      eventId: widget.event.id,
-                    ),
-                    const SizedBox(height: 20),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
 
-// ==================== 5. DETAILS PAGE COMPONENTS ====================
+// ==================== SUB-COMPONENTS ====================
 
 class EventDetailsHeader extends StatelessWidget {
   final VoidCallback? onBack;
@@ -1243,11 +1549,6 @@ class EventHeroBanner extends StatelessWidget {
                       color: Colors.white,
                     ),
                   ),
-                ),
-                const Icon(
-                  Icons.bookmark_border_rounded,
-                  color: Colors.white,
-                  size: 22,
                 ),
               ],
             ),
@@ -1616,8 +1917,6 @@ class RegisteredUsersFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('groups')
-          .doc(groupId)
           .collection('events')
           .doc(eventId)
           .collection('rsvps')
