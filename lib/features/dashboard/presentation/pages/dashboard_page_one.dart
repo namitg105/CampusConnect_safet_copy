@@ -22,6 +22,21 @@ import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/group_chat/presentation/pages/groups_page.dart';
 import 'package:noteswap/features/events/notifications/notifications_screen.dart';
 import 'package:noteswap/ViewModels/NotificationController.dart';
+import 'package:noteswap/features/posts/presentation/pages/post_detail_page.dart';
+import 'package:noteswap/features/posts/presentation/pages/all_announcements_screen.dart';
+import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
+import 'package:noteswap/features/posts/domain/usecases/create_post_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/get_feed_by_tag_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/get_top_voted_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/upvote_post_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/downvote_post_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/add_comment_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/get_comments_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/delete_comment_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/toggle_comment_like_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/get_user_votes_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/delete_post_usecase.dart';
+import 'package:noteswap/features/posts/domain/usecases/get_user_liked_comments_usecase.dart';
 
 class DashboardPageOne extends StatefulWidget {
   const DashboardPageOne({super.key});
@@ -35,9 +50,29 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
   late final GetFeedUseCase feedUseCase;
   Map<String, dynamic>? profileData;
   List<PostEntity> newestDiscussions = [];
+  List<PostEntity> announcementPosts = [];
   bool isLoading = true;
   String? _loadedUid;
   bool _isRefreshing = false;
+
+  PostController _createPostController() {
+    final postRepo = PostRepoImpl();
+    return PostController(
+      createPostUseCase: CreatePostUseCase(repository: postRepo),
+      getFeedUseCase: GetFeedUseCase(repository: postRepo),
+      getFeedByTagUseCase: GetFeedByTagUseCase(repository: postRepo),
+      getTopVotedPostsUseCase: GetTopVotedPostsUseCase(repository: postRepo),
+      upvotePostUseCase: UpvotePostUseCase(repository: postRepo),
+      downvotePostUseCase: DownvotePostUseCase(repository: postRepo),
+      addCommentUseCase: AddCommentUseCase(repository: postRepo),
+      getCommentsUseCase: GetCommentsUseCase(repository: postRepo),
+      deleteCommentUseCase: DeleteCommentUseCase(repository: postRepo),
+      toggleCommentLikeUseCase: ToggleCommentLikeUseCase(repository: postRepo),
+      getUserVotesUseCase: GetUserVotesUseCase(repository: postRepo),
+      deletePostUseCase: DeletePostUseCase(repository: postRepo),
+      getUserLikedCommentsUseCase: GetUserLikedCommentsUseCase(repository: postRepo),
+    );
+  }
 
   Future<void> _handleRefresh() async {
     final authState = context.read<AuthCubit>().state;
@@ -109,11 +144,13 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
     final collegeId = data?['collegeId'] as String? ?? user.collegeId;
 
     List<PostEntity> feed = [];
+    List<PostEntity> announcements = [];
     if (collegeId.isNotEmpty) {
       try {
         feed = await feedUseCase.call(collegeId);
+        announcements = feed.where((p) => p.tag.toLowerCase() == 'announcement').toList();
         print("[DashboardOne] Resolved collegeId: '$collegeId'");
-        print("[DashboardOne] Fetched feed posts count: ${feed.length}");
+        print("[DashboardOne] Fetched feed posts count: ${feed.length}, announcements count: ${announcements.length}");
       } catch (e) {
         print("[DashboardOne] Error fetching feed: $e");
       }
@@ -126,6 +163,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
         _loadedUid = user.uid;
         profileData = data;
         newestDiscussions = feed.take(3).toList();
+        announcementPosts = announcements;
         isLoading = false;
       });
     }
@@ -355,37 +393,81 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                               const SizedBox(height: 24),
 
                               // Announcements Section
-                              _buildHeader('Announcements'),
+                              _buildHeader(
+                                'Announcements',
+                                onViewAll: () {
+                                  if (authState is Authenticated) {
+                                    final collegeId = profileData?['collegeId'] as String? ?? authState.user.collegeId;
+                                    final postController = _createPostController();
+                                    Get.to(() => AllAnnouncementsScreen(
+                                          collegeId: collegeId,
+                                          controller: postController,
+                                          currentUser: authState.user,
+                                        ));
+                                  }
+                                },
+                              ),
                               const SizedBox(height: 12),
                               SizedBox(
                                 height: 140,
-                                child: ListView(
-                                  scrollDirection: Axis.horizontal,
-                                  physics: const BouncingScrollPhysics(),
-                                  children: [
-                                    _buildTrendingCard(
-                                      'CAT-I Exam Schedule Released',
-                                      'Check your vtop portal',
-                                      Icons.notifications_active,
-                                      const Color(0xFF6139ED),
-                                      const Color(0xFFECE7FF),
-                                    ),
-                                    _buildTrendingCard(
-                                      'Annual Tech Fest 2025',
-                                      'Registrations Open!',
-                                      Icons.event,
-                                      const Color(0xFF00BFA5),
-                                      const Color(0xFFE0F2F1),
-                                    ),
-                                    _buildTrendingCard(
-                                      'New Scholarships',
-                                      'Apply before deadline',
-                                      Icons.school,
-                                      const Color(0xFFFF6D00),
-                                      const Color(0xFFFBE9E7),
-                                    ),
-                                  ],
-                                ),
+                                child: announcementPosts.isNotEmpty
+                                    ? ListView.builder(
+                                        scrollDirection: Axis.horizontal,
+                                        physics: const BouncingScrollPhysics(),
+                                        itemCount: announcementPosts.length,
+                                        itemBuilder: (context, index) {
+                                          final post = announcementPosts[index];
+                                          final colorPalettes = [
+                                            {
+                                              'iconColor': const Color(0xFF6139ED),
+                                              'bgColor': const Color(0xFFECE7FF),
+                                            },
+                                            {
+                                              'iconColor': const Color(0xFF8B5CF6),
+                                              'bgColor': const Color(0xFFF3E8FF),
+                                            },
+                                            {
+                                              'iconColor': const Color(0xFF4F46E5),
+                                              'bgColor': const Color(0xFFE0E7FF),
+                                            },
+                                          ];
+                                          final palette = colorPalettes[index % colorPalettes.length];
+                                          final authorName = post.authorName.contains('@')
+                                              ? post.authorName.split('@').first
+                                              : post.authorName;
+
+                                          return _buildTrendingCard(
+                                            post.title,
+                                            '$authorName • ${formatTimeAgo(post.createdAt)}',
+                                            Icons.campaign_rounded,
+                                            palette['iconColor']!,
+                                            palette['bgColor']!,
+                                            onTap: () {
+                                              if (authState is Authenticated) {
+                                                final postController = _createPostController();
+                                                Get.to(() => PostDetailPage(
+                                                      post: post,
+                                                      controller: postController,
+                                                      currentUser: authState.user,
+                                                    ));
+                                              }
+                                            },
+                                          );
+                                        },
+                                      )
+                                    : ListView(
+                                        scrollDirection: Axis.horizontal,
+                                        physics: const BouncingScrollPhysics(),
+                                        children: [
+                                          _buildTrendingCard(
+                                            'No Announcements',
+                                            'Stay tuned for updates',
+                                            Icons.campaign_outlined,
+                                            const Color(0xFF6139ED),
+                                            const Color(0xFFECE7FF),
+                                          ),
+                                        ],
+                                      ),
                               ),
                               const SizedBox(height: 24),
 
@@ -624,7 +706,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
     );
   }
 
-  Widget _buildHeader(String title, {bool showViewAll = true}) {
+  Widget _buildHeader(String title, {bool showViewAll = true, VoidCallback? onViewAll}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -636,12 +718,15 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
           ),
         ),
         if (showViewAll)
-          const Text(
-            'View all',
-            style: TextStyle(
-              color: Color(0xFF6139ED),
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
+          GestureDetector(
+            onTap: onViewAll,
+            child: const Text(
+              'View all',
+              style: TextStyle(
+                color: Color(0xFF6139ED),
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
             ),
           ),
       ],
@@ -690,47 +775,52 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
   }
 
   Widget _buildTrendingCard(String title, String members, IconData icon,
-      Color iconColor, Color bgColor) {
-    return Container(
-      width: 110,
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: iconColor, size: 26),
-          const Spacer(),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: iconColor,
+      Color iconColor, Color bgColor, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 140,
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: iconColor, size: 24),
+            const Spacer(),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: iconColor,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            members,
-            style: TextStyle(
-              fontSize: 9,
-              color: iconColor.withOpacity(0.8),
+            const SizedBox(height: 2),
+            Text(
+              members,
+              style: TextStyle(
+                fontSize: 9,
+                color: iconColor.withOpacity(0.8),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            height: 12,
-            child: CustomPaint(
-              painter: WavyLinePainter(iconColor),
+            const SizedBox(height: 6),
+            SizedBox(
+              width: double.infinity,
+              height: 12,
+              child: CustomPaint(
+                painter: WavyLinePainter(iconColor),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
