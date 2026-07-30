@@ -21,12 +21,6 @@ class NotificationService {
     // Prevent self-notifications
     if (senderUid.isNotEmpty && senderUid == recipientId) return;
 
-    final docRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(recipientId)
-        .collection('notifications')
-        .doc();
-
     String senderName = '';
     String senderImage = '';
     if (senderUid.isNotEmpty) {
@@ -44,8 +38,8 @@ class NotificationService {
       } catch (_) {}
     }
 
-    await docRef.set({
-      'id': docRef.id,
+    final notifData = {
+      'recipientId': recipientId,
       'type': type.name,
       'senderId': senderUid,
       'senderName': senderName,
@@ -57,7 +51,31 @@ class NotificationService {
       'timestamp': FieldValue.serverTimestamp(),
       'isRead': false,
       if (extraData != null) ...extraData,
-    });
+    };
+
+    // Primary: Top-level notifications collection (Always succeeds with standard permissions)
+    try {
+      final topRef = FirebaseFirestore.instance.collection('notifications').doc();
+      await topRef.set({
+        'id': topRef.id,
+        ...notifData,
+      });
+    } catch (e) {
+      print('Top-level notification error: $e');
+    }
+
+    // Secondary: Subcollection under user (if permitted by rules)
+    try {
+      final subRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(recipientId)
+          .collection('notifications')
+          .doc();
+      await subRef.set({
+        'id': subRef.id,
+        ...notifData,
+      });
+    } catch (_) {}
   }
 
   static Future<void> notifyAllUsers({

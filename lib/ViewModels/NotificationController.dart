@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class NotificationController extends GetxController {
   RxInt unreadCount = 0.obs;
   StreamSubscription? _notifSub;
+  StreamSubscription? _subNotifSub;
   StreamSubscription? _authSub;
 
   @override
@@ -15,42 +16,59 @@ class NotificationController extends GetxController {
   }
 
   void _listenAuth() {
-    // Listen to Auth State so that when user logs in or switches, the stream updates immediately
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (user != null && user.uid.isNotEmpty) {
         _listen(user.uid);
       } else {
-        _notifSub?.cancel();
+        _cancelSubs();
         unreadCount.value = 0;
       }
     });
 
-    // Also check current user immediately in case already logged in
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null && currentUser.uid.isNotEmpty) {
       _listen(currentUser.uid);
     }
   }
 
-  void _listen(String uid) {
+  void _cancelSubs() {
     _notifSub?.cancel();
+    _subNotifSub?.cancel();
+  }
+
+  void _listen(String uid) {
+    _cancelSubs();
+
+    // Listen to top-level notifications collection
     _notifSub = FirebaseFirestore.instance
+        .collection('notifications')
+        .where('recipientId', isEqualTo: uid)
+        .where('isRead', isEqualTo: false)
+        .snapshots()
+        .listen((snapshot) {
+      unreadCount.value = snapshot.docs.length;
+    }, onError: (e) {
+      print('Top-level unread notification error: $e');
+    });
+
+    // Fallback: Listen to subcollection if permitted
+    _subNotifSub = FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
         .collection('notifications')
         .where('isRead', isEqualTo: false)
         .snapshots()
         .listen((snapshot) {
-      unreadCount.value = snapshot.docs.length;
-    }, onError: (e) {
-      print('Failed to listen to unread notifications: $e');
-    });
+      if (snapshot.docs.isNotEmpty) {
+        unreadCount.value = snapshot.docs.length;
+      }
+    }, onError: (_) {});
   }
 
   @override
   void onClose() {
     _authSub?.cancel();
-    _notifSub?.cancel();
+    _cancelSubs();
     super.onClose();
   }
 }

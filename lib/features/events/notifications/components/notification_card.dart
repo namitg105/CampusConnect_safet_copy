@@ -27,15 +27,10 @@ class NotificationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
-        if (uid.isNotEmpty) {
-          FirebaseFirestore.instance
-              .collection('users')
-              .doc(uid)
-              .collection('notifications')
-              .doc(notification.id)
-              .update({'isRead': true});
-        }
+        FirebaseFirestore.instance
+            .collection('notifications')
+            .doc(notification.id)
+            .update({'isRead': true});
         onTap?.call();
       },
       child: Container(

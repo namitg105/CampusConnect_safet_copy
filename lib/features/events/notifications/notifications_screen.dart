@@ -58,9 +58,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (uid.isEmpty) return;
     try {
       final unreadSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
           .collection('notifications')
+          .where('recipientId', isEqualTo: uid)
           .where('isRead', isEqualTo: false)
           .get();
 
@@ -87,10 +86,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
 
     _notificationsSubscription = FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
         .collection('notifications')
-        .orderBy('timestamp', descending: true)
+        .where('recipientId', isEqualTo: uid)
         .snapshots()
         .listen((snapshot) {
           final list = snapshot.docs.map((doc) {
@@ -135,6 +132,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             );
           }).toList();
 
+          list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
           if (mounted) {
             setState(() {
               _notifications = list;
@@ -176,12 +175,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   void _onDelete(String id) async {
-    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
-    if (uid.isEmpty) return;
     try {
       await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
           .collection('notifications')
           .doc(id)
           .delete();
@@ -195,9 +190,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (uid.isEmpty) return;
     try {
       final snapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
           .collection('notifications')
+          .where('recipientId', isEqualTo: uid)
           .get();
       final batch = FirebaseFirestore.instance.batch();
       for (var doc in snapshot.docs) {

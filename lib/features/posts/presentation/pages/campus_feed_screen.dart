@@ -152,8 +152,10 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                       alignment: Alignment.center,
                       children: [
                         IconButton(
-                          onPressed: () => Get.to(() => const NotificationsScreen()),
-                          icon: Icon(Icons.notifications_none, color: textColor),
+                          onPressed: () =>
+                              Get.to(() => const NotificationsScreen()),
+                          icon:
+                              Icon(Icons.notifications_none, color: textColor),
                         ),
                         if (notifCtrl.unreadCount.value > 0)
                           Positioned(
@@ -300,7 +302,8 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                   (() {
                     final query = _searchQuery.value.trim().toLowerCase();
                     final filteredPosts = postController.posts.where((post) {
-                      final titleMatch = post.title.toLowerCase().contains(query);
+                      final titleMatch =
+                          post.title.toLowerCase().contains(query);
                       final bodyMatch = post.body.toLowerCase().contains(query);
                       return titleMatch || bodyMatch;
                     }).toList();
