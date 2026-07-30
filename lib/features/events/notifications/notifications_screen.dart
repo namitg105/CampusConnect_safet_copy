@@ -85,6 +85,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             final Timestamp? ts = data['timestamp'] as Timestamp?;
             final DateTime dt = ts?.toDate() ?? DateTime.now();
 
+            final senderId = data['senderId'] ?? '';
+            final senderName = data['senderName'] ?? '';
+            final senderImage = data['senderImage'] ?? '';
+            final appUser = (senderName.isNotEmpty || senderId.isNotEmpty)
+                ? AppUser(
+                    uid: senderId,
+                    email: '',
+                    name: senderName,
+                    collegeId: '',
+                    imageURL: senderImage,
+                  )
+                : null;
+
             return NotificationData(
               id: doc.id,
               type: type,
@@ -94,6 +107,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               isRead: data['isRead'] ?? false,
               societyName: data['societyName'] ?? '',
               subtitle: data['subtitle'] ?? '',
+              appUser: appUser,
             );
           }).toList();
 

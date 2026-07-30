@@ -22,10 +22,24 @@ class NotificationService {
         .collection('notifications')
         .doc();
 
+    String senderName = '';
+    String senderImage = '';
+    if (senderUid.isNotEmpty) {
+      try {
+        final senderDoc = await FirebaseFirestore.instance.collection('users').doc(senderUid).get();
+        if (senderDoc.exists) {
+          senderName = senderDoc.data()?['name'] ?? '';
+          senderImage = senderDoc.data()?['profileImage'] ?? '';
+        }
+      } catch (_) {}
+    }
+
     await docRef.set({
       'id': docRef.id,
       'type': type.name,
       'senderId': senderUid,
+      'senderName': senderName,
+      'senderImage': senderImage,
       'title': title,
       'subtitle': subtitle ?? '',
       'description': description ?? '',
