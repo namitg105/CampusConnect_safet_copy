@@ -397,10 +397,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                 'Announcements',
                                 onViewAll: () {
                                   if (authState is Authenticated) {
-                                    final collegeId = profileData?['collegeId'] as String? ?? authState.user.collegeId;
                                     final postController = _createPostController();
                                     Get.to(() => AllAnnouncementsScreen(
-                                          collegeId: collegeId,
                                           controller: postController,
                                           currentUser: authState.user,
                                         ));
