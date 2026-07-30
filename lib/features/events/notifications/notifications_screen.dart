@@ -90,47 +90,65 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         .where('recipientId', isEqualTo: uid)
         .snapshots()
         .listen((snapshot) {
-          final list = snapshot.docs.map((doc) {
-            final data = doc.data();
-            
-            NotificationType type;
+          final list = <NotificationData>[];
+          for (var doc in snapshot.docs) {
             try {
-              type = NotificationType.values.firstWhere(
-                (e) => e.name == data['type'],
-                orElse: () => NotificationType.postCommented,
-              );
-            } catch (_) {
-              type = NotificationType.postCommented;
+              final data = doc.data();
+              
+              NotificationType type;
+              try {
+                type = NotificationType.values.firstWhere(
+                  (e) => e.name == data['type'],
+                  orElse: () => NotificationType.postCommented,
+                );
+              } catch (_) {
+                type = NotificationType.postCommented;
+              }
+
+              DateTime dt = DateTime.now();
+              final rawTs = data['timestamp'];
+              if (rawTs is Timestamp) {
+                dt = rawTs.toDate();
+              } else if (rawTs is String) {
+                dt = DateTime.tryParse(rawTs) ?? DateTime.now();
+              } else if (rawTs is int) {
+                dt = DateTime.fromMillisecondsSinceEpoch(rawTs);
+              }
+
+              final senderId = (data['senderId'] is String) ? data['senderId'] as String : '';
+              final senderName = (data['senderName'] is String) ? data['senderName'] as String : '';
+              final senderImage = (data['senderImage'] is String) ? data['senderImage'] as String : '';
+              final appUser = (senderName.isNotEmpty || senderId.isNotEmpty)
+                  ? AppUser(
+                      uid: senderId,
+                      email: '',
+                      name: senderName,
+                      collegeId: '',
+                      imageURL: senderImage,
+                    )
+                  : null;
+
+              final title = (data['title'] is String) ? data['title'] as String : '';
+              final description = (data['description'] is String) ? data['description'] as String : '';
+              final isRead = (data['isRead'] is bool) ? data['isRead'] as bool : false;
+              final societyName = (data['societyName'] is String) ? data['societyName'] as String : '';
+              final subtitle = (data['subtitle'] is String) ? data['subtitle'] as String : '';
+
+              list.add(NotificationData(
+                id: doc.id,
+                type: type,
+                title: title,
+                description: description,
+                timestamp: dt,
+                isRead: isRead,
+                societyName: societyName,
+                subtitle: subtitle,
+                appUser: appUser,
+              ));
+            } catch (e) {
+              print("Error parsing notification ${doc.id}: $e");
             }
-
-            final Timestamp? ts = data['timestamp'] as Timestamp?;
-            final DateTime dt = ts?.toDate() ?? DateTime.now();
-
-            final senderId = data['senderId'] ?? '';
-            final senderName = data['senderName'] ?? '';
-            final senderImage = data['senderImage'] ?? '';
-            final appUser = (senderName.isNotEmpty || senderId.isNotEmpty)
-                ? AppUser(
-                    uid: senderId,
-                    email: '',
-                    name: senderName,
-                    collegeId: '',
-                    imageURL: senderImage,
-                  )
-                : null;
-
-            return NotificationData(
-              id: doc.id,
-              type: type,
-              title: data['title'] ?? '',
-              description: data['description'] ?? '',
-              timestamp: dt,
-              isRead: data['isRead'] ?? false,
-              societyName: data['societyName'] ?? '',
-              subtitle: data['subtitle'] ?? '',
-              appUser: appUser,
-            );
-          }).toList();
+          }
 
           list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
