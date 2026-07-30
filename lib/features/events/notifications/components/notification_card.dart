@@ -24,47 +24,101 @@ class NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        FirebaseFirestore.instance
-            .collection('notifications')
-            .doc(notification.id)
-            .update({'isRead': true});
-        onTap?.call();
+    return Builder(
+      builder: (context) {
+        try {
+          return GestureDetector(
+            onTap: () {
+              try {
+                FirebaseFirestore.instance
+                    .collection('notifications')
+                    .doc(notification.id)
+                    .update({'isRead': true});
+              } catch (_) {}
+              onTap?.call();
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: [
+                  BoxShadow(
+                    blurRadius: 18,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 8),
+                    color: Colors.black.withValues(alpha: 0.06),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  NotificationAvatar(
+                    appUser: notification.appUser,
+                    actionIcon: notification.actionIcon,
+                    actionColor: notification.actionColor,
+                    fallbackColor: notification.avatarColor,
+                    fallbackInitials: notification.initials,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: _buildContent(),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildTrailing(),
+                ],
+              ),
+            ),
+          );
+        } catch (e) {
+          // Graceful Error Boundary Card
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  blurRadius: 10,
+                  color: Colors.black.withValues(alpha: 0.04),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                const CircleAvatar(
+                  backgroundColor: Color(0xFF6139ED),
+                  child: Icon(Icons.notifications, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        notification.title.isNotEmpty ? notification.title : 'Notification',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Color(0xFF1F1F1F),
+                        ),
+                      ),
+                      if (notification.description != null && notification.description!.trim().isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          notification.description!,
+                          style: const TextStyle(color: Color(0xFF7E7E7E), fontSize: 13),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              blurRadius: 18,
-              spreadRadius: 0,
-              offset: const Offset(0, 8),
-              color: Colors.black.withValues(alpha: 0.06),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(18),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            NotificationAvatar(
-              appUser: notification.appUser,
-              actionIcon: notification.actionIcon,
-              actionColor: notification.actionColor,
-              fallbackColor: notification.avatarColor,
-              fallbackInitials: notification.initials,
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: _buildContent(),
-            ),
-            const SizedBox(width: 8),
-            _buildTrailing(),
-          ],
-        ),
-      ),
     );
   }
 
@@ -83,7 +137,7 @@ class NotificationCard extends StatelessWidget {
   }
 
   Widget _buildRequestContent() {
-    final name = (notification.appUser != null && notification.appUser!.name.isNotEmpty)
+    final name = (notification.appUser != null && notification.appUser!.name.trim().isNotEmpty)
         ? notification.appUser!.name
         : (notification.title.startsWith('New message from ')
             ? notification.title.replaceFirst('New message from ', '').trim()
@@ -98,7 +152,7 @@ class NotificationCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         NotificationRichContent(
-          name: name,
+          name: name.isNotEmpty ? name : 'Someone',
           action: action,
           subtitle: (notification.societyName != null && notification.societyName!.isNotEmpty)
               ? notification.societyName
@@ -133,7 +187,7 @@ class NotificationCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         NotificationRichContent(
-          name: name,
+          name: name.isNotEmpty ? name : 'Someone',
           action: notification.title,
           subtitle: notification.societyName ?? notification.subtitle,
           timestamp: _formatTimestamp(notification.timestamp),
@@ -195,12 +249,16 @@ class NotificationCard extends StatelessWidget {
   }
 
   String _formatTimestamp(DateTime dt) {
-    final now = DateTime.now();
-    final diff = now.difference(dt);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
-    if (diff.inDays < 1) return '${diff.inHours}h ago';
-    if (diff.inDays == 1) return 'Yesterday';
-    return '${dt.day}/${dt.month}/${dt.year}';
+    try {
+      final now = DateTime.now();
+      final diff = now.difference(dt);
+      if (diff.inMinutes < 1) return 'Just now';
+      if (diff.inHours < 1) return '${diff.inMinutes}m ago';
+      if (diff.inDays < 1) return '${diff.inHours}h ago';
+      if (diff.inDays == 1) return 'Yesterday';
+      return '${dt.day}/${dt.month}/${dt.year}';
+    } catch (_) {
+      return 'Just now';
+    }
   }
 }

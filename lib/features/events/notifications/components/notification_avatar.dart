@@ -25,7 +25,7 @@ class NotificationAvatar extends StatelessWidget {
 
     final initials = fallbackInitials.isNotEmpty
         ? fallbackInitials
-        : (appUser != null && appUser!.name.isNotEmpty
+        : (appUser != null && appUser!.name.trim().isNotEmpty
             ? _getInitials(appUser!.name)
             : '?');
 
@@ -78,11 +78,16 @@ class NotificationAvatar extends StatelessWidget {
     try {
       final trimmed = name.trim();
       if (trimmed.isEmpty) return '?';
-      final parts = trimmed.split(' ');
-      if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
-        return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+      final words = trimmed.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+      if (words.isEmpty) return '?';
+
+      if (words.length >= 2) {
+        final first = words[0].substring(0, 1);
+        final second = words[1].substring(0, 1);
+        return (first + second).toUpperCase();
+      } else {
+        return words[0].substring(0, 1).toUpperCase();
       }
-      return trimmed[0].toUpperCase();
     } catch (_) {
       return '?';
     }
