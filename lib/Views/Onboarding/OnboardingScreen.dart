@@ -14,7 +14,12 @@ class OnboardingScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF8F9FE),
       body: PageView(
         controller: controller.pageController,
-        onPageChanged: controller.onPageChanged,
+        onPageChanged: (index) {
+          controller.onPageChanged(index);
+          if (index >= 3) {
+            Get.offAll(() => const AuthPage());
+          }
+        },
         children: [
           OnboardingPageLayout(
             pageIndex: 0,
@@ -36,14 +41,14 @@ class OnboardingScreen extends StatelessWidget {
           ),
           OnboardingPageLayout(
             pageIndex: 2,
-            imagePath:
-                "assets/Gemini_Generated_Image_s38k7zs38k7zs38k 1.png",
+            imagePath: "assets/Gemini_Generated_Image_s38k7zs38k7zs38k 1.png",
             bottomIconPath: "assets/notes 1.png",
             title: "Share & Access Resources",
             subtitle:
                 "Get course notes, important resources,\nand study materials shared by seniors.",
             controller: controller,
           ),
+          const AuthPage(),
         ],
       ),
     );
@@ -185,15 +190,18 @@ class OnboardingPageLayout extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 32),
-                // Pagination Dots Row (Tapping 3rd dot on 3rd screen navigates to login)
+                // Pagination Dots Row
                 Obx(
                   () => Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(3, (index) {
-                      final isActive = controller.currentPage.value == index;
+                      final activeIndex = controller.currentPage.value >= 2
+                          ? 2
+                          : controller.currentPage.value;
+                      final isActive = activeIndex == index;
                       return GestureDetector(
                         onTap: () {
-                          if (controller.currentPage.value == 2 && index == 2) {
+                          if (controller.currentPage.value >= 2 && index == 2) {
                             Get.offAll(() => const AuthPage());
                           } else {
                             controller.pageController.animateToPage(
