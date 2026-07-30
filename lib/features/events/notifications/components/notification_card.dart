@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/notification_model.dart';
 import 'notification_avatar.dart';
@@ -55,19 +54,19 @@ class NotificationCard extends StatelessWidget {
               actionIcon: notification.actionIcon,
               actionColor: notification.actionColor,
               fallbackColor: notification.avatarColor,
-            fallbackInitials: notification.initials,
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: _buildContent(),
-          ),
-          const SizedBox(width: 8),
-          _buildTrailing(),
-        ],
+              fallbackInitials: notification.initials,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: _buildContent(),
+            ),
+            const SizedBox(width: 8),
+            _buildTrailing(),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildContent() {
     switch (notification.type) {
@@ -84,17 +83,29 @@ class NotificationCard extends StatelessWidget {
   }
 
   Widget _buildRequestContent() {
-    final name = notification.appUser?.name ?? 'Unknown';
+    final name = (notification.appUser != null && notification.appUser!.name.isNotEmpty)
+        ? notification.appUser!.name
+        : (notification.title.startsWith('New message from ')
+            ? notification.title.replaceFirst('New message from ', '').trim()
+            : 'Someone');
+    final action = notification.title.startsWith('New message from ')
+        ? 'sent a message'
+        : (notification.title.replaceFirst(name, '').trim().isNotEmpty
+            ? notification.title.replaceFirst(name, '').trim()
+            : 'interacted with you');
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         NotificationRichContent(
           name: name,
-          action: notification.title.replaceFirst(name, '').trim(),
-          subtitle: notification.societyName ?? notification.subtitle,
+          action: action,
+          subtitle: (notification.societyName != null && notification.societyName!.isNotEmpty)
+              ? notification.societyName
+              : null,
           timestamp: _formatTimestamp(notification.timestamp),
         ),
-        if (notification.description != null) ...[
+        if (notification.description != null && notification.description!.trim().isNotEmpty) ...[
           const SizedBox(height: 6),
           Text(
             notification.description!,
@@ -117,7 +128,7 @@ class NotificationCard extends StatelessWidget {
   }
 
   Widget _buildSocialContent() {
-    final name = notification.appUser?.name ?? 'Unknown';
+    final name = notification.appUser?.name ?? 'Someone';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -127,7 +138,7 @@ class NotificationCard extends StatelessWidget {
           subtitle: notification.societyName ?? notification.subtitle,
           timestamp: _formatTimestamp(notification.timestamp),
         ),
-        if (notification.description != null) ...[
+        if (notification.description != null && notification.description!.trim().isNotEmpty) ...[
           const SizedBox(height: 6),
           Text(
             notification.description!,

@@ -75,11 +75,17 @@ class NotificationAvatar extends StatelessWidget {
   }
 
   String _getInitials(String name) {
-    final parts = name.split(' ');
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    try {
+      final trimmed = name.trim();
+      if (trimmed.isEmpty) return '?';
+      final parts = trimmed.split(' ');
+      if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
+        return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+      }
+      return trimmed[0].toUpperCase();
+    } catch (_) {
+      return '?';
     }
-    return name[0].toUpperCase();
   }
 
   Color _textColor(Color bg) {
