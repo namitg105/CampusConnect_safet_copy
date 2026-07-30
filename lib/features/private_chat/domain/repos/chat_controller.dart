@@ -100,22 +100,6 @@ class ChatController extends GetxController {
       repliedMessageType: repliedMessageType,
       skipUnreadIncrement: skipUnreadIncrement,
     );
-
-    // Send Notification
-    try {
-      final senderDoc = await FirebaseFirestore.instance.collection('users').doc(senderId).get();
-      final senderName = senderDoc.data()?['name'] ?? 'Someone';
-      
-      await NotificationService.createNotification(
-        recipientId: receiverId,
-        type: NotificationType.requestChatPrivate,
-        title: 'New message from $senderName',
-        description: message.trim().isNotEmpty ? message.trim() : 'Sent an attachment',
-        subtitle: roomId,
-      );
-    } catch (e) {
-      print('Failed to send private chat notification: $e');
-    }
   }
 
   void listenToMessages(String roomId) {

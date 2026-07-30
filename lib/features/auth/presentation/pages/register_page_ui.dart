@@ -30,36 +30,66 @@ class RegisterPageUi extends State<RegisterPage> {
   final emailTextController = TextEditingController();
   final passTextController = TextEditingController();
   final confirmPassTextController = TextEditingController();
-  late bool hiddenText = false;
-  late bool confirmhiddenText = false;
+  bool hiddenText = true;
+  bool confirmhiddenText = true;
 
   //-------------------image controller----------------------//
   final imagePath = "assets/images_register/register_girl_grouped_cropped.png";
   late AssetImage imageProvider;
   late double displayedHeight = 0.0;
   //-------------------form controller-----------------------//
-  late bool isChecked = false;
+  bool isChecked = false;
 
 //register button pressed
   void register() {
-//prepare info
-    final email = emailTextController.text;
-    final name = nameTextController.text;
-    final pw = passTextController.text;
+    final email = emailTextController.text.trim();
+    final name = nameTextController.text.trim();
+    final pw = passTextController.text.trim();
+    final confirmPw = confirmPassTextController.text.trim();
 
-//auth cubit
-    final authCubit = context.read<AuthCubit>();
-
-//ensure fields aren't empty
-    if (email.isNotEmpty && pw.isNotEmpty && name.isNotEmpty) {
-      //register user
-      authCubit.register(name, email, pw);
-    }
-
-//fields are empty-> display error
-    else {
+    if (email.isEmpty || pw.isEmpty || name.isEmpty) {
       showErrorSnackbar("Please complete all fields");
+      return;
     }
+
+    if (pw != confirmPw) {
+      showErrorSnackbar("Passwords do not match");
+      return;
+    }
+
+    if (!isChecked) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text(
+            "Terms & Conditions Required",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          content: const Text(
+            "Please check the terms and condition box to continue to the app.",
+            style: TextStyle(fontSize: 14, color: Color(0xFF4A4A4A)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                "OK",
+                style: TextStyle(
+                  color: Color(0xFF6139ED),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final authCubit = context.read<AuthCubit>();
+    authCubit.register(name, email, pw);
   }
 
   @override

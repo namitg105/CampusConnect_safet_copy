@@ -182,13 +182,19 @@ class NotificationCard extends StatelessWidget {
   }
 
   Widget _buildSocialContent() {
-    final name = notification.appUser?.name ?? 'Someone';
+    final name = (notification.appUser != null && notification.appUser!.name.trim().isNotEmpty)
+        ? notification.appUser!.name
+        : 'Someone';
+    final action = notification.title.startsWith(name)
+        ? notification.title.replaceFirst(name, '').trim()
+        : notification.title;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         NotificationRichContent(
-          name: name.isNotEmpty ? name : 'Someone',
-          action: notification.title,
+          name: name,
+          action: action,
           subtitle: notification.societyName ?? notification.subtitle,
           timestamp: _formatTimestamp(notification.timestamp),
         ),

@@ -19,6 +19,7 @@ class Loginscreen extends StatefulWidget {
 class _LoginscreenState extends State<Loginscreen> {
   final emailController = TextEditingController();
   final pwController = TextEditingController();
+  bool _obscurePassword = true;
 
   //forgot password button pressed
   Future<void> _showForgotPasswordDialog() async {
@@ -284,7 +285,7 @@ class _LoginscreenState extends State<Loginscreen> {
                           const SizedBox(height: 8),
                           TextField(
                             controller: pwController,
-                            obscureText: true,
+                            obscureText: _obscurePassword,
                             decoration: InputDecoration(
                               hintText: "Enter your password",
                               hintStyle: TextStyle(
@@ -301,12 +302,16 @@ class _LoginscreenState extends State<Loginscreen> {
                               ),
                               suffixIcon: IconButton(
                                 onPressed: () {
-                                  // Toggle password visibility
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
                                 },
-                                icon: Image.asset(
-                                  'assets/Eye_icon.png',
-                                  width: 24,
-                                  height: 24,
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                  color: const Color(0xFF6139ED),
+                                  size: 24,
                                 ),
                               ),
                               contentPadding:
