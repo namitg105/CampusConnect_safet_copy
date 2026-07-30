@@ -311,7 +311,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 onClearAllTap: _onClearAll,
               ),
               const SizedBox(height: 26),
-              NotificationTitleSection(totalCount: _notifications.length),
+              NotificationTitleSection(unreadCount: _unreadCount),
               const SizedBox(height: 26),
               Expanded(child: _isLoading ? const Center(child: CircularProgressIndicator()) : _buildNotificationList()),
             ],

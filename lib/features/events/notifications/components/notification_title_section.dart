@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class NotificationTitleSection extends StatelessWidget {
-  final int totalCount;
+  final int unreadCount;
 
-  const NotificationTitleSection({super.key, required this.totalCount});
+  const NotificationTitleSection({super.key, required this.unreadCount});
 
   @override
   Widget build(BuildContext context) {
@@ -20,24 +20,26 @@ class NotificationTitleSection extends StatelessWidget {
                 color: Colors.black87,
               ),
             ),
-            const SizedBox(width: 8),
-            Container(
-              width: 24,
-              height: 24,
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: Color(0xFF7C5CFA),
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                '$totalCount',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+            if (unreadCount > 0) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(4),
+                constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF7C5CFA),
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  '$unreadCount',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
         const SizedBox(height: 4),
