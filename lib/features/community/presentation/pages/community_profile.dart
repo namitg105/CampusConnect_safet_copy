@@ -193,15 +193,7 @@ class _GroupProfilePageState extends State<GroupProfilePage>
 
         // Fetch Pinned Announcement map from Firestore
         pinnedAnnouncement = Map<String, dynamic>.from(
-          data["pinnedAnnouncement"] ??
-              {
-                'title': 'Generative AI Bootcamp',
-                'description':
-                    'Join our hands-on workshop and build real AI projects with mentors from top companies',
-                'dateTime': 'Tomorrow, 6:00PM',
-                'location': 'PRP',
-                'buttonText': 'Register Now',
-              },
+          data["pinnedAnnouncement"] ?? {},
         );
 
         if (data["createdAt"] != null && data["createdAt"] is Timestamp) {
@@ -477,16 +469,16 @@ class _GroupProfilePageState extends State<GroupProfilePage>
 
   // --- ADMIN FUNCTION: EDIT PINNED ANNOUNCEMENT ---
   void _showEditAnnouncementDialog() {
-    final titleController = TextEditingController(
-        text: pinnedAnnouncement['title'] ?? 'Generative AI Bootcamp');
+    final titleController =
+        TextEditingController(text: pinnedAnnouncement['title'] ?? '');
     final descController =
         TextEditingController(text: pinnedAnnouncement['description'] ?? '');
-    final dateTimeController = TextEditingController(
-        text: pinnedAnnouncement['dateTime'] ?? 'Tomorrow, 6:00PM');
+    final dateTimeController =
+        TextEditingController(text: pinnedAnnouncement['dateTime'] ?? '');
     final locationController =
-        TextEditingController(text: pinnedAnnouncement['location'] ?? 'PRP');
-    final btnController = TextEditingController(
-        text: pinnedAnnouncement['buttonText'] ?? 'Register Now');
+        TextEditingController(text: pinnedAnnouncement['location'] ?? '');
+    final btnController =
+        TextEditingController(text: pinnedAnnouncement['buttonText'] ?? '');
 
     showDialog(
       context: context,
@@ -1651,6 +1643,9 @@ class _GroupProfilePageState extends State<GroupProfilePage>
 
   // --- OVERVIEW TAB ---
   Widget _buildOverviewTab(List<QueryDocumentSnapshot> memberDocs) {
+    final bool hasAnnouncementData = pinnedAnnouncement.isNotEmpty &&
+        (pinnedAnnouncement['title']?.toString().trim().isNotEmpty ?? false);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -1793,157 +1788,174 @@ class _GroupProfilePageState extends State<GroupProfilePage>
           const SizedBox(height: 16),
 
           // --- PINNED ANNOUNCEMENT CONTAINER ---
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F3FF),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFDDD6FE)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Row(
+          // Render ONLY if: Admin (can edit) OR if an announcement exists
+          if (isCurrentUserAdmin || hasAnnouncementData) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F3FF),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFDDD6FE)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.push_pin_outlined,
+                              size: 16, color: Color(0xFF6366F1)),
+                          SizedBox(width: 6),
+                          Text(
+                            'Pinned Announcement',
+                            style: TextStyle(
+                                color: Color(0xFF6366F1),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13),
+                          ),
+                        ],
+                      ),
+                      if (isCurrentUserAdmin)
+                        InkWell(
+                          onTap: _showEditAnnouncementDialog,
+                          child: const Padding(
+                            padding: EdgeInsets.all(2.0),
+                            child: Icon(Icons.edit_outlined,
+                                size: 16, color: Color(0xFF6366F1)),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (!hasAnnouncementData && isCurrentUserAdmin)
+                    const Text(
+                      'No pinned announcement set yet. Tap the edit icon above to create one.',
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                          fontStyle: FontStyle.italic),
+                    )
+                  else
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.push_pin_outlined,
-                            size: 16, color: Color(0xFF6366F1)),
-                        SizedBox(width: 6),
-                        Text(
-                          'Pinned Announcements',
-                          style: TextStyle(
-                              color: Color(0xFF6366F1),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13),
+                        Container(
+                          width: 70,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E1B4B),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.campaign_outlined,
+                              color: Colors.indigoAccent, size: 30),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (pinnedAnnouncement['title'] != null &&
+                                  pinnedAnnouncement['title']
+                                      .toString()
+                                      .isNotEmpty)
+                                Text(
+                                  pinnedAnnouncement['title'],
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14),
+                                ),
+                              if (pinnedAnnouncement['description'] != null &&
+                                  pinnedAnnouncement['description']
+                                      .toString()
+                                      .isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  pinnedAnnouncement['description'],
+                                  style: const TextStyle(
+                                      fontSize: 11, color: Colors.grey),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                              if (pinnedAnnouncement['dateTime'] != null &&
+                                  pinnedAnnouncement['dateTime']
+                                      .toString()
+                                      .isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.access_time,
+                                        size: 12, color: Colors.black54),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      pinnedAnnouncement['dateTime'],
+                                      style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                              if (pinnedAnnouncement['location'] != null &&
+                                  pinnedAnnouncement['location']
+                                      .toString()
+                                      .isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.location_on_outlined,
+                                        size: 12, color: Colors.black54),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      pinnedAnnouncement['location'],
+                                      style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                              if (pinnedAnnouncement['buttonText'] != null &&
+                                  pinnedAnnouncement['buttonText']
+                                      .toString()
+                                      .isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFEEF2FF),
+                                      foregroundColor: const Color(0xFF6366F1),
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8)),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 14, vertical: 6),
+                                    ),
+                                    onPressed: () {},
+                                    child: Text(
+                                      pinnedAnnouncement['buttonText'],
+                                      style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                    if (isCurrentUserAdmin)
-                      InkWell(
-                        onTap: _showEditAnnouncementDialog,
-                        child: const Padding(
-                          padding: EdgeInsets.all(2.0),
-                          child: Icon(Icons.edit_outlined,
-                              size: 16, color: Color(0xFF6366F1)),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 70,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E1B4B),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.laptop_chromebook,
-                          color: Colors.indigoAccent, size: 36),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (pinnedAnnouncement['title'] != null &&
-                              pinnedAnnouncement['title'].toString().isNotEmpty)
-                            Text(
-                              pinnedAnnouncement['title'],
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 15),
-                            ),
-                          if (pinnedAnnouncement['description'] != null &&
-                              pinnedAnnouncement['description']
-                                  .toString()
-                                  .isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              pinnedAnnouncement['description'],
-                              style: const TextStyle(
-                                  fontSize: 11, color: Colors.grey),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                          if (pinnedAnnouncement['dateTime'] != null &&
-                              pinnedAnnouncement['dateTime']
-                                  .toString()
-                                  .isNotEmpty) ...[
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                const Icon(Icons.access_time,
-                                    size: 12, color: Colors.black54),
-                                const SizedBox(width: 4),
-                                Text(
-                                  pinnedAnnouncement['dateTime'],
-                                  style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ),
-                          ],
-                          if (pinnedAnnouncement['location'] != null &&
-                              pinnedAnnouncement['location']
-                                  .toString()
-                                  .isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                const Icon(Icons.location_on_outlined,
-                                    size: 12, color: Colors.black54),
-                                const SizedBox(width: 4),
-                                Text(
-                                  pinnedAnnouncement['location'],
-                                  style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ),
-                          ],
-                          if (pinnedAnnouncement['buttonText'] != null &&
-                              pinnedAnnouncement['buttonText']
-                                  .toString()
-                                  .isNotEmpty) ...[
-                            const SizedBox(height: 10),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFEEF2FF),
-                                  foregroundColor: const Color(0xFF6366F1),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8)),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 8),
-                                ),
-                                onPressed: () {},
-                                child: Text(
-                                  pinnedAnnouncement['buttonText'],
-                                  style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 16),
+          ],
+
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
