@@ -18,8 +18,6 @@ class NotificationService {
         : (FirebaseAuth.instance.currentUser?.uid ?? '');
 
     if (recipientId.isEmpty) return;
-    // Prevent self-notifications
-    if (senderUid.isNotEmpty && senderUid == recipientId) return;
 
     String senderName = '';
     String senderImage = '';

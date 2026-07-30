@@ -6,7 +6,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class NotificationController extends GetxController {
   RxInt unreadCount = 0.obs;
   StreamSubscription? _notifSub;
-  StreamSubscription? _subNotifSub;
   StreamSubscription? _authSub;
 
   @override
@@ -33,7 +32,6 @@ class NotificationController extends GetxController {
 
   void _cancelSubs() {
     _notifSub?.cancel();
-    _subNotifSub?.cancel();
   }
 
   void _listen(String uid) {
@@ -50,19 +48,6 @@ class NotificationController extends GetxController {
     }, onError: (e) {
       print('Top-level unread notification error: $e');
     });
-
-    // Fallback: Listen to subcollection if permitted
-    _subNotifSub = FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('notifications')
-        .where('isRead', isEqualTo: false)
-        .snapshots()
-        .listen((snapshot) {
-      if (snapshot.docs.isNotEmpty) {
-        unreadCount.value = snapshot.docs.length;
-      }
-    }, onError: (_) {});
   }
 
   @override
