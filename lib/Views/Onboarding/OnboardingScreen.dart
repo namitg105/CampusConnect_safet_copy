@@ -3,42 +3,80 @@ import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 import '../../ViewModels/OnboardingViewModels.dart';
 
-class OnboardingScreen extends StatelessWidget {
-  OnboardingScreen({Key? key}) : super(key: key);
+class OnboardingScreen extends StatefulWidget {
+  const OnboardingScreen({Key? key}) : super(key: key);
 
+  @override
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
+}
+
+class _OnboardingScreenState extends State<OnboardingScreen> {
   final OnboardingController controller = Get.put(OnboardingController());
+  bool _isNavigating = false;
+
+  void _navigateToLogin() {
+    if (!_isNavigating) {
+      _isNavigating = true;
+      Get.offAll(() => const AuthPage());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FE),
-      body: PageView(
-        controller: controller.pageController,
-        onPageChanged: controller.onPageChanged,
-        children: [
-          OnboardingPageLayout(
-            pageIndex: 0,
-            imagePath: "assets/images_intro/Splash_page_2_image.png",
-            title: "Real-time Conversations",
-            subtitle: "Chat, discuss, and stay updated in organized channels for every topic that matters.",
-            controller: controller,
+      body: NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification notification) {
+          if (controller.currentPage.value == 2) {
+            if (notification is OverscrollNotification && notification.overscroll > 0) {
+              _navigateToLogin();
+            } else if (notification is ScrollUpdateNotification &&
+                notification.metrics.pixels >= notification.metrics.maxScrollExtent &&
+                (notification.scrollDelta ?? 0) > 8) {
+              _navigateToLogin();
+            }
+          }
+          return false;
+        },
+        child: GestureDetector(
+          onHorizontalDragEnd: (details) {
+            if (controller.currentPage.value == 2 &&
+                details.primaryVelocity != null &&
+                details.primaryVelocity! < -150) {
+              _navigateToLogin();
+            }
+          },
+          child: PageView(
+            controller: controller.pageController,
+            onPageChanged: controller.onPageChanged,
+            children: [
+              OnboardingPageLayout(
+                pageIndex: 0,
+                imagePath: "assets/images_intro/Splash_page_2_image.png",
+                bottomIconPath: "assets/images_intro/App_icon_1.png",
+                title: "Real-time Conversations",
+                subtitle: "Chat, discuss, and stay updated in organized channels for every topic that matters.",
+                controller: controller,
+              ),
+              OnboardingPageLayout(
+                pageIndex: 1,
+                imagePath: "assets/images_intro/Splash_page_3_image-1.png",
+                bottomIconPath: "assets/images_intro/svg_icon_2.png",
+                title: "Join & Create Communities",
+                subtitle: "Discover clubs, sports teams, and academic groups or create your own community.",
+                controller: controller,
+              ),
+              OnboardingPageLayout(
+                pageIndex: 2,
+                imagePath: "assets/Gemini_Generated_Image_s38k7zs38k7zs38k 1.png",
+                bottomIconPath: "assets/notes 1.png",
+                title: "Share & Access Resources",
+                subtitle: "Get course notes, important resources,\nand study materials shared by seniors.",
+                controller: controller,
+              ),
+            ],
           ),
-          OnboardingPageLayout(
-            pageIndex: 1,
-            imagePath: "assets/images_intro/Splash_page_3_image-1.png",
-            title: "Join & Create Communities",
-            subtitle: "Discover clubs, sports teams, and academic groups or create your own community.",
-            controller: controller,
-          ),
-          OnboardingPageLayout(
-            pageIndex: 2,
-            imagePath: "assets/Gemini_Generated_Image_s38k7zs38k7zs38k 1.png",
-            bottomIconPath: "assets/notes 1.png",
-            title: "Share & Access Resourses",
-            subtitle: "Get course notes, important resourses,\nand study materials shared by seniors.",
-            controller: controller,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -65,6 +103,7 @@ class OnboardingPageLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Stack(
       children: [
@@ -74,29 +113,29 @@ class OnboardingPageLayout extends StatelessWidget {
           left: 0,
           child: Image.asset(
             "assets/Icon l-r.png",
-            width: MediaQuery.of(context).size.width * 0.65,
+            width: screenWidth * 0.7,
             fit: BoxFit.contain,
           ),
         ),
-        // Top-right background decoration (for pageIndex 2, and others if needed)
+        // Top-right background decoration
         Positioned(
-          top: 450,
+          top: screenHeight * 0.46,
           right: 0,
           child: Image.asset(
             "assets/Icon.png",
-            width: MediaQuery.of(context).size.width * 0.65,
+            width: screenWidth * 0.65,
             fit: BoxFit.contain,
           ),
         ),
-        // Central Illustration
+        // Central Illustration (Larger size matching ss2, ss4, ss5)
         Positioned(
-          top: screenHeight * 0.12,
+          top: screenHeight * 0.10,
           left: -20,
           right: -20,
           child: Image.asset(
             imagePath,
             fit: BoxFit.contain,
-            height: screenHeight * 0.45,
+            height: screenHeight * 0.52,
           ),
         ),
         // Header (Logo + Skip)
@@ -137,21 +176,20 @@ class OnboardingPageLayout extends StatelessWidget {
         Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
-            padding: const EdgeInsets.only(bottom: 40.0, left: 24.0, right: 24.0),
+            padding: const EdgeInsets.only(bottom: 36.0, left: 24.0, right: 24.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (bottomIconPath != null) ...[
                   Image.asset(
                     bottomIconPath!,
-                    width: 104,
-                    height: 97,
+                    width: 72,
+                    height: 72,
                     fit: BoxFit.contain,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                 ] else ...[
-                  // Keep spacing consistent if no bottom icon
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 32),
                 ],
                 Text(
                   title,
@@ -164,7 +202,7 @@ class OnboardingPageLayout extends StatelessWidget {
                     letterSpacing: -0.5,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Text(
                   subtitle,
                   textAlign: TextAlign.center,
@@ -176,7 +214,7 @@ class OnboardingPageLayout extends StatelessWidget {
                     height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 32),
                 // Pagination Dots Row
                 Obx(
                   () => Row(

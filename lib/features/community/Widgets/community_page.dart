@@ -185,17 +185,7 @@ class _Header extends StatelessWidget {
           children: [
             Row(
               children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.menu_rounded,
-                    color: _textDark,
-                    size: 28,
-                  ),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                ),
-                const SizedBox(width: 12),
+                SizedBox(width: 175),
                 Image.asset(
                   "assets/header1.png",
                   height: 32,
