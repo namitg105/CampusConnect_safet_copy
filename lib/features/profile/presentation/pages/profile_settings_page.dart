@@ -102,7 +102,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
               children: [
                 // App Bar
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -118,7 +119,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                               color: brandColor.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Icon(Icons.school, color: brandColor, size: 24),
+                            child:
+                                Icon(Icons.school, color: brandColor, size: 24),
                           ),
                           const SizedBox(width: 8),
                           Text(
@@ -133,10 +135,10 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                       ),
                       Row(
                         children: [
-                          
                           IconButton(
                             onPressed: () {},
-                            icon: Icon(Icons.settings_outlined, color: textColor),
+                            icon:
+                                Icon(Icons.settings_outlined, color: textColor),
                           ),
                         ],
                       ),
@@ -178,12 +180,20 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                         radius: 36,
                                         backgroundColor:
                                             brandColor.withOpacity(0.15),
-                                        backgroundImage: (profileData?['profileImage'] != null &&
-                                                (profileData?['profileImage'] as String).isNotEmpty)
-                                            ? NetworkImage(profileData?['profileImage'])
+                                        backgroundImage: (profileData?[
+                                                        'profileImage'] !=
+                                                    null &&
+                                                (profileData?['profileImage']
+                                                        as String)
+                                                    .isNotEmpty)
+                                            ? NetworkImage(
+                                                profileData?['profileImage'])
                                             : null,
-                                        child: (profileData?['profileImage'] != null &&
-                                                (profileData?['profileImage'] as String).isNotEmpty)
+                                        child: (profileData?['profileImage'] !=
+                                                    null &&
+                                                (profileData?['profileImage']
+                                                        as String)
+                                                    .isNotEmpty)
                                             ? null
                                             : Text(
                                                 initials,
@@ -237,7 +247,12 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          (profileData != null && profileData!['bio'] != null && profileData!['bio'].toString().trim().isNotEmpty)
+                                          (profileData != null &&
+                                                  profileData!['bio'] != null &&
+                                                  profileData!['bio']
+                                                      .toString()
+                                                      .trim()
+                                                      .isNotEmpty)
                                               ? profileData!['bio'].toString()
                                               : 'No bio added yet',
                                           style: TextStyle(
@@ -271,7 +286,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                                     color: brandColor,
                                                     fontWeight: FontWeight.w500,
                                                   ),
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                               ),
                                             ],
@@ -293,7 +309,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
 
                             // Account Heading
                             Padding(
-                              padding: const EdgeInsets.only(left: 4, bottom: 12),
+                              padding:
+                                  const EdgeInsets.only(left: 4, bottom: 12),
                               child: Text(
                                 'Account',
                                 style: TextStyle(
@@ -463,8 +480,6 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
       color: isLightMode ? Colors.grey[200] : Colors.grey[800],
     );
   }
-
-
 
   void _showEditProfileModal() {
     final isLightMode = Theme.of(context).brightness == Brightness.light;

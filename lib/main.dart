@@ -12,6 +12,7 @@ import 'package:noteswap/features/private_chat/data/private-chat-services/user_s
 import 'package:noteswap/firebase_options.dart';
 import 'ViewModels/DarkModeViewModels.dart'; // Retained member's theme controller
 import 'core/di/injection.dart'; // DI injection init
+import 'ViewModels/NotificationController.dart';
 import 'features/home/presentation/pages/main_page.dart'; // MainPage
 
 void main() async {
@@ -36,6 +37,7 @@ void main() async {
 
   // Initialize controllers
   Get.put(LightModeController());
+    Get.put(NotificationController());
   await Get.putAsync<UserService>(() async => UserService());
 
   runApp(const MyApp());
