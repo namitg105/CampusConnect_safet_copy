@@ -96,7 +96,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     children: [
                       GestureDetector(
                         onTap: () {
-                          Get.to(() => OnboardingScreenOne());
+                          Get.to(() => Onboardingone());
                         },
                         child: Image.asset(
                           "assets/Button.png",

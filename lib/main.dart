@@ -26,8 +26,10 @@ void main() async {
       );
     }
   } catch (e) {
-    if (e.toString().contains('duplicate-app') || e.toString().contains('duplicate-app-name')) {
-      debugPrint('Firebase App already exists, ignoring duplicate-app exception.');
+    if (e.toString().contains('duplicate-app') ||
+        e.toString().contains('duplicate-app-name')) {
+      debugPrint(
+          'Firebase App already exists, ignoring duplicate-app exception.');
     } else {
       rethrow;
     }
@@ -38,7 +40,7 @@ void main() async {
 
   // Initialize controllers
   Get.put(LightModeController());
-    Get.put(NotificationController());
+  Get.put(NotificationController());
   await Get.putAsync<UserService>(() async => UserService());
 
   runApp(const MyApp());
@@ -109,7 +111,7 @@ class AuthWrapper extends StatelessWidget {
           return const MainPage(); // Land on MainPage (includes bottom navigation)
         } else if (authState is Unauthenticated) {
           Get.find<UserService>().clearUser();
-          return const OnboardingScreenOne();
+          return const Onboardingone();
         }
 
         // Handles loading or initial authentication state resolution

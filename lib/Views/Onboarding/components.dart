@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 
 class Splash_Widget_Components {
   const Splash_Widget_Components({required this.width, required this.height});
@@ -22,7 +24,7 @@ class Splash_Widget_Components {
       ),
       actions: [
         TextButton(
-          onPressed: () => {},
+          onPressed: () => Get.offAll(() => const AuthPage()),
           child: Text(
             "Skip",
             style: TextStyle(

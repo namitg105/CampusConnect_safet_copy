@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
-import 'OnboardingOne.dart';
 import 'OnboardingThree.dart';
 
 class OnboardingScreenTwo extends StatelessWidget {

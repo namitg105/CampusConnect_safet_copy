@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 import 'OnboardingOne.dart';
-import 'OnbordingTwo.dart';
 
 class OnboardingScreenThree extends StatelessWidget {
   const OnboardingScreenThree({Key? key}) : super(key: key);
@@ -140,7 +139,7 @@ class OnboardingScreenThree extends StatelessWidget {
                         GestureDetector(
                           onTap: () {
                             Get.to(
-                              () => const OnboardingScreenOne(),
+                              () => const Onboardingone(),
                               transition: Transition.leftToRight,
                             );
                           },
