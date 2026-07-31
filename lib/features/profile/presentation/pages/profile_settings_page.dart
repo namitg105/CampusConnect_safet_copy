@@ -582,7 +582,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
             SizedBox(width: 10),
             Expanded(
               child: Text(
-                'About UniConnect',
+                'About Valsco-Tech',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
@@ -596,19 +596,10 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "UniConnect is your all-in-one student communication platform for clubs, courses, and campus communities.",
-              style: TextStyle(
-                fontSize: 14,
-                color: Color(0xFF555555),
-                height: 1.4,
-              ),
-            ),
             const SizedBox(height: 16),
             InkWell(
               onTap: () async {
-                final Uri url = Uri.parse(
-                    "https://youtu.be/tkHhZkbi-7k?si=spfd04EhjO0KYI_i");
+                final Uri url = Uri.parse("https://valscotech.com/");
                 if (await canLaunchUrl(url)) {
                   await launchUrl(url, mode: LaunchMode.externalApplication);
                 } else {
@@ -627,17 +618,14 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.play_circle_fill,
-                        color: Color(0xFF6139ED), size: 24),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        "More about UniConnect",
+                        " Valsco-Tech",
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF6139ED),
-                          decoration: TextDecoration.underline,
                         ),
                       ),
                     ),
