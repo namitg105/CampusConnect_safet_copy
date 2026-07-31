@@ -19,6 +19,7 @@ import 'package:noteswap/features/posts/data/post_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
 import 'package:noteswap/utils/time_formatter.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
+import 'package:noteswap/features/chat/presentation/pages/chat_rooms_page.dart';
 import 'package:noteswap/features/group_chat/presentation/pages/groups_page.dart';
 import 'package:noteswap/features/events/notifications/notifications_screen.dart';
 import 'package:noteswap/ViewModels/NotificationController.dart';
@@ -364,10 +365,10 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                       cardColor,
                                       textColor,
                                       onTap: () {
-                                        if (Get.isRegistered<
-                                            MainPageController>()) {
-                                          Get.find<MainPageController>()
-                                              .changeIndex(1);
+                                        if (authState is Authenticated) {
+                                          Get.to(() => ChatRoomsPage(
+                                                currentUser: authState.user,
+                                              ));
                                         }
                                       },
                                     ),
