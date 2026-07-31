@@ -9,7 +9,6 @@ import 'presentation/Design_By_Opencode_3/directory_screen.dart';
 import 'presentation/Design_By_Opencode_5/chat_request_screen.dart';
 import 'presentation/Design_By_Opencode/recent_chats_screen.dart';
 import 'presentation/Design_By_Opencode/recent_chats_components.dart';
-import 'package:noteswap/features/events/announcements/announcements_screen.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
 
@@ -208,55 +207,6 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
           ),
           ProfileAvatarButton(
             onTap: () => Get.to(() => const ProfileSettingsPage()),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showLogoutDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Logout',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1F2937),
-          ),
-        ),
-        content: const Text(
-          'Are you sure you want to logout?',
-          style: TextStyle(
-            fontSize: 14,
-            color: Color(0xFF6B7280),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                color: Color(0xFF6B7280),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              logout();
-            },
-            child: const Text(
-              'Logout',
-              style: TextStyle(
-                color: Color(0xFFEF4444),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
           ),
         ],
       ),

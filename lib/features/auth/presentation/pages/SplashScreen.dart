@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/Views/Onboarding/OnboardingOne.dart';
 import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -95,7 +96,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     children: [
                       GestureDetector(
                         onTap: () {
-                          Get.to(() => OnboardingScreen());
+                          Get.to(() => OnboardingScreenOne());
                         },
                         child: Image.asset(
                           "assets/Button.png",
