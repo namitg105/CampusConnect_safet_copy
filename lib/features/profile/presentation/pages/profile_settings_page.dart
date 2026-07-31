@@ -11,6 +11,7 @@ import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart
 import 'package:noteswap/features/posts/domain/usecases/update_profile_usecase.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileSettingsPage extends StatefulWidget {
   const ProfileSettingsPage({super.key});
@@ -365,7 +366,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       textColor,
                                       subTextColor,
                                       onTap: () => _showComingSoonDialog(
-                                          'Notifications')),
+                                          'Manage Notifications')),
                                   _buildDivider(isLightMode),
                                   _buildSettingItem(
                                       Icons.security_outlined,
@@ -375,7 +376,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       textColor,
                                       subTextColor,
                                       onTap: () => _showComingSoonDialog(
-                                          'Privacy & Security')),
+                                          'Privacy & Security Management')),
                                   _buildDivider(isLightMode),
                                   _buildSettingItem(
                                       Icons.help_outline,
@@ -384,8 +385,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       brandColor,
                                       textColor,
                                       subTextColor,
-                                      onTap: () => _showComingSoonDialog(
-                                          'Help & Support')),
+                                      onTap: () => _showHelpSupportDialog()),
                                   _buildDivider(isLightMode),
                                   _buildSettingItem(
                                       Icons.info_outline,
@@ -394,8 +394,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       brandColor,
                                       textColor,
                                       subTextColor,
-                                      onTap: () => _showComingSoonDialog(
-                                          'About UniConnect')),
+                                      onTap: () => _showAboutUniConnectDialog()),
                                 ],
                               ),
                             ),
@@ -505,6 +504,166 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
           ],
         );
       },
+    );
+  }
+
+  void _showHelpSupportDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Row(
+          children: [
+            Icon(
+              Icons.help_outline,
+              color: Color(0xFF6139ED),
+              size: 26,
+            ),
+            SizedBox(width: 10),
+            Text(
+              'Help & Support',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: Color(0xFF1A1A1A),
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          "Please mail jurident@gmail.com for any issue or if you need any help with the app",
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFF555555),
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6139ED),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              "OK",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAboutUniConnectDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Row(
+          children: [
+            Icon(
+              Icons.info_outline,
+              color: Color(0xFF6139ED),
+              size: 26,
+            ),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'About UniConnect',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "UniConnect is your all-in-one student communication platform for clubs, courses, and campus communities.",
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF555555),
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 16),
+            InkWell(
+              onTap: () async {
+                final Uri url = Uri.parse("https://youtu.be/tkHhZkbi-7k?si=spfd04EhjO0KYI_i");
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                } else {
+                  await launchUrl(url);
+                }
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECE7FF),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF6139ED).withOpacity(0.3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.play_circle_fill, color: Color(0xFF6139ED), size: 24),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        "More about UniConnect",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF6139ED),
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                    Icon(Icons.open_in_new, color: Color(0xFF6139ED), size: 18),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6139ED),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              "Close",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
