@@ -890,11 +890,18 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
           const SizedBox(height: 6),
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              'assets/Screenshot 2026-07-24 111253.png',
+            child: Image.network(
+              post.imageUrl!,
               height: 80,
               width: double.infinity,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                height: 80,
+                color: isLightMode ? const Color(0xFFF3F4F6) : const Color(0xFF2D2D2D),
+                child: const Center(
+                  child: Icon(Icons.image_not_supported_outlined, color: Colors.grey, size: 24),
+                ),
+              ),
             ),
           ),
         ],

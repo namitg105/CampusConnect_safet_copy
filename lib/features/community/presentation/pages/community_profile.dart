@@ -10,6 +10,8 @@ import '../../../chat/presentation/pages/chatPage.dart';
 import '../../../events/presentation/screens/event_community.dart';
 import 'assign_role.dart';
 import 'media_link.dart';
+import 'package:get/get.dart';
+import 'package:noteswap/features/private_chat/presentation/Design_By_Opencode_2/chat_screen.dart';
 
 String get currentUserId => FirebaseAuth.instance.currentUser?.uid ?? "";
 
@@ -2912,21 +2914,97 @@ class GroupMemberCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: () {
-                  if (isCurrentUserAdmin && uid != currentGroupCreatorUid) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AssignRolePage(
-                          groupId: groupId,
-                          targetUid: uid,
-                          targetName: displayName,
-                          targetUsername: username,
-                          targetImageUrl: displayImage,
-                          currentGroupCreatorUid: currentGroupCreatorUid,
-                        ),
-                      ),
+                onPressed: () async {
+                  final currentUid = FirebaseAuth.instance.currentUser?.uid;
+                  if (currentUid == null) return;
+
+                  if (currentUid == uid) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("This is your profile.")),
                     );
+                    return;
+                  }
+
+                  // Check if they are friends
+                  final friendDoc = await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(currentUid)
+                      .collection('friends')
+                      .doc(uid)
+                      .get();
+
+                  if (friendDoc.exists) {
+                    // Already friends -> Navigate directly to ChatScreen
+                    final List<String> ids = [currentUid, uid]..sort();
+                    final String roomId = ids.join('_');
+
+                    Get.to(() => ChatScreen(
+                          roomId: roomId,
+                          currentUid: currentUid,
+                          friendUid: uid,
+                          friendName: displayName,
+                          friendInitials: displayName.isNotEmpty
+                              ? displayName[0].toUpperCase()
+                              : 'U',
+                          friendAvatarColor: const Color(0xFF6366F1),
+                          friendImageUrl: displayImage,
+                        ));
+                  } else {
+                    // Not friends -> Send or prompt friend request
+                    final reqDoc = await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(uid)
+                        .collection('incoming_requests')
+                        .doc(currentUid)
+                        .get();
+
+                    if (reqDoc.exists) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text(
+                                "Friend request already sent to $displayName.")),
+                      );
+                    } else {
+                      // Send friend request
+                      final currentUserDoc = await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(currentUid)
+                          .get();
+                      final currentData =
+                          currentUserDoc.data() as Map<String, dynamic>? ?? {};
+
+                      await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(uid)
+                          .collection('incoming_requests')
+                          .doc(currentUid)
+                          .set({
+                        'fromUid': currentUid,
+                        'fromName': currentData['name'] ??
+                            currentData['displayName'] ??
+                            'User',
+                        'fromEmail': currentData['email'] ?? '',
+                        'timestamp': FieldValue.serverTimestamp(),
+                        'status': 'pending',
+                      });
+
+                      await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(currentUid)
+                          .collection('sent_requests')
+                          .doc(uid)
+                          .set({
+                        'toUid': uid,
+                        'timestamp': FieldValue.serverTimestamp(),
+                        'status': 'pending',
+                      });
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text(
+                                "Friend request sent to $displayName!")),
+                      );
+                    }
                   }
                 },
                 child: const Text(

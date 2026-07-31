@@ -396,10 +396,23 @@ class _PostDetailPageState extends State<PostDetailPage> {
                           const SizedBox(height: 14),
                           ClipRRect(
                             borderRadius: BorderRadius.circular(16),
-                            child: Image.asset(
-                              'assets/Screenshot 2026-07-24 111253.png',
+                            child: Image.network(
+                              widget.post.imageUrl!,
                               fit: BoxFit.cover,
                               width: double.infinity,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                height: 180,
+                                color: isLightMode
+                                    ? const Color(0xFFF3F4F6)
+                                    : const Color(0xFF2D2D2D),
+                                child: const Center(
+                                  child: Icon(
+                                      Icons.image_not_supported_outlined,
+                                      color: Colors.grey,
+                                      size: 40),
+                                ),
+                              ),
                             ),
                           ),
                         ],

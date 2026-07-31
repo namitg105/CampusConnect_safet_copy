@@ -2,8 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
+import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
 import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
 
 class CreatePostPage extends StatefulWidget {
@@ -46,7 +48,16 @@ class _CreatePostPageState extends State<CreatePostPage> {
   ];
 
   XFile? _selectedImage;
+  PlatformFile? _selectedFile;
+  String? _mediaType;
   final ImagePicker _picker = ImagePicker();
+
+  bool isPollExpanded = false;
+  final pollQuestionController = TextEditingController();
+  final List<TextEditingController> pollOptionControllers = [
+    TextEditingController(),
+    TextEditingController(),
+  ];
 
   @override
   void initState() {
@@ -62,7 +73,64 @@ class _CreatePostPageState extends State<CreatePostPage> {
   void dispose() {
     bodyController.dispose();
     tagController.dispose();
+    pollQuestionController.dispose();
+    for (var c in pollOptionControllers) {
+      c.dispose();
+    }
     super.dispose();
+  }
+
+  Future<void> _pickFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: [
+          'jpg',
+          'jpeg',
+          'png',
+          'gif',
+          'mp4',
+          'mov',
+          'pdf',
+          'doc',
+          'docx',
+          'txt'
+        ],
+      );
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        if (file.size > 50 * 1024 * 1024) {
+          Get.snackbar(
+            'File Too Large',
+            'File size exceeds the 50MB limit.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+          return;
+        }
+        final ext = file.extension?.toLowerCase() ?? '';
+        String type = 'document';
+        if (['jpg', 'jpeg', 'png', 'gif'].contains(ext)) {
+          type = 'image';
+        } else if (['mp4', 'mov'].contains(ext)) {
+          type = 'video';
+        }
+
+        setState(() {
+          _selectedFile = file;
+          _mediaType = type;
+        });
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to pick file: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
   }
 
   Future<void> _pickImage() async {
@@ -169,13 +237,32 @@ class _CreatePostPageState extends State<CreatePostPage> {
                                   ? '${firstLine.substring(0, 47)}...'
                                   : firstLine;
 
+                              PollData? pollData;
+                              final pollQ = pollQuestionController.text.trim();
+                              final validOptions = pollOptionControllers
+                                  .map((c) => c.text.trim())
+                                  .where((t) => t.isNotEmpty)
+                                  .toList();
+
+                              if (pollQ.isNotEmpty && validOptions.length >= 2) {
+                                pollData = PollData(
+                                  question: pollQ,
+                                  options: validOptions
+                                      .map((opt) => PollOption(text: opt, votes: []))
+                                      .toList(),
+                                );
+                              }
+
                               await widget.controller.addPost(
                                 title: extractedTitle,
                                 body: text,
                                 author: widget.currentUser,
                                 tag: tag,
-                                imagePath: _selectedImage?.path,
-                                imageName: _selectedImage?.name,
+                                imagePath: _selectedFile?.path ?? _selectedImage?.path,
+                                imageName: _selectedFile?.name ?? _selectedImage?.name,
+                                mediaType: _mediaType ?? (_selectedImage != null ? 'image' : null),
+                                mediaName: _selectedFile?.name ?? _selectedImage?.name,
+                                poll: pollData,
                               );
 
                               if (widget
@@ -415,7 +502,62 @@ class _CreatePostPageState extends State<CreatePostPage> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          if (_selectedImage != null)
+                          if (_selectedFile != null)
+                            Stack(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: brandColor.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        _mediaType == 'image'
+                                            ? Icons.image
+                                            : (_mediaType == 'video'
+                                                ? Icons.videocam
+                                                : Icons.insert_drive_file),
+                                        color: brandColor,
+                                        size: 28,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          _selectedFile!.name,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                            color: textColor,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: CircleAvatar(
+                                    backgroundColor: Colors.black54,
+                                    radius: 14,
+                                    child: IconButton(
+                                      icon: const Icon(Icons.close,
+                                          size: 12, color: Colors.white),
+                                      onPressed: () => setState(() {
+                                        _selectedFile = null;
+                                        _mediaType = null;
+                                      }),
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          else if (_selectedImage != null)
                             Stack(
                               children: [
                                 ClipRRect(
@@ -446,7 +588,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                             )
                           else
                             GestureDetector(
-                              onTap: _pickImage,
+                              onTap: _pickFile,
                               child: Container(
                                 width: double.infinity,
                                 height: 120,
@@ -455,8 +597,6 @@ class _CreatePostPageState extends State<CreatePostPage> {
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
                                     color: brandColor.withOpacity(0.15),
-                                    style: BorderStyle
-                                        .solid, // solid fallback for now
                                     width: 1.5,
                                   ),
                                 ),
@@ -464,7 +604,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.all(8),
+                                      padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
                                         color: brandColor.withOpacity(0.08),
                                         shape: BoxShape.circle,
@@ -500,8 +640,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
 
                     // Card 3: Create a Poll Card
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: cardColor,
                         borderRadius: BorderRadius.circular(20),
@@ -521,27 +660,130 @@ class _CreatePostPageState extends State<CreatePostPage> {
                           width: 0.5,
                         ),
                       ),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.bar_chart, color: brandColor, size: 22),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Create a Poll',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
-                              ),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                isPollExpanded = !isPollExpanded;
+                              });
+                            },
+                            child: Row(
+                              children: [
+                                Icon(Icons.bar_chart,
+                                    color: brandColor, size: 22),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Create a Poll',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                ),
+                                Icon(
+                                  isPollExpanded
+                                      ? Icons.keyboard_arrow_up
+                                      : Icons.keyboard_arrow_down,
+                                  size: 18,
+                                  color: subTextColor,
+                                ),
+                              ],
                             ),
                           ),
-                          Text(
-                            'Optional',
-                            style: TextStyle(fontSize: 11, color: subTextColor),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(Icons.keyboard_arrow_down,
-                              size: 16, color: subTextColor),
+                          if (isPollExpanded) ...[
+                            const SizedBox(height: 14),
+                            TextField(
+                              controller: pollQuestionController,
+                              style: TextStyle(color: textColor, fontSize: 13),
+                              decoration: InputDecoration(
+                                hintText: 'Ask a question...',
+                                hintStyle: TextStyle(
+                                    color: subTextColor, fontSize: 13),
+                                filled: true,
+                                fillColor: isLightMode
+                                    ? const Color(0xFFF3F4F6)
+                                    : const Color(0xFF2D2D2D),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            ...List.generate(pollOptionControllers.length,
+                                (index) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextField(
+                                        controller:
+                                            pollOptionControllers[index],
+                                        style: TextStyle(
+                                            color: textColor, fontSize: 13),
+                                        decoration: InputDecoration(
+                                          hintText: 'Option ${index + 1}',
+                                          hintStyle: TextStyle(
+                                              color: subTextColor,
+                                              fontSize: 13),
+                                          filled: true,
+                                          fillColor: isLightMode
+                                              ? const Color(0xFFF3F4F6)
+                                              : const Color(0xFF2D2D2D),
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            borderSide: BorderSide.none,
+                                          ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                  horizontal: 12, vertical: 10),
+                                        ),
+                                      ),
+                                    ),
+                                    if (pollOptionControllers.length > 2)
+                                      IconButton(
+                                        icon: const Icon(Icons.remove_circle,
+                                            color: Colors.red, size: 20),
+                                        onPressed: () {
+                                          setState(() {
+                                            pollOptionControllers.removeAt(index);
+                                          });
+                                        },
+                                      ),
+                                  ],
+                                ),
+                              );
+                            }),
+                            if (pollOptionControllers.length < 5)
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: TextButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      pollOptionControllers
+                                          .add(TextEditingController());
+                                    });
+                                  },
+                                  icon: Icon(Icons.add,
+                                      color: brandColor, size: 18),
+                                  label: Text(
+                                    'Add Option',
+                                    style: TextStyle(
+                                        color: brandColor,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ],
                       ),
                     ),

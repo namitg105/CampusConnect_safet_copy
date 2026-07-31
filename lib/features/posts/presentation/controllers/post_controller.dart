@@ -147,6 +147,9 @@ class PostController extends GetxController {
     required String tag,
     String? imagePath,
     String? imageName,
+    String? mediaType,
+    String? mediaName,
+    PollData? poll,
   }) async {
     if (title.trim().isEmpty || body.trim().isEmpty) {
       errorMessage.value = 'Title and body cannot be empty.';
@@ -159,7 +162,6 @@ class PostController extends GetxController {
     try {
       String? imageUrl;
       if (imagePath != null && imageName != null) {
-        // Temporarily set a dummy URL to bypass Google Storage delinquency block
         imageUrl = 'dummy_image_url';
       }
 
@@ -179,6 +181,9 @@ class PostController extends GetxController {
         tag: tag,
         createdAt: DateTime.now(),
         imageUrl: imageUrl,
+        mediaType: mediaType,
+        mediaName: mediaName,
+        poll: poll,
       );
 
       await createPostUseCase.call(newPost);

@@ -233,19 +233,12 @@ class PostCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
 
+            if (post.poll != null) ...[
+              _buildPollWidget(context, post, isLightMode),
+            ],
+
             if (post.imageUrl != null && post.imageUrl!.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  constraints: const BoxConstraints(maxHeight: 200),
-                  width: double.infinity,
-                  child: Image.asset(
-                    'assets/Screenshot 2026-07-24 111253.png',
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
+              _buildMediaWidget(context, post, isLightMode),
             ],
             const SizedBox(height: 14),
 
@@ -389,6 +382,223 @@ class PostCard extends StatelessWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  Widget _buildPollWidget(
+      BuildContext context, PostEntity post, bool isLightMode) {
+    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final poll = post.poll!;
+    final totalVotes = poll.totalVotes;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isLightMode ? const Color(0xFFF8F9FE) : const Color(0xFF25252A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF6139ED).withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.poll_outlined,
+                  color: Color(0xFF6139ED), size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  poll.question,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: isLightMode ? const Color(0xFF1A1A1E) : Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...poll.options.map((option) {
+            final isVoted = option.votes.contains(currentUid);
+            final percentage = totalVotes > 0
+                ? (option.votes.length / totalVotes * 100).round()
+                : 0;
+
+            return GestureDetector(
+              onTap: () async {
+                if (currentUid.isEmpty) return;
+                final newOptions = poll.options.map((opt) {
+                  final newVotes = List<String>.from(opt.votes);
+                  if (opt.text == option.text) {
+                    if (isVoted) {
+                      newVotes.remove(currentUid);
+                    } else {
+                      newVotes.add(currentUid);
+                    }
+                  } else {
+                    newVotes.remove(currentUid);
+                  }
+                  return PollOption(text: opt.text, votes: newVotes);
+                }).toList();
+
+                final updatedPoll =
+                    PollData(question: poll.question, options: newOptions);
+                await FirebaseFirestore.instance
+                    .collection('posts')
+                    .doc(post.id)
+                    .update({'poll': updatedPoll.toJson()});
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isVoted
+                      ? const Color(0xFF6139ED).withOpacity(0.12)
+                      : (isLightMode ? Colors.white : const Color(0xFF1E1E22)),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isVoted
+                        ? const Color(0xFF6139ED)
+                        : (isLightMode
+                            ? const Color(0xFFE5E7EB)
+                            : const Color(0xFF374151)),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          isVoted
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                          color: isVoted
+                              ? const Color(0xFF6139ED)
+                              : Colors.grey,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          option.text,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight:
+                                isVoted ? FontWeight.bold : FontWeight.w500,
+                            color: isLightMode
+                                ? const Color(0xFF1A1A1E)
+                                : Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '$percentage%',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF6139ED),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+          const SizedBox(height: 4),
+          Text(
+            '$totalVotes ${totalVotes == 1 ? 'vote' : 'votes'}',
+            style: const TextStyle(fontSize: 11, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMediaWidget(
+      BuildContext context, PostEntity post, bool isLightMode) {
+    if (post.imageUrl == null || post.imageUrl!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final mediaType = post.mediaType ?? 'image';
+
+    if (mediaType == 'document') {
+      return Container(
+        margin: const EdgeInsets.only(top: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color:
+              isLightMode ? const Color(0xFFECE7FF) : const Color(0xFF2D2D2D),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF6139ED).withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.description, color: Color(0xFF6139ED), size: 28),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                post.mediaName ?? 'Attached Document',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: isLightMode ? const Color(0xFF1A1A1E) : Colors.white,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const Icon(Icons.download_rounded,
+                color: Color(0xFF6139ED), size: 20),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          constraints: const BoxConstraints(maxHeight: 220),
+          width: double.infinity,
+          child: Image.network(
+            post.imageUrl!,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Container(
+              height: 120,
+              color: isLightMode
+                  ? const Color(0xFFF3F4F6)
+                  : const Color(0xFF2D2D2D),
+              child: const Center(
+                child: Icon(Icons.image_not_supported_outlined,
+                    color: Colors.grey, size: 36),
+              ),
+            ),
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Container(
+                height: 150,
+                color: isLightMode
+                    ? const Color(0xFFF3F4F6)
+                    : const Color(0xFF2D2D2D),
+                child: const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Color(0xFF6139ED)),
+                  ),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
