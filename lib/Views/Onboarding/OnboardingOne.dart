@@ -1,36 +1,189 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:noteswap/Constents/AppConstents.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
-import '../../Constents/AppStyles.dart';
-import '../../Widgets/ImageWidgets.dart';
+import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
+import 'OnbordingTwo.dart';
+import 'OnboardingThree.dart';
 
 class OnboardingScreenOne extends StatelessWidget {
+  const OnboardingScreenOne({Key? key}) : super(key: key);
 
-  final LightModeController lightModeController = Get.put(LightModeController());
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      ()=> Scaffold(
-        backgroundColor: lightModeController.isLightMode.value ? Colors.black : Colors.white,
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FE),
+      body: GestureDetector(
+        onHorizontalDragEnd: (details) {
+          if (details.primaryVelocity! < 0) {
+            // Swiped Left -> Go to Page 2
+            Get.to(
+              () => const OnboardingScreenTwo(),
+              transition: Transition.rightToLeft,
+            );
+          }
+        },
+        child: Stack(
           children: [
-            Padding(
-              padding: EdgeInsets.all(10),
-              child: Text(
-                AppConstants.onboardingText,
-                textAlign: TextAlign.center,
-                style: AppStyles.headingTextStyle,
+            // Top-left icon background
+            Positioned(
+              top: 0,
+              left: 0,
+              child: Image.asset(
+                "assets/Icon l-r.png",
+                width: screenWidth * 0.7,
+                fit: BoxFit.contain,
               ),
             ),
-            SizedBox(height: 20),
-            ImageWidget(
-              imagePath: AppConstants.onboardingFirst,
-              width: double.infinity,
-              fit: BoxFit.fitWidth,
+            // Top-right background decoration
+            Positioned(
+              top: screenHeight * 0.46,
+              right: 0,
+              child: Image.asset(
+                "assets/Icon.png",
+                width: screenWidth * 0.65,
+                fit: BoxFit.contain,
+              ),
+            ),
+            // Central Illustration
+            Positioned(
+              top: screenHeight * 0.067,
+              left: -20,
+              right: -20,
+              child: Image.asset(
+                "assets/images_intro/Splash_page_2_image.png",
+                fit: BoxFit.contain,
+                height: screenHeight * 0.7,
+              ),
+            ),
+            // Header (Logo + Skip)
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24.0, vertical: 16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Image.asset(
+                      "assets/Heading.png",
+                      width: 220,
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Get.offAll(() => const AuthPage());
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          "Skip",
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 22,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF6139ED),
+                            letterSpacing: -1.1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Bottom Content
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                    bottom: 36.0, left: 24.0, right: 24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 24),
+                    const Text(
+                      "Real-time Conversations",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      "Chat, discuss, and stay updated in organized channels for every topic that matters.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF4A4A68),
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    // Pagination Dots Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Dot 0 (Active)
+                        GestureDetector(
+                          onTap: () {},
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            height: 8,
+                            width: 24,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF6139ED),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                        // Dot 1
+                        GestureDetector(
+                          onTap: () {
+                            Get.to(
+                              () => const OnboardingScreenTwo(),
+                              transition: Transition.rightToLeft,
+                            );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            height: 8,
+                            width: 16,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF9E9EA7).withOpacity(0.4),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                        // Dot 2
+                        GestureDetector(
+                          onTap: () {
+                            Get.to(
+                              () => const OnboardingScreenThree(),
+                              transition: Transition.rightToLeft,
+                            );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            height: 8,
+                            width: 16,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF9E9EA7).withOpacity(0.4),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),

@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
-import 'package:noteswap/Views/Onboarding/OnboardingScreen.dart';
 import 'package:noteswap/features/auth/presentation/pages/SplashScreen.dart';
 import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
@@ -394,7 +393,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       brandColor,
                                       textColor,
                                       subTextColor,
-                                      onTap: () => _showAboutUniConnectDialog()),
+                                      onTap: () =>
+                                          _showAboutUniConnectDialog()),
                                 ],
                               ),
                             ),
@@ -607,7 +607,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
             const SizedBox(height: 16),
             InkWell(
               onTap: () async {
-                final Uri url = Uri.parse("https://youtu.be/tkHhZkbi-7k?si=spfd04EhjO0KYI_i");
+                final Uri url = Uri.parse(
+                    "https://youtu.be/tkHhZkbi-7k?si=spfd04EhjO0KYI_i");
                 if (await canLaunchUrl(url)) {
                   await launchUrl(url, mode: LaunchMode.externalApplication);
                 } else {
@@ -616,15 +617,18 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
               },
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
                   color: const Color(0xFFECE7FF),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF6139ED).withOpacity(0.3)),
+                  border: Border.all(
+                      color: const Color(0xFF6139ED).withOpacity(0.3)),
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.play_circle_fill, color: Color(0xFF6139ED), size: 24),
+                    Icon(Icons.play_circle_fill,
+                        color: Color(0xFF6139ED), size: 24),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(

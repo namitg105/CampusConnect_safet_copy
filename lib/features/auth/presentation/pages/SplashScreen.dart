@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
 import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
-import 'package:noteswap/Views/Onboarding/OnboardingScreen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
