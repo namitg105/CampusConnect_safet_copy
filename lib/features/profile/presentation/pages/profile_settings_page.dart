@@ -388,8 +388,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                   _buildDivider(isLightMode),
                                   _buildSettingItem(
                                       Icons.info_outline,
-                                      'About UniConnect',
-                                      'Learn more about app',
+                                      'More about Valsco-Tech',
+                                      'Company behind UniConnect',
                                       brandColor,
                                       textColor,
                                       subTextColor,
