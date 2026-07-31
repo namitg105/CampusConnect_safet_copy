@@ -8,7 +8,7 @@ class Splash_Widget_Components {
   final double width;
   final double height;
 
-  PreferredSizeWidget AppBarDesign() {
+  PreferredSizeWidget AppBarDesign({VoidCallback? onSkip}) {
     return AppBar(
       title: Row(
         mainAxisAlignment: MainAxisAlignment.start,
@@ -24,11 +24,11 @@ class Splash_Widget_Components {
       ),
       actions: [
         TextButton(
-          onPressed: () => Get.offAll(() => const AuthPage()),
+          onPressed: onSkip ?? () => Get.offAll(() => const AuthPage()),
           child: Text(
             "Skip",
             style: TextStyle(
-              color: Color.fromRGBO(114, 75, 230, 1),
+              color: const Color.fromRGBO(114, 75, 230, 1),
               fontSize: width * 0.04,
               fontWeight: FontWeight.bold,
             ),
