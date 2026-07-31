@@ -38,9 +38,7 @@ const String shareSvg = '''
 </svg>
 ''';
 
-/// Day 4: Individual Post Card component
-/// Displays a single post's title, body preview, author, tag, and vote count
-/// Styled dynamically to align with the uniConnect Figma specifications
+/// Individual Post Card component
 class PostCard extends StatelessWidget {
   final PostEntity post;
   final VoidCallback onTap;
@@ -73,6 +71,90 @@ class PostCard extends StatelessWidget {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
     return cleanName[0].toUpperCase();
+  }
+
+  Widget _buildMediaWidget(
+      BuildContext context, PostEntity post, bool isLightMode) {
+    if (post.imageUrl == null || post.imageUrl!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final mediaType = post.mediaType ?? 'image';
+
+    if (mediaType == 'document') {
+      return Container(
+        margin: const EdgeInsets.only(top: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color:
+              isLightMode ? const Color(0xFFECE7FF) : const Color(0xFF2D2D2D),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF6139ED).withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.description, color: Color(0xFF6139ED), size: 28),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                post.mediaName ?? 'Attached Document',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: isLightMode ? const Color(0xFF1A1A1E) : Colors.white,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const Icon(Icons.download_rounded,
+                color: Color(0xFF6139ED), size: 20),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          constraints: const BoxConstraints(maxHeight: 220),
+          width: double.infinity,
+          child: Image.network(
+            post.imageUrl!,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Container(
+              height: 120,
+              color: isLightMode
+                  ? const Color(0xFFF3F4F6)
+                  : const Color(0xFF2D2D2D),
+              child: const Center(
+                child: Icon(Icons.image_not_supported_outlined,
+                    color: Colors.grey, size: 36),
+              ),
+            ),
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Container(
+                height: 150,
+                color: isLightMode
+                    ? const Color(0xFFF3F4F6)
+                    : const Color(0xFF2D2D2D),
+                child: const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Color(0xFF6139ED)),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -258,7 +340,7 @@ class PostCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -316,23 +398,16 @@ class PostCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 16),
 
-                // Comment Count Capsule
-                Container(
-                  decoration: BoxDecoration(
-                    color: isLightMode
-                        ? const Color(0xFFF3F4F6)
-                        : const Color(0xFF2D2D2D),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                // Comment Action Button
+                GestureDetector(
+                  onTap: onTap,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       SvgPicture.string(
                         commentSvg,
-                        width: 14,
-                        height: 14,
+                        width: 16,
+                        height: 16,
                         colorFilter: ColorFilter.mode(
                           isLightMode ? Colors.grey[600]! : Colors.grey[400]!,
                           BlendMode.srcIn,
@@ -340,11 +415,12 @@ class PostCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        post.commentCount.toString(),
-                        style: GoogleFonts.poppins(
+                        '${post.commentCount} Comments',
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: textColor,
+                          color:
+                              isLightMode ? Colors.grey[600] : Colors.grey[400],
                         ),
                       ),
                     ],
@@ -352,7 +428,7 @@ class PostCard extends StatelessWidget {
                 ),
                 const Spacer(),
 
-                // Share Action Button (NO capsule background!)
+                // Share Action Button
                 GestureDetector(
                   onTap: () {
                     Share.share(
@@ -390,6 +466,7 @@ class PostCard extends StatelessWidget {
       ),
     );
   }
+}
 
 class PollWidget extends StatefulWidget {
   final PostEntity post;
@@ -566,91 +643,6 @@ class _PollWidgetState extends State<PollWidget> {
             style: const TextStyle(fontSize: 11, color: Colors.grey),
           ),
         ],
-      ),
-    );
-  }
-}
-
-  Widget _buildMediaWidget(
-      BuildContext context, PostEntity post, bool isLightMode) {
-    if (post.imageUrl == null || post.imageUrl!.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final mediaType = post.mediaType ?? 'image';
-
-    if (mediaType == 'document') {
-      return Container(
-        margin: const EdgeInsets.only(top: 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color:
-              isLightMode ? const Color(0xFFECE7FF) : const Color(0xFF2D2D2D),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF6139ED).withOpacity(0.3)),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.description, color: Color(0xFF6139ED), size: 28),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                post.mediaName ?? 'Attached Document',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  color: isLightMode ? const Color(0xFF1A1A1E) : Colors.white,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const Icon(Icons.download_rounded,
-                color: Color(0xFF6139ED), size: 20),
-          ],
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          constraints: const BoxConstraints(maxHeight: 220),
-          width: double.infinity,
-          child: Image.network(
-            post.imageUrl!,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => Container(
-              height: 120,
-              color: isLightMode
-                  ? const Color(0xFFF3F4F6)
-                  : const Color(0xFF2D2D2D),
-              child: const Center(
-                child: Icon(Icons.image_not_supported_outlined,
-                    color: Colors.grey, size: 36),
-              ),
-            ),
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Container(
-                height: 150,
-                color: isLightMode
-                    ? const Color(0xFFF3F4F6)
-                    : const Color(0xFF2D2D2D),
-                child: const Center(
-                  child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Color(0xFF6139ED)),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
       ),
     );
   }
