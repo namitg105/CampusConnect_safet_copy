@@ -344,8 +344,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       brandColor,
                                       textColor,
                                       subTextColor,
-                                      onTap: () =>
-                                          _showComingSoonDialog('Account')),
+                                      onTap: () => _showComingSoonDialog(
+                                          'Manage Account ')),
                                   _buildDivider(isLightMode),
                                   _buildSettingItem(
                                       Icons.palette_outlined,
@@ -534,7 +534,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
           ],
         ),
         content: const Text(
-          "Please mail jurident@gmail.com for any issue or if you need any help with the app",
+          "Please mail valsco@gmail.com for any issue or if you need any help with the app",
           style: TextStyle(
             fontSize: 14,
             color: Color(0xFF555555),
