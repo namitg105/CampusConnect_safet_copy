@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
 import 'package:noteswap/Views/Onboarding/OnboardingScreen.dart';
+import 'package:noteswap/features/auth/presentation/pages/SplashScreen.dart';
 import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/update_profile_usecase.dart';
@@ -415,12 +416,12 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                               ),
                               child: GestureDetector(
                                 onTap: () async {
-                                  Get.offAll(() => OnboardingScreen());
                                   try {
                                     await context.read<AuthCubit>().logout();
                                   } catch (e) {
                                     print("Logout error: $e");
                                   }
+                                  Get.offAll(() => SplashScreen());
                                 },
                                 child: _buildSettingItem(
                                   Icons.logout_outlined,

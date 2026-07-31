@@ -84,6 +84,12 @@ class FirebaseAuthRepo implements AuthRepo {
       return user;
     } catch (e) {
       print("Firebase login error: $e");
+      if (e is FirebaseAuthException && e.code == 'network-request-failed') {
+        throw Exception('Network error: Please check your device internet connection and try again.');
+      }
+      if (e.toString().contains('network-request-failed') || e.toString().contains('UnknownHostException')) {
+        throw Exception('Network error: Unable to connect to Firebase. Please check your internet connection.');
+      }
       throw Exception('Login failed: $e');
     }
   }
@@ -126,6 +132,12 @@ class FirebaseAuthRepo implements AuthRepo {
 
       return user;
     } catch (e) {
+      if (e is FirebaseAuthException && e.code == 'network-request-failed') {
+        throw Exception('Network error: Please check your device internet connection and try again.');
+      }
+      if (e.toString().contains('network-request-failed') || e.toString().contains('UnknownHostException')) {
+        throw Exception('Network error: Unable to connect to Firebase. Please check your internet connection.');
+      }
       throw Exception("Register failed: $e");
     }
   }
