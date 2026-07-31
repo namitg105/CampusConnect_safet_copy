@@ -34,8 +34,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
     super.dispose();
   }
 
-  Widget _buildPaginationDots(
-      int activeDotIndex, ValueChanged<int> onDotTap) {
+  Widget _buildPaginationDots(int activeDotIndex, ValueChanged<int> onDotTap) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(3, (index) {
@@ -92,8 +91,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   }
 
   // --- PAGE 0: SPLASH / FIRST SCREEN ---
-  Widget _buildSplashScreenContent(
-      Splash_Widget_Components splashComponents) {
+  Widget _buildSplashScreenContent(Splash_Widget_Components splashComponents) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FE),
       body: Stack(
@@ -110,7 +108,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
             right: 0,
             child: Image.asset(
               "assets/Icon.png",
-              width: MediaQuery.of(context).size.width * 0.65,
+              width: MediaQuery.of(context).size.width * 0.58,
               fit: BoxFit.contain,
             ),
           ),
@@ -219,50 +217,88 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   }
 
   // --- PAGE 1: ONBOARDING SCREEN 1 ---
-  Widget _buildOnboardingOneContent(
-      Splash_Widget_Components splashComponents) {
+  Widget _buildOnboardingOneContent(Splash_Widget_Components splashComponents) {
     final height = splashComponents.height;
-    return Scaffold(
-      appBar: splashComponents.AppBarDesign(onSkip: () => _goToPage(4)),
-      body: Stack(
-        children: [
-          splashComponents.BackgroundCapDesign(
-            true,
-            true,
-            path: "assets/images_intro/Graduate_hat_right.png",
-            height: height * 0.35,
-            opacity: 0.01,
-            top: 0,
-            left: 0,
+
+    // 1. Remove the Scaffold and just return the Stack directly
+    return Stack(
+      children: [
+        // Top Left Graphic
+        splashComponents.BackgroundCapDesign(
+          true,
+          true,
+          path: "assets/images_intro/Graduate_hat_right.png",
+          height: height * 0.45,
+          opacity: 0.01,
+          top: 0, // Should now behave normally without bending
+          left: 0,
+        ),
+
+        // Bottom Right Graphic
+        splashComponents.BackgroundCapDesign(
+          true,
+          true,
+          path: "assets/images_intro/Graduate_hat_left.png",
+          height: height * 0.45,
+          opacity: 0.0,
+          bottom: height * 0.065,
+          right: 1,
+        ),
+
+        // Main Center Content
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(height: height * 0.025),
+            splashComponents.CenterPageDesign(
+              path: "assets/images_intro/Splash_page_2_image.png",
+            ),
+            splashComponents.CenterPageContentDesign(
+              contentArray: [
+                "Real-time Conversation",
+                "Chat discussion and stay updated in organized channels for every topic that matters",
+              ],
+            ),
+            const SizedBox(height: 32),
+            _buildPaginationDots(0, (index) => _goToPage(index + 1)),
+          ],
+        ),
+
+        // 2. Add your Header (Logo & Skip) manually via SafeArea
+        // to match exactly what you did in Page 2 and Page 3
+        SafeArea(
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Image.asset(
+                  "assets/Heading.png",
+                  width: 220,
+                ),
+                GestureDetector(
+                  onTap: () => _goToPage(4),
+                  child: const Padding(
+                    padding: EdgeInsets.only(top: 4.0),
+                    child: Text(
+                      "Skip",
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF6139ED),
+                        letterSpacing: -1.1,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          splashComponents.BackgroundCapDesign(
-            true,
-            true,
-            path: "assets/images_intro/Graduate_hat_left.png",
-            height: height * 0.35,
-            opacity: 0.0,
-            bottom: height * 0.09,
-            right: 0,
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(height: height * 0.025),
-              splashComponents.CenterPageDesign(
-                path: "assets/images_intro/Splash_page_2_image.png",
-              ),
-              splashComponents.CenterPageContentDesign(
-                contentArray: [
-                  "Real-time Conversation",
-                  "Chat discussion and stay updated in organized channels for every topic that matters",
-                ],
-              ),
-              const SizedBox(height: 32),
-              _buildPaginationDots(0, (index) => _goToPage(index + 1)),
-            ],
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -271,25 +307,25 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
     return Stack(
       children: [
         Positioned(
-          top: 0,
+          top: 436,
           left: 0,
           child: Image.asset(
             "assets/Icon l-r.png",
-            width: screenWidth * 0.7,
+            width: screenWidth * 0.6,
             fit: BoxFit.contain,
           ),
         ),
         Positioned(
-          top: screenHeight * 0.46,
+          top: 0,
           right: 0,
           child: Image.asset(
             "assets/Icon.png",
-            width: screenWidth * 0.65,
+            width: screenWidth * 0.695,
             fit: BoxFit.contain,
           ),
         ),
         Positioned(
-          top: screenHeight * 0.067,
+          top: screenHeight * 0.11,
           left: -20,
           right: -20,
           child: Image.asset(
@@ -373,16 +409,15 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   }
 
   // --- PAGE 3: ONBOARDING SCREEN 3 ---
-  Widget _buildOnboardingThreeContent(
-      double screenWidth, double screenHeight) {
+  Widget _buildOnboardingThreeContent(double screenWidth, double screenHeight) {
     return Stack(
       children: [
         Positioned(
-          top: 0,
+          top: 1,
           left: 0,
           child: Image.asset(
             "assets/Icon l-r.png",
-            width: screenWidth * 0.7,
+            width: screenWidth * 0.695,
             fit: BoxFit.contain,
           ),
         ),
@@ -440,15 +475,19 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
         Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
-            padding:
-                const EdgeInsets.only(bottom: 36.0, left: 24.0, right: 24.0),
+            padding: const EdgeInsets.only(
+              bottom: 50.0,
+              left: 20.0,
+              right: 24.0,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Image.asset(
                   "assets/notes 1.png",
-                  width: 60,
-                  height: 60,
+                  scale: 20,
+                  width: 6000,
+                  height: 100,
                   fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 12),
