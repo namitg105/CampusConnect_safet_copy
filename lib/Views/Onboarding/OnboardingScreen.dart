@@ -24,7 +24,6 @@ class OnboardingScreen extends StatelessWidget {
           OnboardingPageLayout(
             pageIndex: 0,
             imagePath: "assets/images_intro/Splash_page_2_image.png",
-            bottomIconPath: "assets/images_intro/App_icon_1.png",
             title: "Real-time Conversations",
             subtitle:
                 "Chat, discuss, and stay updated in organized channels for every topic that matters.",
@@ -33,7 +32,6 @@ class OnboardingScreen extends StatelessWidget {
           OnboardingPageLayout(
             pageIndex: 1,
             imagePath: "assets/images_intro/Splash_page_3_image-1.png",
-            bottomIconPath: "assets/images_intro/svg_icon_2.png",
             title: "Join & Create Communities",
             subtitle:
                 "Discover clubs, sports teams, and academic groups or create your own community.",
@@ -108,7 +106,7 @@ class OnboardingPageLayout extends StatelessWidget {
           child: Image.asset(
             imagePath,
             fit: BoxFit.contain,
-            height: screenHeight * 0.67,
+            height: screenHeight * 0.7,
           ),
         ),
         // Header (Logo + Skip)

@@ -11,6 +11,7 @@ import 'presentation/Design_By_Opencode/recent_chats_screen.dart';
 import 'presentation/Design_By_Opencode/recent_chats_components.dart';
 import 'package:noteswap/features/events/announcements/announcements_screen.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
+import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
 
 class PrivateChatPageController extends StatefulWidget {
   const PrivateChatPageController({Key? key}) : super(key: key);
@@ -38,7 +39,8 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
     }
     _userController = Get.find<UserController>();
     if (Get.isRegistered<MainPageController>()) {
-      _selectedTab = Get.find<MainPageController>().privateChatSelectedTab.value;
+      _selectedTab =
+          Get.find<MainPageController>().privateChatSelectedTab.value;
     }
   }
 
@@ -77,7 +79,8 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
       style: const TextStyle(fontFamily: 'Quicksand'),
       child: Obx(() {
         if (Get.isRegistered<MainPageController>()) {
-          _selectedTab = Get.find<MainPageController>().privateChatSelectedTab.value;
+          _selectedTab =
+              Get.find<MainPageController>().privateChatSelectedTab.value;
         }
         return Scaffold(
           backgroundColor: const Color(0xFFF8F8FC),
@@ -86,59 +89,64 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(),
-                Divider(height: 1, thickness: 1, color: const Color(0xFFECECEC)),
+                Divider(
+                    height: 1, thickness: 1, color: const Color(0xFFECECEC)),
                 ChatsTabBar(
                   selectedIndex: _selectedTab,
                   onTabSelected: _onTabSelected,
                 ),
-              Divider(height: 1, thickness: 1, color: const Color(0xFFECECEC)),
-              SearchPeopleBar(
-                controller: _searchController,
-                onChanged: _onSearchChanged,
-              ),
-              Obx(() {
-                final friendsCount = _userController?.friendsList.length ?? 0;
-                final onlineCount = _getOnlineCount();
-                final blockedCount = _userController?.blockedUids.length ?? 0;
-                return ChatStatisticsCard(
-                  friendsCount: friendsCount,
-                  onlineCount: onlineCount,
-                  blockedCount: blockedCount,
-                );
-              }),
-              const SizedBox(height: 8),
-              Expanded(
-                child: IndexedStack(
-                  index: _selectedTab,
-                  children: [
-                    RecentChatsScreen(
-                      searchQuery: _searchQuery,
-                      selectedTab: 0,
-                    ),
-                    RecentChatsScreen(
-                      searchQuery: _searchQuery,
-                      selectedTab: 1,
-                    ),
-                    ChatRequestScreen(
-                      searchQuery: _searchQuery,
-                    ),
-                    DirectoryScreen(
-                      searchQuery: _searchQuery,
-                      onGoToRequests: _switchToRequestTab,
-                    ),
-                  ],
+                Divider(
+                    height: 1, thickness: 1, color: const Color(0xFFECECEC)),
+                SearchPeopleBar(
+                  controller: _searchController,
+                  onChanged: _onSearchChanged,
                 ),
-              ),
-            ],
+                Obx(() {
+                  final friendsCount = _userController?.friendsList.length ?? 0;
+                  final onlineCount = _getOnlineCount();
+                  final blockedCount = _userController?.blockedUids.length ?? 0;
+                  return ChatStatisticsCard(
+                    friendsCount: friendsCount,
+                    onlineCount: onlineCount,
+                    blockedCount: blockedCount,
+                  );
+                }),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: IndexedStack(
+                    index: _selectedTab,
+                    children: [
+                      RecentChatsScreen(
+                        searchQuery: _searchQuery,
+                        selectedTab: 0,
+                      ),
+                      RecentChatsScreen(
+                        searchQuery: _searchQuery,
+                        selectedTab: 1,
+                      ),
+                      ChatRequestScreen(
+                        searchQuery: _searchQuery,
+                      ),
+                      DirectoryScreen(
+                        searchQuery: _searchQuery,
+                        onGoToRequests: _switchToRequestTab,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      );
-    }),
-  );
-}
+        );
+      }),
+    );
+  }
 
   int _getOnlineCount() {
-    return _userController?.friendStatuses.values.where((v) => v == true).length ?? 0;
+    return _userController?.friendStatuses.values
+            .where((v) => v == true)
+            .length ??
+        0;
   }
 
   Widget _buildHeader() {
@@ -161,59 +169,45 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
                   ),
                 ),
                 const SizedBox(height: 2),
-                  Obx(() {
+                Obx(() {
                   final friendsCount = _userController?.friendsList.length ?? 0;
                   final onlineCount = _getOnlineCount();
                   return Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                        Text(
-                          '$friendsCount friends',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF6B7280),
-                          ),
+                      Text(
+                        '$friendsCount friends',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF6B7280),
                         ),
-                        const SizedBox(width: 8),
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF22C55E),
-                            shape: BoxShape.circle,
-                          ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF22C55E),
+                          shape: BoxShape.circle,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '$onlineCount Online',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF1F2937),
-                          ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '$onlineCount Online',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF1F2937),
                         ),
-                      ],
-                    );
+                      ),
+                    ],
+                  );
                 }),
               ],
             ),
           ),
-          Row(
-            children: [
-              HeaderIconButton(
-                icon: Icons.calendar_today_outlined,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const AnnouncementsScreen(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              ProfileAvatarButton(
-                onTap: () => _showLogoutDialog(),
-              ),
-            ],
+          ProfileAvatarButton(
+            onTap: () => Get.to(() => const ProfileSettingsPage()),
           ),
         ],
       ),

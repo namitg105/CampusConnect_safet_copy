@@ -366,9 +366,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                       textColor,
                                       onTap: () {
                                         if (authState is Authenticated) {
-                                          Get.to(() => ChatRoomsPage(
-                                                currentUser: authState.user,
-                                              ));
+                                          Get.to(() => GroupsDisplayPage());
                                         }
                                       },
                                     ),
