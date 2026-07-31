@@ -517,8 +517,7 @@ class _PollWidgetState extends State<PollWidget> {
       return PollOption(text: opt.text, votes: newVotes);
     }).toList();
 
-    final updatedPoll =
-        PollData(question: _poll.question, options: newOptions);
+    final updatedPoll = PollData(question: _poll.question, options: newOptions);
 
     // 1. INSTANT UI UPDATE (0ms delay)
     setState(() {
@@ -529,8 +528,7 @@ class _PollWidgetState extends State<PollWidget> {
     FirebaseFirestore.instance
         .collection('posts')
         .doc(widget.post.id)
-        .update({'poll': updatedPoll.toJson()})
-        .catchError((e) {
+        .update({'poll': updatedPoll.toJson()}).catchError((e) {
       // Background sync error handling
     });
   }

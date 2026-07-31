@@ -2916,41 +2916,57 @@ class GroupMemberCard extends StatelessWidget {
                 ),
                 onPressed: () async {
                   final currentUid = FirebaseAuth.instance.currentUser?.uid;
-                  if (currentUid == null) return;
-
-                  if (currentUid == uid) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("This is your profile.")),
+                  if (currentUid == null || currentUid.isEmpty) {
+                    Get.snackbar(
+                      "Authentication Required",
+                      "Please log in to send messages or friend requests.",
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.orange,
+                      colorText: Colors.white,
                     );
                     return;
                   }
 
-                  // Check if they are friends
-                  final friendDoc = await FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(currentUid)
-                      .collection('friends')
-                      .doc(uid)
-                      .get();
+                  if (currentUid == uid) {
+                    Get.snackbar(
+                      "Your Profile",
+                      "You cannot message yourself.",
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: const Color(0xFF6366F1),
+                      colorText: Colors.white,
+                    );
+                    return;
+                  }
 
-                  if (friendDoc.exists) {
-                    // Already friends -> Navigate directly to ChatScreen
-                    final List<String> ids = [currentUid, uid]..sort();
-                    final String roomId = ids.join('_');
+                  try {
+                    // Check if they are friends
+                    final friendDoc = await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(currentUid)
+                        .collection('friends')
+                        .doc(uid)
+                        .get();
 
-                    Get.to(() => ChatScreen(
-                          roomId: roomId,
-                          currentUid: currentUid,
-                          friendUid: uid,
-                          friendName: displayName,
-                          friendInitials: displayName.isNotEmpty
-                              ? displayName[0].toUpperCase()
-                              : 'U',
-                          friendAvatarColor: const Color(0xFF6366F1),
-                          friendImageUrl: displayImage,
-                        ));
-                  } else {
-                    // Not friends -> Send or prompt friend request
+                    if (friendDoc.exists) {
+                      // Already friends -> Navigate directly to ChatScreen
+                      final List<String> ids = [currentUid, uid]..sort();
+                      final String roomId = ids.join('_');
+
+                      Get.to(() => ChatScreen(
+                            roomId: roomId,
+                            currentUid: currentUid,
+                            friendUid: uid,
+                            friendName: displayName,
+                            friendInitials: displayName.isNotEmpty
+                                ? displayName[0].toUpperCase()
+                                : 'U',
+                            friendAvatarColor: const Color(0xFF6366F1),
+                            friendImageUrl: displayImage,
+                          ));
+                      return;
+                    }
+
+                    // Not friends -> Check if request already pending
                     final reqDoc = await FirebaseFirestore.instance
                         .collection('users')
                         .doc(uid)
@@ -2959,36 +2975,40 @@ class GroupMemberCard extends StatelessWidget {
                         .get();
 
                     if (reqDoc.exists) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text(
-                                "Friend request already sent to $displayName.")),
+                      Get.snackbar(
+                        "Request Pending",
+                        "Friend request already sent to $displayName.",
+                        snackPosition: SnackPosition.BOTTOM,
+                        backgroundColor: Colors.blueAccent,
+                        colorText: Colors.white,
                       );
-                    } else {
-                      // Show confirmation dialog before sending friend request
-                      showDialog(
-                        context: context,
-                        builder: (dialogContext) => AlertDialog(
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                          title: const Text("Add Friend",
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          content: Text(
-                              "Add $displayName as a friend before Direct messaging."),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(dialogContext),
-                              child: const Text("Cancel",
-                                  style: TextStyle(color: Colors.grey)),
+                      return;
+                    }
+
+                    // Show confirmation dialog before sending friend request
+                    Get.dialog(
+                      AlertDialog(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                        title: const Text("Add Friend",
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        content: Text(
+                            "Add $displayName as a friend before Direct messaging."),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Get.back(),
+                            child: const Text("Cancel",
+                                style: TextStyle(color: Colors.grey)),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF6366F1),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
                             ),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF6366F1),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8)),
-                              ),
-                              onPressed: () async {
-                                Navigator.pop(dialogContext);
+                            onPressed: () async {
+                              Get.back();
+                              try {
                                 final currentUserDoc = await FirebaseFirestore
                                     .instance
                                     .collection('users')
@@ -3024,19 +3044,37 @@ class GroupMemberCard extends StatelessWidget {
                                   'status': 'pending',
                                 });
 
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content: Text(
-                                          "Friend request sent to $displayName!")),
+                                Get.snackbar(
+                                  "Success",
+                                  "Friend request sent to $displayName!",
+                                  snackPosition: SnackPosition.BOTTOM,
+                                  backgroundColor: Colors.green,
+                                  colorText: Colors.white,
                                 );
-                              },
-                              child: const Text("Add Friend",
-                                  style: TextStyle(color: Colors.white)),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
+                              } catch (e) {
+                                Get.snackbar(
+                                  "Error",
+                                  "Failed to send request: $e",
+                                  snackPosition: SnackPosition.BOTTOM,
+                                  backgroundColor: Colors.red,
+                                  colorText: Colors.white,
+                                );
+                              }
+                            },
+                            child: const Text("Add Friend",
+                                style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
+                      ),
+                    );
+                  } catch (e) {
+                    Get.snackbar(
+                      "Error",
+                      "Failed to check friendship status: $e",
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.red,
+                      colorText: Colors.white,
+                    );
                   }
                 },
                 child: const Text(
