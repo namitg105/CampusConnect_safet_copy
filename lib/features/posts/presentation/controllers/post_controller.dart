@@ -279,7 +279,8 @@ class PostController extends GetxController {
     if (trendingIndex != -1) {
       final currentPost = trendingPosts[trendingIndex];
       final updatedCount = (currentPost.upvotes + delta).toInt();
-      trendingPosts[trendingIndex] = currentPost.copyWith(upvotes: updatedCount);
+      trendingPosts[trendingIndex] =
+          currentPost.copyWith(upvotes: updatedCount);
     }
   }
 
