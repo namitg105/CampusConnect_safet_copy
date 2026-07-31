@@ -2966,12 +2966,12 @@ class GroupMemberCard extends StatelessWidget {
                       return;
                     }
 
-                    // Not friends -> Check if request already pending
+                    // Not friends -> Check if request already pending in current user's sent_requests
                     final reqDoc = await FirebaseFirestore.instance
                         .collection('users')
-                        .doc(uid)
-                        .collection('incoming_requests')
                         .doc(currentUid)
+                        .collection('sent_requests')
+                        .doc(uid)
                         .get();
 
                     if (reqDoc.exists) {
@@ -3020,21 +3020,6 @@ class GroupMemberCard extends StatelessWidget {
 
                                 await FirebaseFirestore.instance
                                     .collection('users')
-                                    .doc(uid)
-                                    .collection('incoming_requests')
-                                    .doc(currentUid)
-                                    .set({
-                                  'fromUid': currentUid,
-                                  'fromName': currentData['name'] ??
-                                      currentData['displayName'] ??
-                                      'User',
-                                  'fromEmail': currentData['email'] ?? '',
-                                  'timestamp': FieldValue.serverTimestamp(),
-                                  'status': 'pending',
-                                });
-
-                                await FirebaseFirestore.instance
-                                    .collection('users')
                                     .doc(currentUid)
                                     .collection('sent_requests')
                                     .doc(uid)
@@ -3043,6 +3028,25 @@ class GroupMemberCard extends StatelessWidget {
                                   'timestamp': FieldValue.serverTimestamp(),
                                   'status': 'pending',
                                 });
+
+                                try {
+                                  await FirebaseFirestore.instance
+                                      .collection('users')
+                                      .doc(uid)
+                                      .collection('incoming_requests')
+                                      .doc(currentUid)
+                                      .set({
+                                    'fromUid': currentUid,
+                                    'fromName': currentData['name'] ??
+                                        currentData['displayName'] ??
+                                        'User',
+                                    'fromEmail': currentData['email'] ?? '',
+                                    'timestamp': FieldValue.serverTimestamp(),
+                                    'status': 'pending',
+                                  });
+                                } catch (e) {
+                                  print("Incoming request write deferred: $e");
+                                }
 
                                 Get.snackbar(
                                   "Success",
