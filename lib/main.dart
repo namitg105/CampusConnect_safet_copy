@@ -108,7 +108,7 @@ class AuthWrapper extends StatelessWidget {
           return const MainPage(); // Land on MainPage (includes bottom navigation)
         } else if (authState is Unauthenticated) {
           Get.find<UserService>().clearUser();
-          return const AuthPage();
+          return const SplashScreen();
         }
 
         // Handles loading or initial authentication state resolution
