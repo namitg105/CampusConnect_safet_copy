@@ -51,7 +51,7 @@ class PostCard extends StatelessWidget {
   final bool isLightMode;
 
   const PostCard({
-    Key? key,
+    super.key,
     required this.post,
     required this.onTap,
     required this.onProfileTap,
@@ -61,7 +61,7 @@ class PostCard extends StatelessWidget {
     this.isUpvoted = false,
     this.isDownvoted = false,
     required this.isLightMode,
-  }) : super(key: key);
+  });
 
   String getInitials(String name) {
     final cleanName = name.contains('@') ? name.split('@').first : name;
@@ -531,7 +531,7 @@ class _PollWidgetState extends State<PollWidget> {
         .doc(widget.post.id)
         .update({'poll': updatedPoll.toJson()})
         .catchError((e) {
-      print("Error syncing poll vote to Firestore: $e");
+      // Background sync error handling
     });
   }
 
@@ -636,7 +636,7 @@ class _PollWidgetState extends State<PollWidget> {
                 ),
               ),
             );
-          }).toList(),
+          }),
           const SizedBox(height: 4),
           Text(
             '$totalVotes ${totalVotes == 1 ? 'vote' : 'votes'}',
