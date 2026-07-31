@@ -46,8 +46,8 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final ChatController _chatController = Get.find<ChatController>();
-  final UserController _userController = Get.find<UserController>();
+  late final ChatController _chatController;
+  late final UserController _userController;
   final TextEditingController _messageController = TextEditingController();
   domain.ChatMessage? _replyMessage;
   late final ComponentMediaDialog _mediaDialog;
@@ -56,6 +56,12 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    _chatController = Get.isRegistered<ChatController>()
+        ? Get.find<ChatController>()
+        : Get.put(ChatController());
+    _userController = Get.isRegistered<UserController>()
+        ? Get.find<UserController>()
+        : Get.put(UserController());
     _chatController.listenToMessages(widget.roomId);
     _chatController.listenToPinnedMessage(widget.roomId);
     _chatController.markMessagesAsRead(widget.roomId, widget.currentUid);

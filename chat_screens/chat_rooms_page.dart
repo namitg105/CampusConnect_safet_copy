@@ -111,7 +111,8 @@ class _ChatRoomsPageState extends State<ChatRoomsPage> {
             IconButton(
               icon: Icon(Icons.add_comment_outlined, color: brandColor),
               onPressed: () {
-                Get.to(() => CreateChatRoomPage(currentUser: widget.currentUser));
+                Get.to(
+                    () => CreateChatRoomPage(currentUser: widget.currentUser));
               },
             ),
           ],

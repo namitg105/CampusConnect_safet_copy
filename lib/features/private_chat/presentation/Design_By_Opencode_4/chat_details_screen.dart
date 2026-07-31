@@ -31,7 +31,7 @@ class ChatDetailsScreen extends StatefulWidget {
 }
 
 class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
-  final ChatController _chatController = Get.find<ChatController>();
+  late final ChatController _chatController;
   late final UserController _userController;
 
   List<String> _imageUrls = [];
@@ -46,7 +46,12 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    _userController = Get.find<UserController>();
+    _chatController = Get.isRegistered<ChatController>()
+        ? Get.find<ChatController>()
+        : Get.put(ChatController());
+    _userController = Get.isRegistered<UserController>()
+        ? Get.find<UserController>()
+        : Get.put(UserController());
     _loadImages();
     _loadDocs();
     _loadRoomInfo();

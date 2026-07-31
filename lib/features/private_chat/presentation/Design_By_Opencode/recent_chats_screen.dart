@@ -42,8 +42,12 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
   @override
   void initState() {
     super.initState();
-    _chatController = Get.find<ChatController>();
-    _userController = Get.find<UserController>();
+    _chatController = Get.isRegistered<ChatController>()
+        ? Get.find<ChatController>()
+        : Get.put(ChatController());
+    _userController = Get.isRegistered<UserController>()
+        ? Get.find<UserController>()
+        : Get.put(UserController());
 
     _currentUid = FirebaseAuth.instance.currentUser?.uid;
 

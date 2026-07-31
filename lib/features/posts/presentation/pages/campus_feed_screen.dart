@@ -144,36 +144,11 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
             ),
             centerTitle: true,
             actions: [
-              Builder(
-                builder: (context) {
-                  final notifCtrl = Get.put(NotificationController());
-                  return Obx(
-                    () => Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        IconButton(
-                          onPressed: () =>
-                              Get.to(() => const NotificationsScreen()),
-                          icon:
-                              Icon(Icons.notifications_none, color: textColor),
-                        ),
-                        if (notifCtrl.unreadCount.value > 0)
-                          Positioned(
-                            top: 12,
-                            right: 12,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: Colors.redAccent,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  );
+              IconButton(
+                onPressed: () {
+                  Get.to(ProfileSettingsPage());
                 },
+                icon: Icon(Icons.person, color: textColor),
               ),
             ],
           ),
