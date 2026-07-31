@@ -122,14 +122,17 @@ class PostCard extends StatelessWidget {
                         .doc(post.authorId)
                         .snapshots(),
                     builder: (context, snapshot) {
-                      final data = snapshot.data?.data() as Map<String, dynamic>?;
+                      final data =
+                          snapshot.data?.data() as Map<String, dynamic>?;
                       final profileImageUrl = data?['profileImage'] as String?;
-                      final hasImage = profileImageUrl != null && profileImageUrl.isNotEmpty;
+                      final hasImage =
+                          profileImageUrl != null && profileImageUrl.isNotEmpty;
 
                       return CircleAvatar(
                         radius: 18,
                         backgroundColor: brandColor.withOpacity(0.15),
-                        backgroundImage: hasImage ? NetworkImage(profileImageUrl) : null,
+                        backgroundImage:
+                            hasImage ? NetworkImage(profileImageUrl) : null,
                         child: hasImage
                             ? null
                             : Text(
@@ -235,7 +238,7 @@ class PostCard extends StatelessWidget {
             ),
 
             if (post.poll != null) ...[
-              _buildPollWidget(context, post, isLightMode),
+              PollWidget(post: post, isLightMode: isLightMode),
             ],
 
             if (post.imageUrl != null && post.imageUrl!.isNotEmpty) ...[
@@ -388,11 +391,78 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPollWidget(
-      BuildContext context, PostEntity post, bool isLightMode) {
+class PollWidget extends StatefulWidget {
+  final PostEntity post;
+  final bool isLightMode;
+
+  const PollWidget({
+    super.key,
+    required this.post,
+    required this.isLightMode,
+  });
+
+  @override
+  State<PollWidget> createState() => _PollWidgetState();
+}
+
+class _PollWidgetState extends State<PollWidget> {
+  late PollData _poll;
+
+  @override
+  void initState() {
+    super.initState();
+    _poll = widget.post.poll!;
+  }
+
+  @override
+  void didUpdateWidget(covariant PollWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.post.poll != null) {
+      _poll = widget.post.poll!;
+    }
+  }
+
+  void _vote(PollOption option, String currentUid) {
+    if (currentUid.isEmpty) return;
+
+    final isVoted = option.votes.contains(currentUid);
+    final newOptions = _poll.options.map((opt) {
+      final newVotes = List<String>.from(opt.votes);
+      if (opt.text == option.text) {
+        if (isVoted) {
+          newVotes.remove(currentUid);
+        } else {
+          newVotes.add(currentUid);
+        }
+      } else {
+        newVotes.remove(currentUid);
+      }
+      return PollOption(text: opt.text, votes: newVotes);
+    }).toList();
+
+    final updatedPoll =
+        PollData(question: _poll.question, options: newOptions);
+
+    // 1. INSTANT UI UPDATE (0ms delay)
+    setState(() {
+      _poll = updatedPoll;
+    });
+
+    // 2. BACKGROUND FIREBASE FIRESTORE SYNC
+    FirebaseFirestore.instance
+        .collection('posts')
+        .doc(widget.post.id)
+        .update({'poll': updatedPoll.toJson()})
+        .catchError((e) {
+      print("Error syncing poll vote to Firestore: $e");
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
-    final poll = post.poll!;
-    final totalVotes = poll.totalVotes;
+    final totalVotes = _poll.totalVotes;
+    final isLightMode = widget.isLightMode;
 
     return Container(
       margin: const EdgeInsets.only(top: 12),
@@ -414,7 +484,7 @@ class PostCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  poll.question,
+                  _poll.question,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
@@ -425,36 +495,14 @@ class PostCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ...poll.options.map((option) {
+          ..._poll.options.map((option) {
             final isVoted = option.votes.contains(currentUid);
             final percentage = totalVotes > 0
                 ? (option.votes.length / totalVotes * 100).round()
                 : 0;
 
             return GestureDetector(
-              onTap: () async {
-                if (currentUid.isEmpty) return;
-                final newOptions = poll.options.map((opt) {
-                  final newVotes = List<String>.from(opt.votes);
-                  if (opt.text == option.text) {
-                    if (isVoted) {
-                      newVotes.remove(currentUid);
-                    } else {
-                      newVotes.add(currentUid);
-                    }
-                  } else {
-                    newVotes.remove(currentUid);
-                  }
-                  return PollOption(text: opt.text, votes: newVotes);
-                }).toList();
-
-                final updatedPoll =
-                    PollData(question: poll.question, options: newOptions);
-                await FirebaseFirestore.instance
-                    .collection('posts')
-                    .doc(post.id)
-                    .update({'poll': updatedPoll.toJson()});
-              },
+              onTap: () => _vote(option, currentUid),
               child: Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 padding:
@@ -481,9 +529,8 @@ class PostCard extends StatelessWidget {
                           isVoted
                               ? Icons.check_circle
                               : Icons.radio_button_unchecked,
-                          color: isVoted
-                              ? const Color(0xFF6139ED)
-                              : Colors.grey,
+                          color:
+                              isVoted ? const Color(0xFF6139ED) : Colors.grey,
                           size: 16,
                         ),
                         const SizedBox(width: 8),
@@ -522,6 +569,7 @@ class PostCard extends StatelessWidget {
       ),
     );
   }
+}
 
   Widget _buildMediaWidget(
       BuildContext context, PostEntity post, bool isLightMode) {
