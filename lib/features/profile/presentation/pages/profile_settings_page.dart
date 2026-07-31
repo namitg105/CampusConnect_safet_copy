@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
 import 'package:noteswap/features/auth/presentation/pages/SplashScreen.dart';
+import 'package:noteswap/Views/Onboarding/OnboardingScreen.dart';
 import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/update_profile_usecase.dart';
@@ -343,7 +344,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       brandColor,
                                       textColor,
                                       subTextColor,
-                                      onTap: () => _showComingSoonDialog('Account')),
+                                      onTap: () =>
+                                          _showComingSoonDialog('Account')),
                                   _buildDivider(isLightMode),
                                   _buildSettingItem(
                                       Icons.palette_outlined,
@@ -352,7 +354,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       brandColor,
                                       textColor,
                                       subTextColor,
-                                      onTap: () => _showComingSoonDialog('Theme')),
+                                      onTap: () =>
+                                          _showComingSoonDialog('Theme')),
                                   _buildDivider(isLightMode),
                                   _buildSettingItem(
                                       Icons.notifications_none,
@@ -361,7 +364,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       brandColor,
                                       textColor,
                                       subTextColor,
-                                      onTap: () => _showComingSoonDialog('Notifications')),
+                                      onTap: () => _showComingSoonDialog(
+                                          'Notifications')),
                                   _buildDivider(isLightMode),
                                   _buildSettingItem(
                                       Icons.security_outlined,
@@ -370,7 +374,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       brandColor,
                                       textColor,
                                       subTextColor,
-                                      onTap: () => _showComingSoonDialog('Privacy & Security')),
+                                      onTap: () => _showComingSoonDialog(
+                                          'Privacy & Security')),
                                   _buildDivider(isLightMode),
                                   _buildSettingItem(
                                       Icons.help_outline,
@@ -379,7 +384,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       brandColor,
                                       textColor,
                                       subTextColor,
-                                      onTap: () => _showComingSoonDialog('Help & Support')),
+                                      onTap: () => _showComingSoonDialog(
+                                          'Help & Support')),
                                   _buildDivider(isLightMode),
                                   _buildSettingItem(
                                       Icons.info_outline,
@@ -388,7 +394,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       brandColor,
                                       textColor,
                                       subTextColor,
-                                      onTap: () => _showComingSoonDialog('About UniConnect')),
+                                      onTap: () => _showComingSoonDialog(
+                                          'About UniConnect')),
                                 ],
                               ),
                             ),
@@ -410,7 +417,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                               child: GestureDetector(
                                 onTap: () async {
                                   await context.read<AuthCubit>().logout();
-                                  Get.offAll(() => const SplashScreen());
+                                  Get.offAll(() => OnboardingScreen());
                                 },
                                 child: _buildSettingItem(
                                   Icons.logout_outlined,
@@ -479,7 +486,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               ),
               onPressed: () => Navigator.pop(context),
               child: const Text(
