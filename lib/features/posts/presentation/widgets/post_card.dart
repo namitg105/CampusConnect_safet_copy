@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -385,6 +386,8 @@ class PostCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
   Widget _buildPollWidget(
       BuildContext context, PostEntity post, bool isLightMode) {
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
