@@ -2965,44 +2965,76 @@ class GroupMemberCard extends StatelessWidget {
                                 "Friend request already sent to $displayName.")),
                       );
                     } else {
-                      // Send friend request
-                      final currentUserDoc = await FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(currentUid)
-                          .get();
-                      final currentData =
-                          currentUserDoc.data() as Map<String, dynamic>? ?? {};
+                      // Show confirmation dialog before sending friend request
+                      showDialog(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                          title: const Text("Add Friend",
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          content: Text(
+                              "Add $displayName as a friend before Direct messaging."),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dialogContext),
+                              child: const Text("Cancel",
+                                  style: TextStyle(color: Colors.grey)),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF6366F1),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8)),
+                              ),
+                              onPressed: () async {
+                                Navigator.pop(dialogContext);
+                                final currentUserDoc = await FirebaseFirestore
+                                    .instance
+                                    .collection('users')
+                                    .doc(currentUid)
+                                    .get();
+                                final currentData = currentUserDoc.data()
+                                        as Map<String, dynamic>? ??
+                                    {};
 
-                      await FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(uid)
-                          .collection('incoming_requests')
-                          .doc(currentUid)
-                          .set({
-                        'fromUid': currentUid,
-                        'fromName': currentData['name'] ??
-                            currentData['displayName'] ??
-                            'User',
-                        'fromEmail': currentData['email'] ?? '',
-                        'timestamp': FieldValue.serverTimestamp(),
-                        'status': 'pending',
-                      });
+                                await FirebaseFirestore.instance
+                                    .collection('users')
+                                    .doc(uid)
+                                    .collection('incoming_requests')
+                                    .doc(currentUid)
+                                    .set({
+                                  'fromUid': currentUid,
+                                  'fromName': currentData['name'] ??
+                                      currentData['displayName'] ??
+                                      'User',
+                                  'fromEmail': currentData['email'] ?? '',
+                                  'timestamp': FieldValue.serverTimestamp(),
+                                  'status': 'pending',
+                                });
 
-                      await FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(currentUid)
-                          .collection('sent_requests')
-                          .doc(uid)
-                          .set({
-                        'toUid': uid,
-                        'timestamp': FieldValue.serverTimestamp(),
-                        'status': 'pending',
-                      });
+                                await FirebaseFirestore.instance
+                                    .collection('users')
+                                    .doc(currentUid)
+                                    .collection('sent_requests')
+                                    .doc(uid)
+                                    .set({
+                                  'toUid': uid,
+                                  'timestamp': FieldValue.serverTimestamp(),
+                                  'status': 'pending',
+                                });
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text(
-                                "Friend request sent to $displayName!")),
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          "Friend request sent to $displayName!")),
+                                );
+                              },
+                              child: const Text("Add Friend",
+                                  style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                        ),
                       );
                     }
                   }
