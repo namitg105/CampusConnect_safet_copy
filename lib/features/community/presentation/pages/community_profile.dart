@@ -594,39 +594,78 @@ class _GroupProfilePageState extends State<GroupProfilePage>
     );
   }
 
-  // --- SUBMIT JOIN REQUEST ---
+  // --- SUBMIT JOIN REQUEST OR DIRECT JOIN ---
   Future<void> requestToJoinGroup() async {
     if (currentUserId.isEmpty || isCurrentMember || hasPendingRequest) return;
 
     setState(() => isLoading = true);
     try {
-      final requestRef = FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.groupId)
-          .collection('join_requests')
-          .doc(currentUserId);
+      if (isPublic) {
+        // Public Community: Automatically join directly without sending a request to admin!
+        final groupRef = FirebaseFirestore.instance
+            .collection('groups')
+            .doc(widget.groupId);
+        final memberRef = groupRef.collection('members').doc(currentUserId);
+        final joinedGroupRef = FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUserId)
+            .collection('joinedGroups')
+            .doc(widget.groupId);
 
-      await requestRef.set({
-        'requestedAt': FieldValue.serverTimestamp(),
-        'userId': currentUserId,
-        'status': 'pending',
-      });
-
-      if (mounted) {
-        setState(() {
-          hasPendingRequest = true;
-          isLoading = false;
+        await FirebaseFirestore.instance.runTransaction((transaction) async {
+          transaction.set(memberRef, {
+            'uid': currentUserId,
+            'joinedAt': FieldValue.serverTimestamp(),
+          });
+          transaction.set(joinedGroupRef, {
+            'joinedAt': FieldValue.serverTimestamp(),
+          });
+          transaction.update(groupRef, {
+            'memberCount': FieldValue.increment(1),
+            'remainingSeats': FieldValue.increment(-1),
+          });
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Join request sent! Waiting for admin approval.')),
-        );
+
+        if (mounted) {
+          setState(() {
+            isCurrentMember = true;
+            isLoading = false;
+            memberCount += 1;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Joined $groupName!')),
+          );
+        }
+      } else {
+        // Private Community: Send join request to admin for approval
+        final requestRef = FirebaseFirestore.instance
+            .collection('groups')
+            .doc(widget.groupId)
+            .collection('join_requests')
+            .doc(currentUserId);
+
+        await requestRef.set({
+          'requestedAt': FieldValue.serverTimestamp(),
+          'userId': currentUserId,
+          'status': 'pending',
+        });
+
+        if (mounted) {
+          setState(() {
+            hasPendingRequest = true;
+            isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Join request sent! Waiting for admin approval.')),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
         setState(() => isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to send request: $e")),
+          SnackBar(content: Text("Failed to join: $e")),
         );
       }
     }

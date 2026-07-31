@@ -225,26 +225,40 @@ class _SearchCommunitiesPageState extends State<SearchCommunitiesPage> {
           );
         }
       } else {
-        // Send Join Request
-        await FirebaseFirestore.instance
-            .collection('groups')
-            .doc(group.id)
-            .collection('join_requests')
-            .doc(userId)
-            .set({
-          'userId': userId,
-          'status': 'pending',
-          'requestedAt': FieldValue.serverTimestamp(),
-        });
+        if (group.isPublic) {
+          // Public community: Direct join without request
+          await _groupRepo.joinGroup(group.id, userId);
+          setState(() {
+            _currentJoinedIds.add(group.id);
+          });
 
-        setState(() {
-          _pendingRequestGroupIds.add(group.id);
-        });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Joined ${group.name}!')),
+            );
+          }
+        } else {
+          // Private community: Send Join Request to Admin
+          await FirebaseFirestore.instance
+              .collection('groups')
+              .doc(group.id)
+              .collection('join_requests')
+              .doc(userId)
+              .set({
+            'userId': userId,
+            'status': 'pending',
+            'requestedAt': FieldValue.serverTimestamp(),
+          });
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Request sent to join ${group.name}!')),
-          );
+          setState(() {
+            _pendingRequestGroupIds.add(group.id);
+          });
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Request sent to join ${group.name}!')),
+            );
+          }
         }
       }
     } catch (e) {
