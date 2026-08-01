@@ -842,70 +842,84 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
         ? post.authorName.split('@').first
         : post.authorName;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    return GestureDetector(
+      onTap: () {
+        Get.to(() => PostDetailPage(
+              post: post,
+              controller: Get.find<PostController>(),
+            ));
+      },
+      child: Container(
+        color: Colors.transparent,
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Text(
-                post.title,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 11,
-                  color: textColor,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    post.title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                      color: textColor,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: brandColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    post.commentCount.toString(),
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: brandColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '$formattedAuthor • ${formatTimeAgo(post.createdAt)}',
+              style: TextStyle(
+                fontSize: 9,
+                color: subTextColor,
               ),
             ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: brandColor.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                post.commentCount.toString(),
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  color: brandColor,
+            if (post.imageUrl != null && post.imageUrl!.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  post.imageUrl!,
+                  height: 80,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    height: 80,
+                    color: isLightMode
+                        ? const Color(0xFFF3F4F6)
+                        : const Color(0xFF2D2D2D),
+                    child: const Center(
+                      child: Icon(Icons.image_not_supported_outlined,
+                          color: Colors.grey, size: 24),
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          '$formattedAuthor • ${formatTimeAgo(post.createdAt)}',
-          style: TextStyle(
-            fontSize: 9,
-            color: subTextColor,
-          ),
-        ),
-        if (post.imageUrl != null && post.imageUrl!.isNotEmpty) ...[
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              post.imageUrl!,
-              height: 80,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                height: 80,
-                color: isLightMode ? const Color(0xFFF3F4F6) : const Color(0xFF2D2D2D),
-                child: const Center(
-                  child: Icon(Icons.image_not_supported_outlined, color: Colors.grey, size: 24),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ],
+      ),
     );
   }
 

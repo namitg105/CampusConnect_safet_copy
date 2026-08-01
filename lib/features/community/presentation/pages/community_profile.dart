@@ -106,15 +106,9 @@ class _GroupProfilePageState extends State<GroupProfilePage>
 
   Future<void> loadGroup() async {
     try {
-      if (currentUserId.isEmpty) {
-        if (mounted) {
-          setState(() {
-            isLoading = false;
-            hasError = true;
-          });
-        }
-        return;
-      }
+      final uid = currentUserId.isNotEmpty
+          ? currentUserId
+          : (FirebaseAuth.instance.currentUser?.uid ?? '');
 
       final groupDoc = await FirebaseFirestore.instance
           .collection('groups')
@@ -131,48 +125,62 @@ class _GroupProfilePageState extends State<GroupProfilePage>
         return;
       }
 
-      final memberDoc = await FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.groupId)
-          .collection('members')
-          .doc(currentUserId)
-          .get();
+      DocumentSnapshot? memberDoc;
+      DocumentSnapshot? requestDoc;
+      DocumentSnapshot? reviewDoc;
 
-      final requestDoc = await FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.groupId)
-          .collection('join_requests')
-          .doc(currentUserId)
-          .get();
+      if (uid.isNotEmpty) {
+        try {
+          memberDoc = await FirebaseFirestore.instance
+              .collection('groups')
+              .doc(widget.groupId)
+              .collection('members')
+              .doc(uid)
+              .get();
+        } catch (_) {}
 
-      // Fetch user's existing review if present
-      final reviewDoc = await FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.groupId)
-          .collection('reviews')
-          .doc(currentUserId)
-          .get();
+        try {
+          requestDoc = await FirebaseFirestore.instance
+              .collection('groups')
+              .doc(widget.groupId)
+              .collection('join_requests')
+              .doc(uid)
+              .get();
+        } catch (_) {}
 
-      final data = groupDoc.data()!;
+        try {
+          reviewDoc = await FirebaseFirestore.instance
+              .collection('groups')
+              .doc(widget.groupId)
+              .collection('reviews')
+              .doc(uid)
+              .get();
+        } catch (_) {}
+      }
+
+      final data = groupDoc.data() ?? {};
       creatorUid =
           (data["createdBy"] ?? data["adminId"] ?? "").toString().trim();
 
       if (creatorUid.isNotEmpty) {
-        final creatorDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(creatorUid)
-            .get();
-        if (creatorDoc.exists) {
-          creatorName = creatorDoc.data()?['name'] ??
-              creatorDoc.data()?['displayName'] ??
-              'Admin';
-        }
+        try {
+          final creatorDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(creatorUid)
+              .get();
+          if (creatorDoc.exists) {
+            final creatorData = creatorDoc.data() as Map<String, dynamic>?;
+            creatorName = creatorData?['name'] ??
+                creatorData?['displayName'] ??
+                'Admin';
+          }
+        } catch (_) {}
       }
 
       if (!mounted) return;
 
       setState(() {
-        groupName = data["name"] ?? "AI & ML Society";
+        groupName = data["name"] ?? "Community";
         groupImage = data["imageUrl"] ?? "";
         bannerImage = data["bannerUrl"] ?? "";
         groupDescription = data["description"] ?? "";
@@ -187,8 +195,8 @@ class _GroupProfilePageState extends State<GroupProfilePage>
         averageRating = (data["averageRating"] ?? 0.0).toDouble();
         ratingCount = data["ratingCount"] ?? 0;
 
-        if (reviewDoc.exists) {
-          final reviewData = reviewDoc.data();
+        if (reviewDoc != null && reviewDoc.exists) {
+          final reviewData = reviewDoc.data() as Map<String, dynamic>?;
           userExistingRating = (reviewData?['rating'] ?? 0).toInt();
           userExistingReview = reviewData?['review'] ?? "";
         }
@@ -205,11 +213,13 @@ class _GroupProfilePageState extends State<GroupProfilePage>
           createdOn = data["createdOn"] ?? "Recently";
         }
 
-        isCurrentMember = memberDoc.exists;
-        hasPendingRequest = requestDoc.exists;
+        isCurrentMember = memberDoc?.exists ?? false;
+        hasPendingRequest = requestDoc?.exists ?? false;
         isLoading = false;
+        hasError = false;
       });
     } catch (e) {
+      print("Error loading group: $e");
       if (mounted) {
         setState(() {
           isLoading = false;

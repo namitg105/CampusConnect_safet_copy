@@ -438,17 +438,48 @@ class _JoinedCommunitiesSection extends StatelessWidget {
 
     final List<Group> joined = [];
 
-    for (final group in allGroups) {
-      final memberDoc = await FirebaseFirestore.instance
-          .collection('groups')
-          .doc(group.id)
-          .collection('members')
+    try {
+      // 1. Fetch joined group IDs from users/$currentUserId/joinedGroups
+      final joinedDocs = await FirebaseFirestore.instance
+          .collection('users')
           .doc(currentUserId)
+          .collection('joinedGroups')
           .get();
 
-      if (memberDoc.exists) {
-        joined.add(group);
+      final joinedGroupIds = joinedDocs.docs.map((d) => d.id).toSet();
+      final Map<String, Group> groupMap = {for (var g in allGroups) g.id: g};
+
+      for (final id in joinedGroupIds) {
+        if (groupMap.containsKey(id)) {
+          joined.add(groupMap[id]!);
+        } else {
+          final groupDoc = await FirebaseFirestore.instance
+              .collection('groups')
+              .doc(id)
+              .get();
+          if (groupDoc.exists) {
+            joined.add(Group.fromFirestore(groupDoc));
+          }
+        }
       }
+
+      // 2. Fallback: check allGroups for memberDoc if joined list is empty
+      if (joined.isEmpty) {
+        for (final group in allGroups) {
+          final memberDoc = await FirebaseFirestore.instance
+              .collection('groups')
+              .doc(group.id)
+              .collection('members')
+              .doc(currentUserId)
+              .get();
+
+          if (memberDoc.exists) {
+            joined.add(group);
+          }
+        }
+      }
+    } catch (e) {
+      print("Error fetching joined groups: $e");
     }
 
     return joined;
