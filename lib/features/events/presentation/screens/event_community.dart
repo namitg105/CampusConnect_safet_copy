@@ -1436,10 +1436,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         SpeakerCard(
                           speakerName:
                               widget.event.speakerName ?? 'Guest Speaker',
-                          speakerDescription: widget.event.speakerDescription ??
-                              'Event Host & Keynote Presenter',
-                          speakerAvatarUrl: widget.event.speakerAvatarUrl ??
-                              'https://picsum.photos/id/1027/200',
+                          speakerDescription: widget.event.speakerDescription ?? '',
                         ),
                         const SizedBox(height: 12),
                         RegisteredUsersFooter(
@@ -1502,17 +1499,39 @@ class EventHeroBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool hasValidCustomBanner = event.bannerUrl != null &&
+        event.bannerUrl!.isNotEmpty &&
+        !event.bannerUrl!.contains('picsum.photos/id/237');
+
     return Container(
       height: 170,
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        image: DecorationImage(
-          image: NetworkImage(
-            event.bannerUrl ?? 'https://picsum.photos/id/237/900/500',
+        gradient: !hasValidCustomBanner
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF4F46E5),
+                  Color(0xFF7C3AED),
+                  Color(0xFF1E1B4B),
+                ],
+              )
+            : null,
+        image: hasValidCustomBanner
+            ? DecorationImage(
+                image: NetworkImage(event.bannerUrl!),
+                fit: BoxFit.cover,
+              )
+            : null,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6366F1).withOpacity(0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          fit: BoxFit.cover,
-        ),
+        ],
       ),
       child: Container(
         decoration: BoxDecoration(
@@ -1521,12 +1540,12 @@ class EventHeroBanner extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.black.withOpacity(0.3),
-              Colors.black.withOpacity(0.85),
+              Colors.black.withOpacity(0.15),
+              Colors.black.withOpacity(0.75),
             ],
           ),
         ),
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1538,16 +1557,28 @@ class EventHeroBanner extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _primaryPurple,
+                    color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    event.category ?? 'Workshop',
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1,
                     ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.stars_rounded,
+                          color: Colors.amber, size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        event.category ?? 'Featured Event',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -1560,19 +1591,20 @@ class EventHeroBanner extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    letterSpacing: 0.2,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   event.description,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Colors.white70,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withOpacity(0.85),
                   ),
                 ),
               ],
@@ -1800,13 +1832,11 @@ class AboutEventCard extends StatelessWidget {
 class SpeakerCard extends StatelessWidget {
   final String speakerName;
   final String speakerDescription;
-  final String speakerAvatarUrl;
 
   const SpeakerCard({
     super.key,
     required this.speakerName,
     required this.speakerDescription,
-    required this.speakerAvatarUrl,
   });
 
   @override
@@ -1834,19 +1864,17 @@ class SpeakerCard extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: _lightPurpleBg,
-                backgroundImage: speakerAvatarUrl.isNotEmpty
-                    ? NetworkImage(speakerAvatarUrl)
-                    : null,
-                child: speakerAvatarUrl.isEmpty
-                    ? const Icon(
-                        Icons.person,
-                        color: _primaryPurple,
-                        size: 22,
-                      )
-                    : null,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _primaryPurple.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.mic_none_rounded,
+                  color: _primaryPurple,
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1856,22 +1884,24 @@ class SpeakerCard extends StatelessWidget {
                     Text(
                       speakerName,
                       style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
                         color: _primaryText,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      speakerDescription,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: _secondaryText,
-                        height: 1.3,
+                    if (speakerDescription.isNotEmpty &&
+                        speakerDescription != 'Event Host & Keynote Presenter') ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        speakerDescription,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: _secondaryText,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
