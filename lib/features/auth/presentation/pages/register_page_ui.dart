@@ -5,8 +5,10 @@ import 'package:noteswap/features/auth/presentation/components/components.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
 import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
-import 'package:noteswap/features/private_chat/presentation/common_widgets.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
+import 'package:noteswap/features/private_chat/presentation/common_widgets.dart';
+
+//------------------------------//
 
 class RegisterPage extends StatefulWidget {
   final void Function()? togglePages;
@@ -18,30 +20,34 @@ class RegisterPage extends StatefulWidget {
 }
 
 class RegisterPageUi extends State<RegisterPage> {
+  //-------------------width & height-----------------------//
   late double width, height;
   late Splash_Widget_Components _splashAppWidget;
+  late double imageWidthAdjustment;
 
-  // Form controllers
+  //-------------------form controllers-----------------------//
   final nameTextController = TextEditingController();
   final emailTextController = TextEditingController();
   final passTextController = TextEditingController();
   final confirmPassTextController = TextEditingController();
+
   bool hiddenText = true;
   bool confirmhiddenText = true;
 
-  // Image controller
+  //-------------------image controller----------------------//
   final imagePath = "assets/images_register/register_girl_grouped_cropped.png";
 
-  // Form checkbox
+  //-------------------form state-----------------------//
   bool isChecked = false;
 
+  //register button pressed
   void register() {
     final email = emailTextController.text.trim();
     final name = nameTextController.text.trim();
     final pw = passTextController.text.trim();
     final confirmPw = confirmPassTextController.text.trim();
 
-    if (email.isEmpty || pw.isEmpty || name.isEmpty) {
+    if (email.isEmpty || pw.isEmpty || name.isEmpty || confirmPw.isEmpty) {
       showErrorSnackbar("Please complete all fields");
       return;
     }
@@ -82,6 +88,7 @@ class RegisterPageUi extends State<RegisterPage> {
       return;
     }
 
+    // Call AuthCubit to register user via Firebase
     final authCubit = context.read<AuthCubit>();
     authCubit.register(name, email, pw);
   }
@@ -107,93 +114,31 @@ class RegisterPageUi extends State<RegisterPage> {
   Widget build(BuildContext context) {
     width = MediaQuery.of(context).size.width;
     height = MediaQuery.of(context).size.height;
+    imageWidthAdjustment = width / 1.1;
     _splashAppWidget = Splash_Widget_Components(width: width, height: height);
 
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is Authenticated) {
+          // This clears the navigation stack and safely lands them on MainPage
           Get.offAll(() => const MainPage());
         } else if (state is AuthError) {
           showErrorSnackbar(state.message);
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F7FF),
         appBar: _splashAppWidget.AppBarDesign(),
         body: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
           child: Column(
             children: [
-              const SizedBox(height: 10),
-              // Top Banner Area (Title, Subtitle & 3D Girl Illustration)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: SizedBox(
-                  height: 180,
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        left: 0,
-                        top: 10,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            RichText(
-                              text: const TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: "Create Your\n",
-                                    style: TextStyle(
-                                      color: Color(0xFF1A1A1A),
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.w800,
-                                      fontFamily: 'Poppins',
-                                      height: 1.15,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: "Account",
-                                    style: TextStyle(
-                                      color: Color(0xFF6139ED),
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.w800,
-                                      fontFamily: 'Poppins',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              "Join your university\ncommunity and\nstart connecting.",
-                              style: TextStyle(
-                                color: Color(0xFF64748B),
-                                fontSize: 12,
-                                height: 1.3,
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Positioned(
-                        right: -10,
-                        top: -5,
-                        bottom: 0,
-                        child: Image.asset(
-                          imagePath,
-                          width: width * 0.52,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              SizedBox(height: height * 0.025),
+              Container(
+                width: width,
+                alignment: Alignment.center,
+                child: Image.asset(imagePath, width: imageWidthAdjustment),
               ),
-              const SizedBox(height: 10),
-              // Form Container Card
               RegisterBoxDecoration(),
-              const SizedBox(height: 20),
+              SizedBox(height: height * 0.03),
             ],
           ),
         ),
@@ -201,188 +146,224 @@ class RegisterPageUi extends State<RegisterPage> {
     );
   }
 
-  Widget RegisterBoxDecoration() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            InputFieldLabelAndField(
-              "Full Name",
-              "Enter your full name",
-              nameTextController,
-              "assets/images_register/User_icon.png",
-            ),
-            const SizedBox(height: 14),
-            InputFieldLabelAndField(
-              "University Email",
-              "you@university.edu",
-              emailTextController,
-              "assets/images_register/mail_icon.png",
-            ),
-            const SizedBox(height: 14),
-            InputFieldLabelAndField(
-              "Password",
-              "Enter your password",
-              passTextController,
-              "assets/images_register/Password_icon.png",
-              isPassword: true,
-              isHidden: hiddenText,
-              onToggleVisibility: () {
-                setState(() {
-                  hiddenText = !hiddenText;
-                });
-              },
-            ),
-            const SizedBox(height: 14),
-            InputFieldLabelAndField(
-              "Confirm Password",
-              "Confirm your password",
-              confirmPassTextController,
-              "assets/images_register/Password_icon.png",
-              isPassword: true,
-              isHidden: confirmhiddenText,
-              onToggleVisibility: () {
-                setState(() {
-                  confirmhiddenText = !confirmhiddenText;
-                });
-              },
-            ),
-            const SizedBox(height: 14),
-            PrivacyPolicyCheckBox(),
-            const SizedBox(height: 18),
-            RegisterButton(),
-            const SizedBox(height: 14),
-            const Center(
-              child: Text(
-                "or Sign Up with",
-                style: TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Center(
-              child: GestureDetector(
-                onTap: () {
-                  context.read<AuthCubit>().loginWithGoogle();
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Image.asset(
-                    "assets/google1.png",
-                    width: 28,
-                    height: 28,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  "Already have an account? ",
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                ),
-                GestureDetector(
-                  onTap: _navigateToLogin,
-                  child: const Text(
-                    "Log In",
-                    style: TextStyle(
-                      color: Color(0xFF6139ED),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+  TextSpan _TextStyleWidget(
+    String content, {
+    Color? color,
+    double? fontSize,
+    FontWeight? fontWeight,
+  }) {
+    return TextSpan(
+      text: content,
+      style: TextStyle(
+        color: color,
+        fontSize: fontSize,
+        fontWeight: fontWeight,
       ),
     );
   }
 
-  Widget InputFieldLabelAndField(
-    String label,
-    String hintText,
-    TextEditingController textController,
-    String pathImage, {
-    bool isPassword = false,
+  Widget RichTextFormat(
+    String content, {
+    Color? color,
+    double? fontSize,
+    FontWeight? fontWeight,
+  }) {
+    return RichText(
+      text: TextSpan(
+        children: [
+          _TextStyleWidget(
+            content,
+            color: color,
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget RegisterBoxDecoration() {
+    return Container(
+      width: imageWidthAdjustment,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(width * 0.025),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black38,
+            blurRadius: 10.0,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          SizedBox(height: height * 0.025),
+          textFormLayout(
+            isPassword: false,
+            labelText: "Full Name",
+            pathImage: "assets/images_register/User_icon.png",
+            textController: nameTextController,
+            hintText: "Enter your full name",
+          ),
+          SizedBox(height: height * 0.025),
+          textFormLayout(
+            isPassword: false,
+            labelText: "University Email",
+            pathImage: "assets/images_register/mail_icon.png",
+            textController: emailTextController,
+            hintText: "you@university.edu",
+          ),
+          SizedBox(height: height * 0.025),
+          textFormLayout(
+            isPassword: true,
+            labelText: "Password",
+            pathImage: "assets/images_register/Password_icon.png",
+            textController: passTextController,
+            hintText: "Enter your password",
+            isHidden: hiddenText,
+            onToggleVisibility: () {
+              setState(() {
+                hiddenText = !hiddenText;
+              });
+            },
+          ),
+          SizedBox(height: height * 0.025),
+          textFormLayout(
+            isPassword: true,
+            labelText: "Confirm Password",
+            pathImage: "assets/images_register/Password_icon.png",
+            textController: confirmPassTextController,
+            hintText: "Confirm your password",
+            isHidden: confirmhiddenText,
+            onToggleVisibility: () {
+              setState(() {
+                confirmhiddenText = !confirmhiddenText;
+              });
+            },
+          ),
+          SizedBox(height: height * 0.005),
+          Container(
+            margin: EdgeInsets.only(left: width * 0.025),
+            child: PrivacyPolicyCheckBox(),
+          ),
+          RegisterButton(),
+          SizedBox(height: width * 0.025),
+          RichTextFormat(
+            "or sign up with",
+            fontSize: width * 0.0325,
+            color: Colors.black38,
+          ),
+          Container(
+            alignment: Alignment.center,
+            child: IconButton(
+              onPressed: () {
+                context.read<AuthCubit>().loginWithGoogle();
+              },
+              icon: Image.asset("assets/images_register/Google_icon.png"),
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              RichTextFormat(
+                "Already have an account?",
+                fontSize: width * 0.0325,
+                color: Colors.black38,
+              ),
+              TextButton(
+                onPressed: _navigateToLogin,
+                child: RichTextFormat(
+                  " Log in",
+                  fontSize: width * 0.0325,
+                  color: const Color.fromRGBO(114, 75, 230, 1),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget textFormLayout({
+    required bool isPassword,
+    required String labelText,
+    required String pathImage,
+    double? sizedBoxHeight,
+    double? formFieldHeight,
+    TextEditingController? textController,
+    String? hintText,
     bool? isHidden,
     VoidCallback? onToggleVisibility,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: width * 0.035),
+          child: RichTextFormat(
+            labelText,
+            color: Colors.black,
+            fontSize: width * 0.0325,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1A1A1A),
           ),
         ),
-        const SizedBox(height: 6),
-        TextField(
-          controller: textController,
-          obscureText: isPassword ? (isHidden ?? true) : false,
-          decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: TextStyle(
-              color: Colors.grey.shade400,
-              fontSize: 13,
-            ),
-            prefixIcon: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Image.asset(
-                pathImage,
-                width: 22,
-                height: 22,
-              ),
-            ),
-            suffixIcon: isPassword
-                ? IconButton(
-                    icon: Icon(
-                      (isHidden ?? true)
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                      color: const Color(0xFF6139ED),
-                      size: 22,
-                    ),
-                    onPressed: onToggleVisibility,
-                  )
-                : null,
-            contentPadding: const EdgeInsets.symmetric(vertical: 12),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(
-                color: Color(0xFFBDB2FA),
-                width: 1.5,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(
-                color: Color(0xFF6139ED),
-                width: 2,
+        SizedBox(
+          height: (sizedBoxHeight != null) ? sizedBoxHeight : height * 0.00725,
+        ),
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: width * 0.035,
+          ),
+          child: SizedBox(
+            height: (formFieldHeight != null) ? formFieldHeight : height * 0.05,
+            child: TextFormField(
+              controller: textController,
+              obscureText: (isPassword) ? (isHidden ?? true) : false,
+              cursorHeight: (height * 0.045) * 0.6,
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: (hintText != null) ? hintText : "Enter",
+                prefixIcon: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: width * 0.013,
+                    vertical: width * 0.01,
+                  ),
+                  child: Image.asset(
+                    pathImage,
+                  ),
+                ),
+                suffixIcon: (isPassword)
+                    ? (IconButton(
+                        icon: Icon(
+                          (isHidden ?? true)
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: Colors.black38,
+                          size: width * 0.053,
+                        ),
+                        onPressed: onToggleVisibility,
+                      ))
+                    : null,
+                hintStyle: TextStyle(
+                  color: Colors.black38,
+                  fontSize: width * 0.038,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(width * 0.02),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(width * 0.02),
+                  borderSide: BorderSide(
+                    color: const Color.fromRGBO(114, 75, 230, 1),
+                    width: width * 0.0041,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(width * 0.02),
+                  borderSide: const BorderSide(color: Colors.black),
+                ),
               ),
             ),
           ),
@@ -394,46 +375,39 @@ class RegisterPageUi extends State<RegisterPage> {
   Widget PrivacyPolicyCheckBox() {
     return Row(
       children: [
-        SizedBox(
-          height: 24,
-          width: 24,
-          child: Checkbox(
-            activeColor: const Color(0xFF6139ED),
-            checkColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-            value: isChecked,
-            onChanged: (value) {
-              setState(() {
-                isChecked = value ?? false;
-              });
-            },
-          ),
+        Checkbox(
+          activeColor: const Color.fromRGBO(114, 75, 230, 1),
+          checkColor: Colors.white,
+          value: isChecked,
+          onChanged: (value) {
+            setState(() {
+              isChecked = value ?? false;
+            });
+          },
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: RichText(
-            text: const TextSpan(
-              style: TextStyle(fontSize: 11, color: Colors.grey),
-              children: [
-                TextSpan(text: "I agree to the "),
-                TextSpan(
-                  text: "Terms of Service",
-                  style: TextStyle(
-                    color: Color(0xFF6139ED),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                TextSpan(text: " and "),
-                TextSpan(
-                  text: "Privacy Policy",
-                  style: TextStyle(
-                    color: Color(0xFF6139ED),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        RichTextFormat(
+          "I agree to the",
+          color: Colors.black38,
+          fontSize: width * 0.03,
+          fontWeight: FontWeight.w500,
+        ),
+        RichTextFormat(
+          " Terms of Service",
+          color: const Color.fromRGBO(114, 75, 230, 1),
+          fontSize: width * 0.03,
+          fontWeight: FontWeight.w500,
+        ),
+        RichTextFormat(
+          " and",
+          color: Colors.black38,
+          fontSize: width * 0.03,
+          fontWeight: FontWeight.w500,
+        ),
+        RichTextFormat(
+          " Privacy Policy",
+          color: const Color.fromRGBO(114, 75, 230, 1),
+          fontSize: width * 0.03,
+          fontWeight: FontWeight.w500,
         ),
       ],
     );
@@ -441,24 +415,17 @@ class RegisterPageUi extends State<RegisterPage> {
 
   Widget RegisterButton() {
     return SizedBox(
-      width: double.infinity,
-      height: 50,
+      width: imageWidthAdjustment * 0.85,
       child: ElevatedButton(
         onPressed: register,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF6139ED),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          backgroundColor: const Color.fromRGBO(114, 75, 230, 0.7),
         ),
-        child: const Text(
+        child: RichTextFormat(
           "Sign Up",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          color: Colors.white,
+          fontSize: width * 0.04,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
