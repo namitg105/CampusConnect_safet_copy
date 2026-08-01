@@ -37,14 +37,35 @@ class NotificationController extends GetxController {
   void _listen(String uid) {
     _cancelSubs();
 
-    // Listen to top-level notifications collection
+    // Listen to notifications collection for real-time unread count
     _notifSub = FirebaseFirestore.instance
         .collection('notifications')
-        .where('recipientId', isEqualTo: uid)
-        .where('isRead', isEqualTo: false)
         .snapshots()
         .listen((snapshot) {
-      unreadCount.value = snapshot.docs.length;
+      final user = FirebaseAuth.instance.currentUser;
+      final currentUid = user?.uid ?? '';
+      final userEmail = user?.email?.toLowerCase().trim() ?? '';
+      final userDomain = userEmail.contains('@') ? userEmail.split('@').last : '';
+
+      final count = snapshot.docs.where((doc) {
+        final data = doc.data();
+        final isRead = (data['isRead'] == true) || (data['isSeen'] == true);
+        if (isRead) return false;
+
+        final recipientId = data['recipientId'] as String?;
+        if (recipientId != null && recipientId.isNotEmpty && recipientId != currentUid) {
+          return false;
+        }
+
+        final senderEmail = (data['senderEmail'] as String?)?.toLowerCase().trim();
+        if (userDomain.isNotEmpty && senderEmail != null && senderEmail.contains('@')) {
+          final senderDomain = senderEmail.split('@').last.toLowerCase().trim();
+          return senderDomain == userDomain;
+        }
+        return true;
+      }).length;
+
+      unreadCount.value = count;
     }, onError: (e) {
       print('Top-level unread notification error: $e');
     });

@@ -50,7 +50,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void initState() {
     super.initState();
     _listenToNotifications();
-    _markNotificationsAsRead();
   }
 
   void _markNotificationsAsRead() async {
@@ -236,6 +235,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void _handleNotificationTap(NotificationData notification) async {
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
     if (currentUid.isEmpty) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('notifications')
+          .doc(notification.id)
+          .update({'isRead': true, 'isSeen': true});
+    } catch (_) {}
 
     if (notification.type == NotificationType.requestChatPrivate) {
       final targetRoomId = notification.subtitle ?? '';
