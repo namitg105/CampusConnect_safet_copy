@@ -375,6 +375,23 @@ class PostController extends GetxController {
   bool getCommentLikeState(String commentId) =>
       likedComments[commentId] ?? false;
 
+  bool isCommentLiked(String commentId) => getCommentLikeState(commentId);
+
+  Future<void> toggleLikeComment(
+      String postId, String commentId, String userId) async {
+    await toggleCommentLike(postId, commentId, userId);
+  }
+
+  Future<void> deleteComment(String postId, String commentId,
+      [String? userId]) async {
+    final uid = userId ?? '';
+    await removeComment(
+      postId: postId,
+      commentId: commentId,
+      userId: uid,
+    );
+  }
+
   Future<void> removeComment({
     required String postId,
     required String commentId,
