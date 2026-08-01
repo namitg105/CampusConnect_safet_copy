@@ -36,11 +36,19 @@ class NotificationService {
       } catch (_) {}
     }
 
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final currentUserEmail = currentUser?.email ?? '';
+    final senderDomain = currentUserEmail.contains('@')
+        ? currentUserEmail.split('@').last.toLowerCase().trim()
+        : '';
+
     final notifData = {
       'recipientId': recipientId,
       'type': type.name,
       'senderId': senderUid,
       'senderName': senderName,
+      'senderEmail': currentUserEmail,
+      'collegeId': senderDomain,
       'senderImage': senderImage,
       'title': title,
       'subtitle': subtitle ?? '',
@@ -84,18 +92,30 @@ class NotificationService {
     String? targetId,
   }) async {
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final currentUserEmail = FirebaseAuth.instance.currentUser?.email ?? '';
+    final senderDomain = currentUserEmail.contains('@')
+        ? currentUserEmail.split('@').last.toLowerCase().trim()
+        : '';
+
     try {
       final usersSnapshot = await FirebaseFirestore.instance.collection('users').get();
       for (var doc in usersSnapshot.docs) {
         if (doc.id != currentUid) {
-          await createNotification(
-            recipientId: doc.id,
-            type: type,
-            title: title,
-            description: description,
-            subtitle: subtitle,
-            targetId: targetId,
-          );
+          final userData = doc.data();
+          final userEmail = (userData['email'] as String?)?.toLowerCase().trim() ?? '';
+          final userDomain = userEmail.contains('@') ? userEmail.split('@').last : '';
+
+          // Only send notifications to users belonging to the exact SAME email domain after @
+          if (senderDomain.isEmpty || userDomain == senderDomain) {
+            await createNotification(
+              recipientId: doc.id,
+              type: type,
+              title: title,
+              description: description,
+              subtitle: subtitle,
+              targetId: targetId,
+            );
+          }
         }
       }
     } catch (e) {

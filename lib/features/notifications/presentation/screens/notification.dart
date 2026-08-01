@@ -78,8 +78,35 @@ class NotificationPage extends StatelessWidget {
             );
           }
 
+          final currentUser = FirebaseAuth.instance.currentUser;
+          final currentUid = currentUser?.uid ?? '';
+          final currentUserEmail = currentUser?.email?.toLowerCase().trim() ?? '';
+          final currentDomain = currentUserEmail.contains('@')
+              ? currentUserEmail.split('@').last.toLowerCase().trim()
+              : '';
+
           final notifications = snapshot.data!.docs
-              .map((doc) => NotificationModel.fromDoc(doc))
+              .map((doc) => MapEntry(doc, NotificationModel.fromDoc(doc)))
+              .where((entry) {
+                final docData = entry.key.data() as Map<String, dynamic>? ?? {};
+                final recipientId = docData['recipientId'] as String?;
+                final senderEmail = entry.value.senderEmail?.toLowerCase().trim() ??
+                    (docData['senderEmail'] as String?)?.toLowerCase().trim();
+
+                // If recipientId is specified, check recipient or domain match
+                if (recipientId != null && recipientId.isNotEmpty && recipientId != currentUid) {
+                  return false;
+                }
+
+                // If domain after @ is present, restrict notifications to same domain
+                if (currentDomain.isNotEmpty && senderEmail != null && senderEmail.contains('@')) {
+                  final senderDomain = senderEmail.split('@').last.toLowerCase().trim();
+                  return senderDomain == currentDomain;
+                }
+
+                return true;
+              })
+              .map((entry) => entry.value)
               .toList();
 
           return ListView.separated(
