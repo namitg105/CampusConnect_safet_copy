@@ -7,8 +7,6 @@ import 'package:noteswap/features/auth/data/firebase_auth_repo.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
 import 'package:noteswap/features/auth/presentation/pages/SplashScreen.dart';
-import 'package:noteswap/Views/Onboarding/OnboardingOne.dart';
-import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 import 'package:noteswap/features/private_chat/data/private-chat-services/user_service.dart';
 import 'package:noteswap/firebase_options.dart';
 import 'ViewModels/DarkModeViewModels.dart'; // Retained member's theme controller
