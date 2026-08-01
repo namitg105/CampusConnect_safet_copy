@@ -1,12 +1,9 @@
 import 'dart:io';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
-import 'package:noteswap/features/auth/presentation/pages/SplashScreen.dart';
-import 'package:noteswap/main.dart';
 import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/update_profile_usecase.dart';
@@ -420,9 +417,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                   try {
                                     await context.read<AuthCubit>().logout();
                                   } catch (e) {
-                                    print("Logout error: $e");
-                                  } finally {
-                                    Get.offAll(() => const AuthWrapper());
+                                    debugPrint("Logout error: $e");
                                   }
                                 },
                                 child: _buildSettingItem(
