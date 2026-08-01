@@ -457,8 +457,11 @@ class _JoinedCommunitiesSection extends StatelessWidget {
               .collection('groups')
               .doc(id)
               .get();
-          if (groupDoc.exists) {
-            joined.add(Group.fromFirestore(groupDoc));
+          if (groupDoc.exists && groupDoc.data() != null) {
+            joined.add(Group.fromMap(
+              groupDoc.id,
+              groupDoc.data() as Map<String, dynamic>,
+            ));
           }
         }
       }
