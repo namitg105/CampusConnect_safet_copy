@@ -1,7 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Run 'flutter pub add intl' for clean date formatting
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
+import 'package:noteswap/features/community/presentation/pages/community_profile.dart';
+import 'package:noteswap/features/private_chat/presentation/pages/chat_screen.dart';
 
 import '../../domain/model.dart';
 
@@ -107,8 +110,29 @@ class NotificationPage extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: InkWell(
-                    onTap: () {
-                      // Handle notification tap (e.g., mark as read or navigate)
+                    onTap: () async {
+                      try {
+                        await FirebaseFirestore.instance
+                            .collection('notifications')
+                            .doc(notification.id)
+                            .update({'isRead': true, 'isSeen': true});
+                      } catch (_) {}
+
+                      if (notification.groupId != null &&
+                          notification.groupId!.isNotEmpty) {
+                        Get.to(() => GroupProfilePage(
+                              groupId: notification.groupId!,
+                            ));
+                      } else if (notification.senderEmail != null &&
+                          notification.senderEmail!.isNotEmpty &&
+                          notification.senderId != null) {
+                        Get.to(() => ChatScreen(
+                              receiverUserEmail: notification.senderEmail!,
+                              receiverUserID: notification.senderId!,
+                              receiverName: notification.senderName ??
+                                  notification.title,
+                            ));
+                      }
                     },
                     child: Padding(
                       padding: const EdgeInsets.all(16),

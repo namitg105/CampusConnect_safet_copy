@@ -3003,7 +3003,7 @@ class GroupMemberCard extends StatelessWidget {
                     return;
                   }
 
-                  // Show confirmation dialog before sending friend request
+                  // Show message dialog that user must be a friend before direct messaging
                   Get.dialog(
                     AlertDialog(
                       shape: RoundedRectangleBorder(
@@ -3015,61 +3015,10 @@ class GroupMemberCard extends StatelessWidget {
                       actions: [
                         TextButton(
                           onPressed: () => Get.back(),
-                          child: const Text("Cancel",
-                              style: TextStyle(color: Colors.grey)),
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6366F1),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
-                          ),
-                          onPressed: () async {
-                            Get.back();
-                            try {
-                              final currentUserDoc = await FirebaseFirestore
-                                  .instance
-                                  .collection('users')
-                                  .doc(currentUid)
-                                  .get();
-                              final currentData = currentUserDoc.data()
-                                      as Map<String, dynamic>? ??
-                                  {};
-
-                              await FirebaseFirestore.instance
-                                  .collection('users')
-                                  .doc(uid)
-                                  .collection('friend_requests')
-                                  .doc(currentUid)
-                                  .set({
-                                'fromUid': currentUid,
-                                'fromName': currentData['name'] ??
-                                    currentData['displayName'] ??
-                                    'User',
-                                'fromEmail': currentData['email'] ?? '',
-                                'timestamp': FieldValue.serverTimestamp(),
-                                'status': 'pending',
-                              });
-
-                              Get.snackbar(
-                                "Success",
-                                "Friend request sent to $displayName!",
-                                snackPosition: SnackPosition.BOTTOM,
-                                backgroundColor: Colors.green,
-                                colorText: Colors.white,
-                              );
-                            } catch (e) {
-                              Get.snackbar(
-                                "Error",
-                                "Failed to send request: $e",
-                                snackPosition: SnackPosition.BOTTOM,
-                                backgroundColor: Colors.red,
-                                colorText: Colors.white,
-                              );
-                            }
-                          },
-                          child: const Text("Add Friend",
-                              style: TextStyle(color: Colors.white)),
+                          child: const Text("OK",
+                              style: TextStyle(
+                                  color: Color(0xFF6366F1),
+                                  fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),
