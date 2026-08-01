@@ -83,13 +83,13 @@ class FlattenedComment {
 class PostDetailPage extends StatefulWidget {
   final PostEntity post;
   final PostController controller;
-  final AppUser currentUser;
+  final AppUser? currentUser;
 
   const PostDetailPage({
     super.key,
     required this.post,
     required this.controller,
-    required this.currentUser,
+    this.currentUser,
   });
 
   @override
@@ -227,7 +227,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 await widget.controller.removeComment(
                   postId: widget.post.id,
                   commentId: commentId,
-                  userId: widget.currentUser.uid,
+                  userId: widget.currentUser?.uid ?? '',
                   author: widget.currentUser,
                 );
               },
