@@ -73,7 +73,7 @@ class MyApp extends StatelessWidget {
                 ? ThemeMode.light
                 : ThemeMode.dark,
             scrollBehavior: MyCustomScrollBehavior(),
-            home: SplashScreen(),
+            home: const AuthWrapper(),
           ),
         ),
       ),

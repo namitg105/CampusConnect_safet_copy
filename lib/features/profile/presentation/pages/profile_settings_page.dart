@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
 import 'package:noteswap/features/auth/presentation/pages/SplashScreen.dart';
+import 'package:noteswap/main.dart';
 import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/update_profile_usecase.dart';
@@ -421,7 +422,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                   } catch (e) {
                                     print("Logout error: $e");
                                   } finally {
-                                    Get.offAll(() => const SplashScreen());
+                                    Get.offAll(() => const AuthWrapper());
                                   }
                                 },
                                 child: _buildSettingItem(
