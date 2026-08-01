@@ -1,10 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 import 'package:noteswap/features/community/presentation/pages/community_profile.dart';
-import 'package:noteswap/features/private_chat/presentation/pages/chat_screen.dart';
+import 'package:noteswap/features/private_chat/presentation/Design_By_Opencode_2/chat_screen.dart';
 
 import '../../domain/model.dart';
 
@@ -123,14 +124,27 @@ class NotificationPage extends StatelessWidget {
                         Get.to(() => GroupProfilePage(
                               groupId: notification.groupId!,
                             ));
-                      } else if (notification.senderEmail != null &&
-                          notification.senderEmail!.isNotEmpty &&
-                          notification.senderId != null) {
+                      } else if (notification.senderId != null &&
+                          notification.senderId!.isNotEmpty) {
+                        final currentUid =
+                            FirebaseAuth.instance.currentUser?.uid ?? '';
+                        final friendUid = notification.senderId!;
+                        final List<String> ids = [currentUid, friendUid]
+                          ..sort();
+                        final String roomId =
+                            notification.chatId ?? ids.join('_');
+                        final name = notification.senderName ??
+                            notification.title;
+
                         Get.to(() => ChatScreen(
-                              receiverUserEmail: notification.senderEmail!,
-                              receiverUserID: notification.senderId!,
-                              receiverName: notification.senderName ??
-                                  notification.title,
+                              roomId: roomId,
+                              currentUid: currentUid,
+                              friendUid: friendUid,
+                              friendName: name,
+                              friendInitials: name.isNotEmpty
+                                  ? name[0].toUpperCase()
+                                  : 'U',
+                              friendAvatarColor: const Color(0xFF6366F1),
                             ));
                       }
                     },
