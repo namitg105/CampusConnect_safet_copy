@@ -33,6 +33,23 @@ class AuthCubit extends Cubit<AuthState> {
   //get current user
   AppUser? get currentUser => _currentUser;
 
+  //update current user name in memory & state
+  void updateCurrentUserName(String newName) {
+    if (_currentUser != null) {
+      _currentUser = AppUser(
+        uid: _currentUser!.uid,
+        email: _currentUser!.email,
+        name: newName,
+        collegeId: _currentUser!.collegeId,
+        isOnline: _currentUser!.isOnline,
+        isImageExists: _currentUser!.isImageExists,
+        imageURL: _currentUser!.imageURL,
+        phoneNumber: _currentUser!.phoneNumber,
+      );
+      emit(Authenticated(_currentUser!));
+    }
+  }
+
   //login with email pw
   Future<void> login(String email, String pw) async {
     try {

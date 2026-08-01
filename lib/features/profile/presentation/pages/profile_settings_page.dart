@@ -742,6 +742,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     bool isSaving = false;
     final bioController =
         TextEditingController(text: profileData?['bio'] ?? '');
+    final nameController =
+        TextEditingController(text: profileData?['name'] ?? authState.user.name);
 
     showModalBottomSheet(
       context: context,
@@ -750,7 +752,9 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            final String name = profileData?['name'] ?? authState.user.name;
+            final String name = nameController.text.trim().isNotEmpty
+                ? nameController.text.trim()
+                : (profileData?['name'] ?? authState.user.name);
             final String email = profileData?['email'] ?? authState.user.email;
             final String initials = getInitials(name, email);
 
@@ -778,188 +782,241 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 right: 24,
                 bottom: MediaQuery.of(context).viewInsets.bottom + 24,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Pull bar
-                  Center(
-                    child: Container(
-                      width: 48,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[400],
-                        borderRadius: BorderRadius.circular(10),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Pull bar
+                    Center(
+                      child: Container(
+                        width: 48,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[400],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Edit Profile',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
+                    const SizedBox(height: 20),
+                    Text(
+                      'Edit Profile',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  // Image selection UI
-                  Center(
-                    child: Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 50,
-                          backgroundColor: primaryColor.withOpacity(0.15),
-                          backgroundImage: avatarImage,
-                          child: avatarImage != null
-                              ? null
-                              : Text(
-                                  initials,
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: primaryColor,
+                    const SizedBox(height: 24),
+                    // Image selection UI
+                    Center(
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 50,
+                            backgroundColor: primaryColor.withOpacity(0.15),
+                            backgroundImage: avatarImage,
+                            child: avatarImage != null
+                                ? null
+                                : Text(
+                                    initials,
+                                    style: TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                      color: primaryColor,
+                                    ),
                                   ),
-                                ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: CircleAvatar(
-                            backgroundColor: primaryColor,
-                            radius: 18,
-                            child: IconButton(
-                              icon: const Icon(Icons.camera_alt,
-                                  size: 16, color: Colors.white),
-                              onPressed: () async {
-                                final picker = ImagePicker();
-                                final image = await picker.pickImage(
-                                  source: ImageSource.gallery,
-                                  imageQuality: 70,
-                                );
-                                if (image != null) {
-                                  setModalState(() {
-                                    pickedImage = File(image.path);
-                                    resetToDefault = false;
-                                  });
-                                }
-                              },
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: CircleAvatar(
+                              backgroundColor: primaryColor,
+                              radius: 18,
+                              child: IconButton(
+                                icon: const Icon(Icons.camera_alt,
+                                    size: 16, color: Colors.white),
+                                onPressed: () async {
+                                  final picker = ImagePicker();
+                                  final image = await picker.pickImage(
+                                    source: ImageSource.gallery,
+                                    imageQuality: 70,
+                                  );
+                                  if (image != null) {
+                                    setModalState(() {
+                                      pickedImage = File(image.path);
+                                      resetToDefault = false;
+                                    });
+                                  }
+                                },
+                              ),
                             ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            setModalState(() {
+                              pickedImage = null;
+                              resetToDefault = true;
+                            });
+                          },
+                          child: const Text(
+                            'Use Default Avatar',
+                            style: TextStyle(
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          setModalState(() {
-                            pickedImage = null;
-                            resetToDefault = true;
-                          });
-                        },
-                        child: const Text(
-                          'Use Default Avatar',
-                          style: TextStyle(
-                              color: Colors.redAccent,
-                              fontWeight: FontWeight.bold),
+                    const SizedBox(height: 16),
+                    // Name Edit Input
+                    Text(
+                      'Name',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: textColor.withOpacity(0.8),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: nameController,
+                      style: TextStyle(color: textColor),
+                      decoration: InputDecoration(
+                        hintText: 'Enter your name...',
+                        hintStyle: TextStyle(color: Colors.grey[500]),
+                        filled: true,
+                        fillColor: inputBg,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
                         ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  // Bio Edit Input
-                  Text(
-                    'Bio',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: textColor.withOpacity(0.8),
+                      onChanged: (_) {
+                        setModalState(() {});
+                      },
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: bioController,
-                    maxLines: 3,
-                    style: TextStyle(color: textColor),
-                    decoration: InputDecoration(
-                      hintText: 'Tell us about yourself...',
-                      hintStyle: TextStyle(color: Colors.grey[500]),
-                      filled: true,
-                      fillColor: inputBg,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
+                    const SizedBox(height: 16),
+                    // Bio Edit Input
+                    Text(
+                      'Bio',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: textColor.withOpacity(0.8),
                       ),
-                      contentPadding: const EdgeInsets.all(16),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Action Buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: BorderSide(color: Colors.grey[400]!),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: bioController,
+                      maxLines: 3,
+                      style: TextStyle(color: textColor),
+                      decoration: InputDecoration(
+                        hintText: 'Tell us about yourself...',
+                        hintStyle: TextStyle(color: Colors.grey[500]),
+                        filled: true,
+                        fillColor: inputBg,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.all(16),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Action Buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              side: BorderSide(color: Colors.grey[400]!),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(color: textColor),
                             ),
                           ),
-                          child: Text(
-                            'Cancel',
-                            style: TextStyle(color: textColor),
-                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: isSaving
-                              ? null
-                              : () async {
-                                  setModalState(() {
-                                    isSaving = true;
-                                  });
-
-                                  try {
-                                    String? profileImageUrl =
-                                        profileData?['profileImage'];
-
-                                    if (resetToDefault) {
-                                      profileImageUrl = "";
-                                      try {
-                                        final storageRef = FirebaseStorage
-                                            .instance
-                                            .ref()
-                                            .child(
-                                                'profile_pictures/$userId.jpg');
-                                        await storageRef.delete();
-                                      } catch (_) {}
-                                    } else if (pickedImage != null) {
-                                      final storageRef =
-                                          FirebaseStorage.instance.ref().child(
-                                              'profile_pictures/$userId.jpg');
-                                      await storageRef.putFile(pickedImage!);
-                                      profileImageUrl =
-                                          await storageRef.getDownloadURL();
-                                    }
-
-                                    await updateProfileUseCase.call(userId, {
-                                      'bio': bioController.text.trim(),
-                                      'profileImage': profileImageUrl ?? "",
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: isSaving
+                                ? null
+                                : () async {
+                                    setModalState(() {
+                                      isSaving = true;
                                     });
 
-                                    // Close the sheet safely
-                                    if (context.mounted) Navigator.pop(context);
+                                    try {
+                                      String? profileImageUrl =
+                                          profileData?['profileImage'];
 
-                                    _loadProfile();
+                                      if (resetToDefault) {
+                                        profileImageUrl = "";
+                                        try {
+                                          final storageRef = FirebaseStorage
+                                              .instance
+                                              .ref()
+                                              .child(
+                                                  'profile_pictures/$userId.jpg');
+                                          await storageRef.delete();
+                                        } catch (_) {}
+                                      } else if (pickedImage != null) {
+                                        final storageRef =
+                                            FirebaseStorage.instance.ref().child(
+                                                'profile_pictures/$userId.jpg');
+                                        await storageRef.putFile(pickedImage!);
+                                        profileImageUrl =
+                                            await storageRef.getDownloadURL();
+                                      }
+
+                                      final String updatedName =
+                                          nameController.text.trim();
+                                      final String finalName =
+                                          updatedName.isNotEmpty
+                                              ? updatedName
+                                              : name;
+
+                                      await updateProfileUseCase.call(userId, {
+                                        'name': finalName,
+                                        'bio': bioController.text.trim(),
+                                        'profileImage': profileImageUrl ?? "",
+                                      });
+
+                                      try {
+                                        await FirebaseAuth.instance.currentUser
+                                            ?.updateDisplayName(finalName);
+                                      } catch (_) {}
+
+                                      if (context.mounted &&
+                                          finalName.isNotEmpty) {
+                                        context
+                                            .read<AuthCubit>()
+                                            .updateCurrentUserName(finalName);
+                                      }
+
+                                      // Close the sheet safely
+                                      if (context.mounted) {
+                                        Navigator.pop(context);
+                                      }
+
+                                      _loadProfile();
 
                                     Get.snackbar(
                                       'Success',
