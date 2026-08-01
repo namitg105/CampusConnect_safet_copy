@@ -417,10 +417,12 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                 onTap: () async {
                                   try {
                                     await context.read<AuthCubit>().logout();
+                                    await FirebaseAuth.instance.signOut();
                                   } catch (e) {
                                     print("Logout error: $e");
+                                  } finally {
+                                    Get.offAll(() => const SplashScreen());
                                   }
-                                  Get.offAll(() => SplashScreen());
                                 },
                                 child: _buildSettingItem(
                                   Icons.logout_outlined,
