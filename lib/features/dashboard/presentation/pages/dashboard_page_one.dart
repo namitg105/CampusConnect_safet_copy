@@ -844,9 +844,12 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
 
     return GestureDetector(
       onTap: () {
+        final PostController controller = Get.isRegistered<PostController>()
+            ? Get.find<PostController>()
+            : Get.put(_createPostController());
         Get.to(() => PostDetailPage(
               post: post,
-              controller: Get.find<PostController>(),
+              controller: controller,
             ));
       },
       child: Container(

@@ -121,11 +121,13 @@ class _PostDetailPageState extends State<PostDetailPage> {
   }
 
   PostEntity get _latestPost {
-    final idx = widget.controller.posts.indexWhere((p) => p.id == widget.post.id);
+    final idx =
+        widget.controller.posts.indexWhere((p) => p.id == widget.post.id);
     if (idx != -1) {
       return widget.controller.posts[idx];
     }
-    final tIdx = widget.controller.trendingPosts.indexWhere((p) => p.id == widget.post.id);
+    final tIdx = widget.controller.trendingPosts
+        .indexWhere((p) => p.id == widget.post.id);
     if (tIdx != -1) {
       return widget.controller.trendingPosts[tIdx];
     }
@@ -178,8 +180,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
       final isSelfCollapsed = collapsedCommentIds.contains(node.comment.id);
       final currentCollapsedState = isAncestorCollapsed || isSelfCollapsed;
 
-      result.add(
-          FlattenedComment(node.comment, depth, isAncestorCollapsed));
+      result.add(FlattenedComment(node.comment, depth, isAncestorCollapsed));
 
       if (!isSelfCollapsed) {
         for (final reply in node.replies) {
@@ -313,8 +314,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       authorName,
@@ -391,8 +391,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                 child: Image.network(
                                   currentPost.imageUrl!,
                                   fit: BoxFit.cover,
-                                  errorBuilder:
-                                      (context, error, stackTrace) => Container(
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Container(
                                     height: 140,
                                     color: isLightMode
                                         ? const Color(0xFFF3F4F6)
@@ -427,7 +427,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     GestureDetector(
-                                      onTap: () => widget.controller.toggleUpvote(
+                                      onTap: () =>
+                                          widget.controller.toggleUpvote(
                                         currentPost.id,
                                         currentUser.uid,
                                         currentUser,
@@ -577,7 +578,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
                           child: Column(
                             children: [
                               Icon(Icons.chat_bubble_outline_rounded,
-                                  size: 40, color: subTextColor.withOpacity(0.5)),
+                                  size: 40,
+                                  color: subTextColor.withOpacity(0.5)),
                               const SizedBox(height: 8),
                               Text(
                                 'No comments yet. Start the conversation!',
@@ -590,8 +592,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
                       )
                     else
                       Builder(builder: (context) {
-                        final flattened = _buildFlattenedComments(
-                            widget.controller.comments);
+                        final flattened =
+                            _buildFlattenedComments(widget.controller.comments);
 
                         return ListView.separated(
                           shrinkWrap: true,
@@ -604,8 +606,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                             final comment = item.comment;
                             final depth = item.depth;
                             final isCollapsed = item.isCollapsed;
-                            final isMine =
-                                comment.authorId == currentUser.uid;
+                            final isMine = comment.authorId == currentUser.uid;
                             final commentInitials =
                                 getInitials(comment.authorName);
                             final commentAuthor =
@@ -613,14 +614,14 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                     ? comment.authorName.split('@').first
                                     : comment.authorName;
 
-                            final isLiked = widget.controller
-                                .isCommentLiked(comment.id);
+                            final isLiked =
+                                widget.controller.isCommentLiked(comment.id);
 
                             if (isCollapsed) return const SizedBox.shrink();
 
                             return Padding(
-                              padding:
-                                  EdgeInsets.only(left: (depth * 20.0).clamp(0, 100)),
+                              padding: EdgeInsets.only(
+                                  left: (depth * 20.0).clamp(0, 100)),
                               child: Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
@@ -634,8 +635,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                   ),
                                 ),
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     // Comment Author Row
                                     Row(
@@ -682,8 +682,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                                   widget.post.id, comment.id);
                                             },
                                             padding: EdgeInsets.zero,
-                                            constraints:
-                                                const BoxConstraints(),
+                                            constraints: const BoxConstraints(),
                                           ),
                                       ],
                                     ),
