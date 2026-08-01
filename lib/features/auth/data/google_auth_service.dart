@@ -7,6 +7,9 @@ class GoogleAuthService {
 
   Future<User?> signInWithGoogle() async {
     try {
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) return null;
@@ -26,7 +29,7 @@ class GoogleAuthService {
       return userCredential.user;
     } catch (e) {
       print("Error during Google Sign-In: $e");
-      return null;
+      rethrow;
     }
   }
 

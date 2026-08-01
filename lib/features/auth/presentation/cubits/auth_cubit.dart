@@ -106,7 +106,11 @@ class AuthCubit extends Cubit<AuthState> {
       }
     } catch (e) {
       print("LOGIN ERROR: $e");
-      emit(AuthError(e.toString()));
+      String errorMsg = e.toString();
+      if (errorMsg.contains('10:') || errorMsg.contains('ApiException: 10')) {
+        errorMsg = "Google Sign-In failed: Please ensure SHA-1 fingerprint is added in your Firebase Console.";
+      }
+      emit(AuthError(errorMsg));
       emit(Unauthenticated());
     }
   }

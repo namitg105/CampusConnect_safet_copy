@@ -53,7 +53,34 @@ class RegisterPageUi extends State<RegisterPage> {
     }
 
     if (pw != confirmPw) {
-      showErrorSnackbar("Passwords do not match");
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text(
+            "Password Mismatch",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          content: const Text(
+            "Passwords do not match",
+            style: TextStyle(fontSize: 14, color: Color(0xFF4A4A4A)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                "OK",
+                style: TextStyle(
+                  color: Color(0xFF6139ED),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
       return;
     }
 
@@ -61,7 +88,8 @@ class RegisterPageUi extends State<RegisterPage> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Text(
             "Terms & Conditions Required",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
