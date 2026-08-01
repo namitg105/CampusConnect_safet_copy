@@ -37,40 +37,47 @@ class NotificationController extends GetxController {
   void _listen(String uid) {
     _cancelSubs();
 
+    final user = FirebaseAuth.instance.currentUser;
+    final currentUid = user?.uid ?? '';
+    final userEmail = user?.email?.toLowerCase().trim() ?? '';
+    final userDomain = userEmail.contains('@') ? userEmail.split('@').last : '';
+
+    if (currentUid.isEmpty) {
+      unreadCount.value = 0;
+      return;
+    }
+
     // Listen to notifications collection for real-time unread count
     _notifSub = FirebaseFirestore.instance
         .collection('notifications')
         .snapshots()
         .listen((snapshot) {
-      final user = FirebaseAuth.instance.currentUser;
-      final currentUid = user?.uid ?? '';
-      final userEmail = user?.email?.toLowerCase().trim() ?? '';
-      final userDomain = userEmail.contains('@') ? userEmail.split('@').last : '';
-
-      final count = snapshot.docs.where((doc) {
+      int count = 0;
+      for (var doc in snapshot.docs) {
         final data = doc.data();
         final isRead = (data['isRead'] == true) || (data['isSeen'] == true);
-        if (isRead) return false;
+        if (isRead) continue;
 
         final recipientId = data['recipientId'] as String?;
-        if (recipientId != null && recipientId.isNotEmpty) {
-          return recipientId == currentUid;
-        }
-
         final senderEmail = (data['senderEmail'] as String?)?.toLowerCase().trim();
         final collegeId = (data['collegeId'] as String?)?.toLowerCase().trim();
 
-        if (userDomain.isNotEmpty && senderEmail != null && senderEmail.contains('@')) {
-          final senderDomain = senderEmail.split('@').last.toLowerCase().trim();
-          return senderDomain == userDomain;
+        bool isForUser = false;
+        if (recipientId != null && recipientId.isNotEmpty) {
+          if (recipientId == currentUid) isForUser = true;
+        } else if (userDomain.isNotEmpty) {
+          if (senderEmail != null && senderEmail.contains('@')) {
+            final senderDomain = senderEmail.split('@').last.toLowerCase().trim();
+            if (senderDomain == userDomain) isForUser = true;
+          } else if (collegeId != null && collegeId.isNotEmpty) {
+            if (collegeId == userDomain) isForUser = true;
+          }
         }
 
-        if (userDomain.isNotEmpty && collegeId != null && collegeId.isNotEmpty) {
-          return collegeId == userDomain;
+        if (isForUser) {
+          count++;
         }
-
-        return false;
-      }).length;
+      }
 
       unreadCount.value = count;
     }, onError: (e) {

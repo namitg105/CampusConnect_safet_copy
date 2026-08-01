@@ -75,7 +75,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   void _listenToNotifications() {
-    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final user = FirebaseAuth.instance.currentUser;
+    final uid = user?.uid ?? '';
+    final userEmail = user?.email?.toLowerCase().trim() ?? '';
+    final userDomain = userEmail.contains('@') ? userEmail.split('@').last : '';
+
     if (uid.isEmpty) {
       setState(() {
         _notifications = [];
@@ -86,13 +90,30 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     _notificationsSubscription = FirebaseFirestore.instance
         .collection('notifications')
-        .where('recipientId', isEqualTo: uid)
         .snapshots()
         .listen((snapshot) {
       final list = <NotificationData>[];
       for (var doc in snapshot.docs) {
         try {
           final data = doc.data();
+
+          final recipientId = data['recipientId'] as String?;
+          final senderEmail = (data['senderEmail'] as String?)?.toLowerCase().trim();
+          final collegeId = (data['collegeId'] as String?)?.toLowerCase().trim();
+
+          bool isForUser = false;
+          if (recipientId != null && recipientId.isNotEmpty) {
+            if (recipientId == uid) isForUser = true;
+          } else if (userDomain.isNotEmpty) {
+            if (senderEmail != null && senderEmail.contains('@')) {
+              final senderDomain = senderEmail.split('@').last.toLowerCase().trim();
+              if (senderDomain == userDomain) isForUser = true;
+            } else if (collegeId != null && collegeId.isNotEmpty) {
+              if (collegeId == userDomain) isForUser = true;
+            }
+          }
+
+          if (!isForUser) continue;
 
           NotificationType type;
           try {
