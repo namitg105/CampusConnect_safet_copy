@@ -9,6 +9,7 @@ import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart
 import 'package:noteswap/features/posts/domain/usecases/update_profile_usecase.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
 // Added import for the Onboarding Screen
 import 'package:noteswap/Views/Onboarding/OnboardingFlowScreen.dart'; 
@@ -1066,10 +1067,11 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                   ),
                 ],
               ),
-            );
-          },
-        );
-      },
-    );
-  }
+            ),
+          );
+        },
+      );
+    },
+  );
+}
 }
