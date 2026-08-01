@@ -244,14 +244,20 @@ class FirebaseAuthRepo implements AuthRepo {
     try {
       final currentUid = firebaseAuth.currentUser?.uid;
       if (currentUid != null) {
-        await firestore.collection('users').doc(currentUid).update({
-          'isOnline': false,
-        });
+        try {
+          await firestore.collection('users').doc(currentUid).update({
+            'isOnline': false,
+          });
+        } catch (_) {}
       }
-      await firebaseAuth.signOut();
-      await _googleAuthService.signOut();
+      try {
+        await firebaseAuth.signOut();
+      } catch (_) {}
+      try {
+        await _googleAuthService.signOut();
+      } catch (_) {}
     } catch (e) {
-      throw Exception("Logout failed: $e");
+      print("Logout exception: $e");
     }
   }
 
