@@ -117,7 +117,7 @@ class NotificationPage extends StatelessWidget {
               final notification = notifications[index];
 
               // Formatting the date cleanly (e.g., "Oct 24" or "14:32")
-              final date = notification.createdAt?.toDate() ?? DateTime.now();
+              final date = notification.createdAt.toDate();
               final formattedDate = DateFormat('MMM d').format(date);
 
               return Container(
