@@ -133,17 +133,16 @@ class NotificationPage extends StatelessWidget {
                           ..sort();
                         final String roomId =
                             notification.chatId ?? ids.join('_');
-                        final name = notification.senderName ??
-                            notification.title;
+                        final name =
+                            notification.senderName ?? notification.title;
 
                         Get.to(() => ChatScreen(
                               roomId: roomId,
                               currentUid: currentUid,
                               friendUid: friendUid,
                               friendName: name,
-                              friendInitials: name.isNotEmpty
-                                  ? name[0].toUpperCase()
-                                  : 'U',
+                              friendInitials:
+                                  name.isNotEmpty ? name[0].toUpperCase() : 'U',
                               friendAvatarColor: const Color(0xFF6366F1),
                             ));
                       }

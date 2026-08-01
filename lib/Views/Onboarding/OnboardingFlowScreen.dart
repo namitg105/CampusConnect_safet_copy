@@ -307,7 +307,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
     return Stack(
       children: [
         Positioned(
-          top: 436,
+          top: 440,
           left: 0,
           child: Image.asset(
             "assets/Icon l-r.png",
@@ -325,11 +325,11 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
           ),
         ),
         Positioned(
-          top: screenHeight * 0.11,
+          top: screenHeight * 0.09,
           left: -20,
           right: -20,
           child: Image.asset(
-            "assets/images_intro/Splash_page_3_image-1.png",
+            "assets/images_intro/Illustration 3.png",
             fit: BoxFit.contain,
             height: screenHeight * 0.7,
           ),
@@ -369,12 +369,22 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
         Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
-            padding:
-                const EdgeInsets.only(bottom: 36.0, left: 24.0, right: 24.0),
+            padding: const EdgeInsets.only(
+              bottom: 50.0,
+              left: 24.0,
+              right: 24.0,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 24),
+                Transform.translate(
+                  offset: const Offset(0, -12),
+                  child: Image.asset(
+                    "assets/images_intro/ppl 1.png",
+                    fit: BoxFit.contain,
+                    height: 80,
+                  ),
+                ),
                 const Text(
                   "Join & Create Communities",
                   textAlign: TextAlign.center,

@@ -1436,7 +1436,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         SpeakerCard(
                           speakerName:
                               widget.event.speakerName ?? 'Guest Speaker',
-                          speakerDescription: widget.event.speakerDescription ?? '',
+                          speakerDescription:
+                              widget.event.speakerDescription ?? '',
                         ),
                         const SizedBox(height: 12),
                         RegisteredUsersFooter(
@@ -1890,7 +1891,8 @@ class SpeakerCard extends StatelessWidget {
                       ),
                     ),
                     if (speakerDescription.isNotEmpty &&
-                        speakerDescription != 'Event Host & Keynote Presenter') ...[
+                        speakerDescription !=
+                            'Event Host & Keynote Presenter') ...[
                       const SizedBox(height: 2),
                       Text(
                         speakerDescription,
