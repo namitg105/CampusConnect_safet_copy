@@ -53,8 +53,15 @@ class _ChatRequestScreenState extends State<ChatRequestScreen> {
   Future<void> _onAccept(ChatRequest request) async {
     try {
       await _userController.acceptRequest(request.fromUid);
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(request.fromUid)
+          .get();
+      final liveName = (userDoc.data()?['name'] as String?)?.trim();
+      final friendName =
+          (liveName != null && liveName.isNotEmpty) ? liveName : request.fromName;
       if (mounted) {
-        showSuccessSnackbar('${request.fromName} is now your friend!');
+        showSuccessSnackbar('$friendName is now your friend!');
       }
     } catch (e) {
       if (mounted) {
@@ -66,8 +73,15 @@ class _ChatRequestScreenState extends State<ChatRequestScreen> {
   Future<void> _onDecline(ChatRequest request) async {
     try {
       await _userController.rejectRequest(request.fromUid);
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(request.fromUid)
+          .get();
+      final liveName = (userDoc.data()?['name'] as String?)?.trim();
+      final friendName =
+          (liveName != null && liveName.isNotEmpty) ? liveName : request.fromName;
       if (mounted) {
-        showInfoSnackbar('Request from ${request.fromName} declined');
+        showInfoSnackbar('Request from $friendName declined');
       }
     } catch (e) {
       if (mounted) {
@@ -79,8 +93,15 @@ class _ChatRequestScreenState extends State<ChatRequestScreen> {
   Future<void> _onAcceptIgnored(ChatRequest request) async {
     try {
       await _userController.acceptIgnoredRequest(request.fromUid);
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(request.fromUid)
+          .get();
+      final liveName = (userDoc.data()?['name'] as String?)?.trim();
+      final friendName =
+          (liveName != null && liveName.isNotEmpty) ? liveName : request.fromName;
       if (mounted) {
-        showSuccessSnackbar('${request.fromName} is now your friend!');
+        showSuccessSnackbar('$friendName is now your friend!');
       }
     } catch (e) {
       if (mounted) {

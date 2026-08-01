@@ -53,16 +53,23 @@ class NotificationController extends GetxController {
         if (isRead) return false;
 
         final recipientId = data['recipientId'] as String?;
-        if (recipientId != null && recipientId.isNotEmpty && recipientId != currentUid) {
-          return false;
+        if (recipientId != null && recipientId.isNotEmpty) {
+          return recipientId == currentUid;
         }
 
         final senderEmail = (data['senderEmail'] as String?)?.toLowerCase().trim();
+        final collegeId = (data['collegeId'] as String?)?.toLowerCase().trim();
+
         if (userDomain.isNotEmpty && senderEmail != null && senderEmail.contains('@')) {
           final senderDomain = senderEmail.split('@').last.toLowerCase().trim();
           return senderDomain == userDomain;
         }
-        return true;
+
+        if (userDomain.isNotEmpty && collegeId != null && collegeId.isNotEmpty) {
+          return collegeId == userDomain;
+        }
+
+        return false;
       }).length;
 
       unreadCount.value = count;

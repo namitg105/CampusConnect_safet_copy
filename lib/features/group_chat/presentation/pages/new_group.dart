@@ -1,12 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:noteswap/features/group_chat/presentation/pages/groups_page.dart';
-import 'package:noteswap/features/home/presentation/pages/main_page.dart';
-
-import '../../../community/presentation/cubits/group_cubit.dart';
-import '../../../community/presentation/pages/groups_page.dart';
 import 'group_profile.dart';
 
 class Contact {
