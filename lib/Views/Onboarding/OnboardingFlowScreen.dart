@@ -239,10 +239,10 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
           true,
           true,
           path: "assets/images_intro/Graduate_hat_left.png",
-          height: height * 0.45,
+          height: height * 0.46,
           opacity: 0.0,
-          bottom: height * 0.065,
-          right: 1,
+          bottom: height * 0.087,
+          right: 0,
         ),
 
         // Main Center Content
@@ -306,8 +306,19 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   Widget _buildOnboardingTwoContent(double screenWidth, double screenHeight) {
     return Stack(
       children: [
+        // Background Top-Right
         Positioned(
-          top: 440,
+          top: 0,
+          right: 0,
+          child: Image.asset(
+            "assets/Icon.png",
+            width: screenWidth * 0.69,
+            fit: BoxFit.contain,
+          ),
+        ),
+        // Background Bottom-Left (Adjusted to match target design)
+        Positioned(
+          top: 415,
           left: 0,
           child: Image.asset(
             "assets/Icon l-r.png",
@@ -315,25 +326,69 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
             fit: BoxFit.contain,
           ),
         ),
-        Positioned(
-          top: 0,
-          right: 0,
-          child: Image.asset(
-            "assets/Icon.png",
-            width: screenWidth * 0.695,
-            fit: BoxFit.contain,
+
+        // Central Content Column (Matches Screen 1 Structure)
+        SafeArea(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(
+                height: 5,
+              ),
+              // Main Central Illustration
+              Image.asset(
+                "assets/images_intro/Illustration 3.png",
+                height: 510, // Scaled dynamically
+                fit: BoxFit.contain,
+              ),
+
+              // People / Contacts Icon
+              Image.asset(
+                "assets/images_intro/ppl 1.png",
+                height: 90,
+                fit: BoxFit.contain,
+              ),
+
+              const SizedBox(height: 16),
+
+              const Text(
+                "Join & Create Communities",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                  letterSpacing: -0.5,
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.0),
+                child: Text(
+                  "Discover clubs, sports teams, and academic groups or create your own community.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF4A4A68),
+                    height: 1.4,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Pagination Dots - Perfectly aligned
+              _buildPaginationDots(1, (index) => _goToPage(index + 1)),
+            ],
           ),
         ),
-        Positioned(
-          top: screenHeight * 0.09,
-          left: -20,
-          right: -20,
-          child: Image.asset(
-            "assets/images_intro/Illustration 3.png",
-            fit: BoxFit.contain,
-            height: screenHeight * 0.7,
-          ),
-        ),
+
+        // Header (Logo & Skip button) - Placed last so it hovers on top
         SafeArea(
           child: Padding(
             padding:
@@ -362,54 +417,6 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: Padding(
-            padding: const EdgeInsets.only(
-              bottom: 50.0,
-              left: 24.0,
-              right: 24.0,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Transform.translate(
-                  offset: const Offset(0, -12),
-                  child: Image.asset(
-                    "assets/images_intro/ppl 1.png",
-                    fit: BoxFit.contain,
-                    height: 80,
-                  ),
-                ),
-                const Text(
-                  "Join & Create Communities",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  "Discover clubs, sports teams, and academic groups or create your own community.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF4A4A68),
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                _buildPaginationDots(1, (index) => _goToPage(index + 1)),
               ],
             ),
           ),
@@ -447,7 +454,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
           child: Image.asset(
             "assets/Gemini_Generated_Image_s38k7zs38k7zs38k 1.png",
             fit: BoxFit.contain,
-            height: screenHeight * 0.7,
+            height: 600,
           ),
         ),
         SafeArea(
@@ -486,8 +493,8 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
           alignment: Alignment.bottomCenter,
           child: Padding(
             padding: const EdgeInsets.only(
-              bottom: 50.0,
-              left: 20.0,
+              bottom: 90.0,
+              left: 5.0,
               right: 24.0,
             ),
             child: Column(
@@ -495,9 +502,8 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
               children: [
                 Image.asset(
                   "assets/notes 1.png",
-                  scale: 20,
-                  width: 6000,
-                  height: 100,
+                  width: 4540,
+                  height: 90,
                   fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 12),
@@ -524,7 +530,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                     height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 30),
                 _buildPaginationDots(2, (index) => _goToPage(index + 1)),
               ],
             ),

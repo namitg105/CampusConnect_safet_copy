@@ -8,6 +8,7 @@ class Splash_Widget_Components {
 
   PreferredSizeWidget AppBarDesign() {
     return AppBar(
+      automaticallyImplyLeading: false,
       title: Row(
         mainAxisAlignment: MainAxisAlignment.start,
         spacing: width * 0.025,
@@ -20,20 +21,7 @@ class Splash_Widget_Components {
           RichTextDesign(),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => {},
-          child: Text(
-            "Skip",
-            style: TextStyle(
-              color: Color.fromRGBO(114, 75, 230, 1),
-              fontSize: width * 0.04,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        SizedBox(width: width * 0.03),
-      ],
+      actions: const [],
     );
   }
 
