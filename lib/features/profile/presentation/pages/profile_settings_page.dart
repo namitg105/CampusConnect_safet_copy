@@ -10,6 +10,8 @@ import 'package:noteswap/features/posts/domain/usecases/update_profile_usecase.d
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:url_launcher/url_launcher.dart';
+// Added import for the Onboarding Screen
+import 'package:noteswap/Views/Onboarding/OnboardingFlowScreen.dart'; 
 
 class ProfileSettingsPage extends StatefulWidget {
   const ProfileSettingsPage({super.key});
@@ -74,13 +76,22 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     final subTextColor = isLightMode ? Colors.grey[600] : Colors.grey[400];
     final brandColor = const Color(0xFF6139ED);
 
-    return BlocBuilder<AuthCubit, AuthState>(
+    // CHANGED: Using BlocConsumer to listen to state changes and trigger navigation
+    return BlocConsumer<AuthCubit, AuthState>(
+      listener: (context, authState) {
+        if (authState is Unauthenticated) {
+          // Clears the stack and routes to the first Onboarding Screen
+          Get.offAll(() => const OnboardingFlowScreen(initialPage: 0));
+        }
+      },
       builder: (context, authState) {
         if (authState is! Authenticated) {
           return Scaffold(
             backgroundColor: backgroundColor,
             body: const Center(
-              child: Text('Please login to view profile'),
+              child: CircularProgressIndicator(
+                color: Color(0xFF6139ED),
+              ),
             ),
           );
         }
@@ -416,6 +427,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                 onTap: () async {
                                   try {
                                     await context.read<AuthCubit>().logout();
+                                    // The BlocConsumer listener at the top will handle the navigation automatically when the state changes
                                   } catch (e) {
                                     debugPrint("Logout error: $e");
                                   }

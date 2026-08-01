@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
+import 'package:noteswap/Views/Onboarding/OnboardingFlowScreen.dart';
 import 'package:noteswap/features/auth/data/firebase_auth_repo.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
@@ -109,7 +110,7 @@ class AuthWrapper extends StatelessWidget {
           return const MainPage(); // Land on MainPage (includes bottom navigation)
         } else if (authState is Unauthenticated) {
           Get.find<UserService>().clearUser();
-          return const SplashScreen();
+          return const OnboardingFlowScreen(initialPage: 0);
         }
 
         // Handles loading or initial authentication state resolution

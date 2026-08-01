@@ -10,6 +10,7 @@ import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
 import 'package:noteswap/features/private_chat/data/private-chat-services/user_friend_add.dart';
 import 'package:noteswap/features/private_chat/domain/repos/chat_controller.dart';
 import 'package:noteswap/features/private_chat/domain/repos/online_user_controller.dart';
+import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepo authRepo;
@@ -72,6 +73,9 @@ class AuthCubit extends Cubit<AuthState> {
 
   //logout
   Future<void> logout() async {
+    if (Get.isRegistered<MainPageController>()) {
+      Get.delete<MainPageController>(force: true);
+    }
     if (Get.isRegistered<ChatController>()) {
       Get.delete<ChatController>(force: true);
     }
