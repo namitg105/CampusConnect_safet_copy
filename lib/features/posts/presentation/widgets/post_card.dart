@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
-import 'package:noteswap/utils/time_formatter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../../../../utils/time_formatter.dart';
 
 // SVG Assets matching Figma specifications perfectly
 const String upvoteSvg = '''
@@ -121,14 +122,17 @@ class PostCard extends StatelessWidget {
                         .doc(post.authorId)
                         .snapshots(),
                     builder: (context, snapshot) {
-                      final data = snapshot.data?.data() as Map<String, dynamic>?;
+                      final data =
+                          snapshot.data?.data() as Map<String, dynamic>?;
                       final profileImageUrl = data?['profileImage'] as String?;
-                      final hasImage = profileImageUrl != null && profileImageUrl.isNotEmpty;
+                      final hasImage =
+                          profileImageUrl != null && profileImageUrl.isNotEmpty;
 
                       return CircleAvatar(
                         radius: 18,
                         backgroundColor: brandColor.withOpacity(0.15),
-                        backgroundImage: hasImage ? NetworkImage(profileImageUrl) : null,
+                        backgroundImage:
+                            hasImage ? NetworkImage(profileImageUrl) : null,
                         child: hasImage
                             ? null
                             : Text(
@@ -167,7 +171,6 @@ class PostCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Tag & Delete Button
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

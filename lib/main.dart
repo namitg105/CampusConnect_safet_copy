@@ -10,10 +10,12 @@ import 'package:noteswap/features/auth/presentation/pages/SplashScreen.dart';
 import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 import 'package:noteswap/features/private_chat/data/private-chat-services/user_service.dart';
 import 'package:noteswap/firebase_options.dart';
-import 'ViewModels/DarkModeViewModels.dart'; // Retained member's theme controller
-import 'core/di/injection.dart'; // DI injection init
+
+import 'ViewModels/DarkModeViewModels.dart';
 import 'ViewModels/NotificationController.dart';
-import 'features/home/presentation/pages/main_page.dart'; // MainPage
+import 'core/di/injection.dart'; // DI injection init
+
+import 'features/home/presentation/pages/main_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,8 +27,10 @@ void main() async {
       );
     }
   } catch (e) {
-    if (e.toString().contains('duplicate-app') || e.toString().contains('duplicate-app-name')) {
-      debugPrint('Firebase App already exists, ignoring duplicate-app exception.');
+    if (e.toString().contains('duplicate-app') ||
+        e.toString().contains('duplicate-app-name')) {
+      debugPrint(
+          'Firebase App already exists, ignoring duplicate-app exception.');
     } else {
       rethrow;
     }
@@ -37,7 +41,7 @@ void main() async {
 
   // Initialize controllers
   Get.put(LightModeController());
-    Get.put(NotificationController());
+  Get.put(NotificationController());
   await Get.putAsync<UserService>(() async => UserService());
 
   runApp(const MyApp());

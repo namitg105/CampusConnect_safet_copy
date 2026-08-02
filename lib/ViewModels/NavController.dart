@@ -13,16 +13,16 @@ class BottomNavController extends GetxController {
     selectedIndex.value = index;
     switch (index) {
       case 0:
-      Get.to(FeedScreen());
+        Get.to(FeedScreen());
         break;
       case 1:
-      Get.to(SearchScreen());
+        Get.to(SearchScreen());
         break;
       case 2:
         Get.to(AddUsers());
         break;
       case 3:
-      Get.to(NotificationScreen());
+        Get.to(NotificationScreen());
         break;
       case 4:
         Get.to(ProfileScreen());

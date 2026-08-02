@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
+import 'package:noteswap/Views/FeedScreen.dart';
 import 'package:noteswap/features/community/presentation/pages/create_group_page.dart';
 import 'package:noteswap/features/dashboard/presentation/pages/dashboard_page_one.dart';
+import 'package:noteswap/features/notes_swap/FeedScreen.dart';
 import 'package:noteswap/features/private_chat/page_controller.dart';
 import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
 import 'package:noteswap/features/posts/presentation/pages/create_post_page.dart';
@@ -79,8 +81,10 @@ class MainPage extends StatelessWidget {
         }
       } else if (index == 1) {
         Get.to(() => const CreateGroupPage(collegeId: ""));
-      } else if (index == 2) {
+      } else if (index == 3) {
         controller.privateChatSelectedTab.value = 3;
+      } else if (index == 2) {
+        // Handle action for NoteSwap center tab if needed
       }
     }
 
@@ -92,85 +96,127 @@ class MainPage extends StatelessWidget {
           body: IndexedStack(
             index: controller.currentIndex.value,
             children: [
-              const DashboardPageOne(),
-              const GroupsPage(),
-              const PrivateChatPageController(),
-              const ProfileSettingsPage(),
+              const DashboardPageOne(), // Index 0: Home
+              const GroupsPage(), // Index 1: Community
+              NoteSwapFeedScreen(),
+              const PrivateChatPageController(), // Index 3: Messages
+              const ProfileSettingsPage(), // Index 4: Profile
             ],
           ),
           bottomNavigationBar: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
               child: SizedBox(
-                height: 70,
+                height: 80, // Expanded height to accommodate elevated button
                 child: Stack(
                   clipBehavior: Clip.none,
-                  alignment: Alignment.topCenter,
+                  alignment: Alignment.bottomCenter,
                   children: [
-                    // The pill-shaped bar itself.
-                    Positioned.fill(
-                      top: 14, // leaves room for the center button to overlap
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3F1FE),
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: [
-                            BoxShadow(
-                              color: textDark.withOpacity(0.06),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
+                    // Main navigation bar pill container
+                    Container(
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F1FE),
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: textDark.withOpacity(0.06),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          // Left Section: Home & Community
+                          Expanded(
+                            flex: 2,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                _NavBarIcon(
+                                  assetPath: 'assets/community/home_nav.png',
+                                  label: 'Home',
+                                  isSelected:
+                                      controller.currentIndex.value == 0,
+                                  activeColor: brandPrimary,
+                                  inactiveColor: textMuted,
+                                  onTap: () => controller.changeIndex(0),
+                                ),
+                                _NavBarIcon(
+                                  assetPath: 'assets/community/comm_nav.png',
+                                  label: 'Community',
+                                  isSelected:
+                                      controller.currentIndex.value == 1,
+                                  activeColor: brandPrimary,
+                                  inactiveColor: textMuted,
+                                  onTap: () => controller.changeIndex(1),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _NavBarIcon(
-                              assetPath: 'assets/community/home_nav.png',
-                              label: 'Home',
-                              isSelected: controller.currentIndex.value == 0,
-                              activeColor: brandPrimary,
-                              inactiveColor: textMuted,
-                              onTap: () => controller.changeIndex(0),
+                          ),
+
+                          // Center Section: NoteSwap Tab
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.bottomCenter,
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _NavBarIcon(
+                                  icon: Icons.swap_horiz_rounded,
+                                  label: 'NoteSwap',
+                                  isSelected:
+                                      controller.currentIndex.value == 2,
+                                  activeColor: brandPrimary,
+                                  inactiveColor: textMuted,
+                                  onTap: () => controller.changeIndex(2),
+                                ),
+                              ),
                             ),
-                            _NavBarIcon(
-                              assetPath: 'assets/community/comm_nav.png',
-                              label: 'Community',
-                              isSelected: controller.currentIndex.value == 1,
-                              activeColor: brandPrimary,
-                              inactiveColor: textMuted,
-                              onTap: () => controller.changeIndex(1),
+                          ),
+
+                          // Right Section: Messages & Profile
+                          Expanded(
+                            flex: 2,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                _NavBarIcon(
+                                  assetPath: 'assets/community/msg_nav.png',
+                                  label: 'Messages',
+                                  isSelected:
+                                      controller.currentIndex.value == 3,
+                                  activeColor: brandPrimary,
+                                  inactiveColor: textMuted,
+                                  onTap: () => controller.changeIndex(3),
+                                ),
+                                _NavBarIcon(
+                                  assetPath: 'assets/community/prof_nav.png',
+                                  label: 'Profile',
+                                  isSelected:
+                                      controller.currentIndex.value == 4,
+                                  activeColor: brandPrimary,
+                                  inactiveColor: textMuted,
+                                  onTap: () => controller.changeIndex(4),
+                                ),
+                              ],
                             ),
-                            // Empty space the floating center button sits over.
-                            const SizedBox(width: 56),
-                            _NavBarIcon(
-                              assetPath: 'assets/community/msg_nav.png',
-                              label: 'Messages',
-                              isSelected: controller.currentIndex.value == 2,
-                              activeColor: brandPrimary,
-                              inactiveColor: textMuted,
-                              onTap: () => controller.changeIndex(2),
-                            ),
-                            _NavBarIcon(
-                              assetPath: 'assets/community/prof_nav.png',
-                              label: 'Profile',
-                              isSelected: controller.currentIndex.value == 3,
-                              activeColor: brandPrimary,
-                              inactiveColor: textMuted,
-                              onTap: () => controller.changeIndex(3),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                    Positioned(
-                      top: 0,
-                      child: _CreateButton(
-                        color: brandPrimary,
-                        onTap: handleCenterButtonTap,
+
+                    // Floating Action Button pushed higher up (Only shown on Index 0 / Dashboard 1)
+                    if (controller.currentIndex.value == 0)
+                      Positioned(
+                        top: -35,
+                        child: _CreateButton(
+                          color: brandPrimary,
+                          onTap: handleCenterButtonTap,
+                          bottomPadding: 0,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -210,51 +256,51 @@ class _NavBarIcon extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: activeColor.withOpacity(0.15),
+                    color: activeColor.withOpacity(0.12),
                     blurRadius: 8,
-                    offset: const Offset(0, 3),
+                    offset: const Offset(0, 2),
                   ),
                 ]
               : null,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (assetPath != null)
               Image.asset(
                 assetPath!,
-                width: 20,
-                height: 20,
-                color:
-                    currentColor, // Tint the asset with active/inactive color
+                width: 18,
+                height: 18,
+                color: currentColor,
                 errorBuilder: (_, __, ___) => Icon(
                   Icons.groups_rounded,
-                  size: 20,
+                  size: 18,
                   color: currentColor,
                 ),
               )
             else
               Icon(
                 icon,
-                size: 20,
+                size: 18,
                 color: currentColor,
               ),
             const SizedBox(height: 2),
             Text(
               label,
               style: TextStyle(
-                fontSize: 9.5,
+                fontSize: 8.5,
                 fontWeight: FontWeight.w700,
                 color: currentColor,
               ),
@@ -269,28 +315,36 @@ class _NavBarIcon extends StatelessWidget {
 class _CreateButton extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
+  final double bottomPadding;
 
-  const _CreateButton({required this.color, required this.onTap});
+  const _CreateButton({
+    required this.color,
+    required this.onTap,
+    this.bottomPadding = 0.0,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.35),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomPadding),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.35),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: const Icon(Icons.add_rounded, color: Colors.white, size: 26),
         ),
-        child: const Icon(Icons.add_rounded, color: Colors.white, size: 26),
       ),
     );
   }

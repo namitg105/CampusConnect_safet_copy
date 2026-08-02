@@ -38,6 +38,8 @@ import 'package:noteswap/features/posts/domain/usecases/get_user_votes_usecase.d
 import 'package:noteswap/features/posts/domain/usecases/delete_post_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_user_liked_comments_usecase.dart';
 
+import '../../../../Views/FeedScreen.dart';
+
 class DashboardPageOne extends StatefulWidget {
   const DashboardPageOne({super.key});
 
@@ -396,6 +398,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                           () => AllCommunityEventsPage()),
                                     ),
                                   ),
+                                  const SizedBox(width: 12),
                                 ],
                               ),
                               const SizedBox(height: 24),
