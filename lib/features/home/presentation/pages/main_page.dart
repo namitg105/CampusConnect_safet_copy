@@ -23,6 +23,8 @@ import 'package:noteswap/features/posts/domain/usecases/delete_post_usecase.dart
 import 'package:noteswap/features/posts/domain/usecases/get_user_liked_comments_usecase.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
+import 'package:noteswap/noteswap_intern/NotesScreen.dart';
+import 'package:noteswap/noteswap_intern/UploadNotesScreen.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../community/presentation/cubits/group_cubit.dart';
@@ -85,7 +87,7 @@ class MainPage extends StatelessWidget {
         }
       } else if (index == 1) {
         Get.to(() => const CreateGroupPage(collegeId: ""));
-      } else if (index == 2) {
+      } else if (index == 4) {
         controller.privateChatSelectedTab.value = 3;
       }
     }
@@ -100,6 +102,8 @@ class MainPage extends StatelessWidget {
             children: [
               const DashboardPageOne(),
               const GroupsPage(),
+              const UploadNotesScreen(),
+              const NotesScreen(),
               const PrivateChatPageController(),
               const ProfileSettingsPage(),
             ],
@@ -108,14 +112,14 @@ class MainPage extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
               child: SizedBox(
-                height: 70,
+                height: 64,
                 child: Stack(
                   clipBehavior: Clip.none,
                   alignment: Alignment.topCenter,
                   children: [
                     // The pill-shaped bar itself.
                     Positioned.fill(
-                      top: 14, // leaves room for the center button to overlap
+                      top: 12, // leaves room for the center button to overlap
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6),
                         decoration: BoxDecoration(
@@ -132,39 +136,73 @@ class MainPage extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _NavBarIcon(
-                              assetPath: 'assets/community/home_nav.png',
-                              label: 'Home',
-                              isSelected: controller.currentIndex.value == 0,
-                              activeColor: brandPrimary,
-                              inactiveColor: textMuted,
-                              onTap: () => controller.changeIndex(0),
+                            Expanded(
+                              child: _NavBarIcon(
+                                assetPath: 'assets/community/home_nav.png',
+                                label: 'Home',
+                                isSelected:
+                                    controller.currentIndex.value == 0,
+                                activeColor: brandPrimary,
+                                inactiveColor: textMuted,
+                                onTap: () => controller.changeIndex(0),
+                              ),
                             ),
-                            _NavBarIcon(
-                              assetPath: 'assets/community/comm_nav.png',
-                              label: 'Community',
-                              isSelected: controller.currentIndex.value == 1,
-                              activeColor: brandPrimary,
-                              inactiveColor: textMuted,
-                              onTap: () => controller.changeIndex(1),
+                            Expanded(
+                              child: _NavBarIcon(
+                                assetPath: 'assets/community/comm_nav.png',
+                                label: 'Community',
+                                isSelected:
+                                    controller.currentIndex.value == 1,
+                                activeColor: brandPrimary,
+                                inactiveColor: textMuted,
+                                onTap: () => controller.changeIndex(1),
+                              ),
+                            ),
+                            Expanded(
+                              child: _NavBarIcon(
+                                icon: Icons.upload_file,
+                                label: 'Upload',
+                                isSelected:
+                                    controller.currentIndex.value == 2,
+                                activeColor: brandPrimary,
+                                inactiveColor: textMuted,
+                                onTap: () => controller.changeIndex(2),
+                              ),
                             ),
                             // Empty space the floating center button sits over.
                             const SizedBox(width: 56),
-                            _NavBarIcon(
-                              assetPath: 'assets/community/msg_nav.png',
-                              label: 'Messages',
-                              isSelected: controller.currentIndex.value == 2,
-                              activeColor: brandPrimary,
-                              inactiveColor: textMuted,
-                              onTap: () => controller.changeIndex(2),
+                            Expanded(
+                              child: _NavBarIcon(
+                                icon: Icons.menu_book,
+                                label: 'Notes',
+                                isSelected:
+                                    controller.currentIndex.value == 3,
+                                activeColor: brandPrimary,
+                                inactiveColor: textMuted,
+                                onTap: () => controller.changeIndex(3),
+                              ),
                             ),
-                            _NavBarIcon(
-                              assetPath: 'assets/community/prof_nav.png',
-                              label: 'Profile',
-                              isSelected: controller.currentIndex.value == 3,
-                              activeColor: brandPrimary,
-                              inactiveColor: textMuted,
-                              onTap: () => controller.changeIndex(3),
+                            Expanded(
+                              child: _NavBarIcon(
+                                assetPath: 'assets/community/msg_nav.png',
+                                label: 'Messages',
+                                isSelected:
+                                    controller.currentIndex.value == 4,
+                                activeColor: brandPrimary,
+                                inactiveColor: textMuted,
+                                onTap: () => controller.changeIndex(4),
+                              ),
+                            ),
+                            Expanded(
+                              child: _NavBarIcon(
+                                assetPath: 'assets/community/prof_nav.png',
+                                label: 'Profile',
+                                isSelected:
+                                    controller.currentIndex.value == 5,
+                                activeColor: brandPrimary,
+                                inactiveColor: textMuted,
+                                onTap: () => controller.changeIndex(5),
+                              ),
                             ),
                           ],
                         ),
@@ -214,13 +252,22 @@ class _NavBarIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentColor = isSelected ? activeColor : inactiveColor;
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bool compact = screenWidth < 400;
+    final double iconSize = compact ? 18 : 20;
+    final double fontSize = compact ? 8.5 : 9.5;
+    final EdgeInsets padding = EdgeInsets.symmetric(
+      horizontal: compact ? 6 : 10,
+      vertical: compact ? 5 : 8,
+    );
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: padding,
         decoration: BoxDecoration(
           color: isSelected ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
@@ -240,29 +287,33 @@ class _NavBarIcon extends StatelessWidget {
             if (assetPath != null)
               Image.asset(
                 assetPath!,
-                width: 20,
-                height: 20,
+                width: iconSize,
+                height: iconSize,
                 color:
                     currentColor, // Tint the asset with active/inactive color
                 errorBuilder: (_, __, ___) => Icon(
                   Icons.groups_rounded,
-                  size: 20,
+                  size: iconSize,
                   color: currentColor,
                 ),
               )
             else
               Icon(
                 icon,
-                size: 20,
+                size: iconSize,
                 color: currentColor,
               ),
             const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 9.5,
-                fontWeight: FontWeight.w700,
-                color: currentColor,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w700,
+                  color: currentColor,
+                ),
               ),
             ),
           ],
