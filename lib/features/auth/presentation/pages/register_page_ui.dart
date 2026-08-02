@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/components/components.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
-import 'package:noteswap/features/private_chat/presentation/common_widgets.dart';
+import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
+import 'package:noteswap/features/private_chat/presentation/common_widgets.dart';
 
 //------------------------------//
 
@@ -25,35 +25,62 @@ class RegisterPageUi extends State<RegisterPage> {
   late Splash_Widget_Components _splashAppWidget;
   late double imageWidthAdjustment;
 
-  //-------------------form controller-----------------------//
+  //-------------------form controllers-----------------------//
   final nameTextController = TextEditingController();
   final emailTextController = TextEditingController();
   final passTextController = TextEditingController();
   final confirmPassTextController = TextEditingController();
+
   bool hiddenText = true;
   bool confirmhiddenText = true;
 
   //-------------------image controller----------------------//
   final imagePath = "assets/images_register/register_girl_grouped_cropped.png";
-  late AssetImage imageProvider;
-  late double displayedHeight = 0.0;
-  //-------------------form controller-----------------------//
+
+  //-------------------form state-----------------------//
   bool isChecked = false;
 
-//register button pressed
+  //register button pressed
   void register() {
     final email = emailTextController.text.trim();
     final name = nameTextController.text.trim();
     final pw = passTextController.text.trim();
     final confirmPw = confirmPassTextController.text.trim();
 
-    if (email.isEmpty || pw.isEmpty || name.isEmpty) {
+    if (email.isEmpty || pw.isEmpty || name.isEmpty || confirmPw.isEmpty) {
       showErrorSnackbar("Please complete all fields");
       return;
     }
 
     if (pw != confirmPw) {
-      showErrorSnackbar("Passwords do not match");
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text(
+            "Password Mismatch",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          content: const Text(
+            "Passwords do not match",
+            style: TextStyle(fontSize: 14, color: Color(0xFF4A4A4A)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                "OK",
+                style: TextStyle(
+                  color: Color(0xFF6139ED),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
       return;
     }
 
@@ -61,7 +88,8 @@ class RegisterPageUi extends State<RegisterPage> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Text(
             "Terms & Conditions Required",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
@@ -88,8 +116,17 @@ class RegisterPageUi extends State<RegisterPage> {
       return;
     }
 
+    // Call AuthCubit to register user via Firebase
     final authCubit = context.read<AuthCubit>();
     authCubit.register(name, email, pw);
+  }
+
+  void _navigateToLogin() {
+    if (widget.togglePages != null) {
+      widget.togglePages!();
+    } else {
+      Get.offAll(() => const AuthPage());
+    }
   }
 
   @override
@@ -105,34 +142,36 @@ class RegisterPageUi extends State<RegisterPage> {
   Widget build(BuildContext context) {
     width = MediaQuery.of(context).size.width;
     height = MediaQuery.of(context).size.height;
-    imageWidthAdjustment = width / 1.1; //width / 1.2
+    imageWidthAdjustment = width / 1.1;
     _splashAppWidget = Splash_Widget_Components(width: width, height: height);
 
     return BlocListener<AuthCubit, AuthState>(
-        listener: (context, state) {
-          if (state is Authenticated) {
-            // This clears the navigation stack and safely lands them on MainPage
-            Get.offAll(() => const MainPage());
-          } else if (state is AuthError) {
-            showErrorSnackbar(state.message);
-          }
-        },
-        child: Scaffold(
-          appBar: _splashAppWidget.AppBarDesign(),
-          body: SingleChildScrollView(
-            child: Column(
-              children: [
-                SizedBox(height: height * 0.025),
-                Container(
-                  width: width,
-                  alignment: Alignment.center,
-                  child: Image.asset(imagePath, width: imageWidthAdjustment),
-                ),
-                RegisterBoxDecoration(),
-              ],
-            ),
+      listener: (context, state) {
+        if (state is Authenticated) {
+          // This clears the navigation stack and safely lands them on MainPage
+          Get.offAll(() => const MainPage());
+        } else if (state is AuthError) {
+          showErrorSnackbar(state.message);
+        }
+      },
+      child: Scaffold(
+        appBar: _splashAppWidget.AppBarDesign(),
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              SizedBox(height: height * 0.025),
+              Container(
+                width: width,
+                alignment: Alignment.center,
+                child: Image.asset(imagePath, width: imageWidthAdjustment),
+              ),
+              RegisterBoxDecoration(),
+              SizedBox(height: height * 0.03),
+            ],
           ),
-        ));
+        ),
+      ),
+    );
   }
 
   TextSpan _TextStyleWidget(
@@ -144,15 +183,15 @@ class RegisterPageUi extends State<RegisterPage> {
     return TextSpan(
       text: content,
       style: TextStyle(
-        color: (color != null) ? color : Colors.black,
-        fontSize: (fontSize != null) ? fontSize : width * 0.038,
-        fontWeight: (fontWeight != null) ? fontWeight : FontWeight.bold,
+        color: color,
+        fontSize: fontSize,
+        fontWeight: fontWeight,
       ),
     );
   }
 
   Widget RichTextFormat(
-    String context, {
+    String content, {
     Color? color,
     double? fontSize,
     FontWeight? fontWeight,
@@ -161,7 +200,7 @@ class RegisterPageUi extends State<RegisterPage> {
       text: TextSpan(
         children: [
           _TextStyleWidget(
-            context,
+            content,
             color: color,
             fontSize: fontSize,
             fontWeight: fontWeight,
@@ -172,102 +211,135 @@ class RegisterPageUi extends State<RegisterPage> {
   }
 
   Widget RegisterBoxDecoration() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: width * 0.051),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade200, width: width * 0.005),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(width * 0.04),
-            topRight: Radius.circular(width * 0.04),
+    return Container(
+      width: imageWidthAdjustment,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(width * 0.025),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black38,
+            blurRadius: 10.0,
+            spreadRadius: 1,
           ),
-          color: Colors.white,
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 15,
-              offset: Offset(0, -5),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            SizedBox(height: height * 0.02),
-            InputFieldLabelAndField(
-              "Full Name",
-              "John Doe",
-              nameTextController,
-              "assets/images_register/User_icon.png",
-            ),
-            SizedBox(height: height * 0.015),
-            InputFieldLabelAndField(
-              "University Email",
-              "you@university.edu",
-              emailTextController,
-              "assets/images_register/mail_icon.png",
-            ),
-            SizedBox(height: height * 0.015),
-            InputFieldLabelAndField(
-              "Password",
-              "Enter your password",
-              passTextController,
-              "assets/images_register/Password_icon.png",
-              isPassword: true,
-              isHidden: hiddenText,
-              onToggleVisibility: () {
-                setState(() {
-                  hiddenText = !hiddenText;
-                });
+        ],
+      ),
+      child: Column(
+        children: [
+          SizedBox(height: height * 0.025),
+          textFormLayout(
+            isPassword: false,
+            labelText: "Full Name",
+            pathImage: "assets/images_register/User_icon.png",
+            textController: nameTextController,
+            hintText: "Enter your full name",
+          ),
+          SizedBox(height: height * 0.025),
+          textFormLayout(
+            isPassword: false,
+            labelText: "University Email",
+            pathImage: "assets/images_register/mail_icon.png",
+            textController: emailTextController,
+            hintText: "you@university.edu",
+          ),
+          SizedBox(height: height * 0.025),
+          textFormLayout(
+            isPassword: true,
+            labelText: "Password",
+            pathImage: "assets/images_register/Password_icon.png",
+            textController: passTextController,
+            hintText: "Enter your password",
+            isHidden: hiddenText,
+            onToggleVisibility: () {
+              setState(() {
+                hiddenText = !hiddenText;
+              });
+            },
+          ),
+          SizedBox(height: height * 0.025),
+          textFormLayout(
+            isPassword: true,
+            labelText: "Confirm Password",
+            pathImage: "assets/images_register/Password_icon.png",
+            textController: confirmPassTextController,
+            hintText: "Confirm your password",
+            isHidden: confirmhiddenText,
+            onToggleVisibility: () {
+              setState(() {
+                confirmhiddenText = !confirmhiddenText;
+              });
+            },
+          ),
+          SizedBox(height: height * 0.005),
+          Container(
+            margin: EdgeInsets.only(left: width * 0.025),
+            child: PrivacyPolicyCheckBox(),
+          ),
+          RegisterButton(),
+          SizedBox(height: width * 0.025),
+          RichTextFormat(
+            "or sign up with",
+            fontSize: width * 0.0325,
+            color: Colors.black38,
+          ),
+          Container(
+            alignment: Alignment.center,
+            child: IconButton(
+              onPressed: () {
+                context.read<AuthCubit>().loginWithGoogle();
               },
+              icon: Image.asset("assets/images_register/Google_icon.png"),
             ),
-            SizedBox(height: height * 0.015),
-            InputFieldLabelAndField(
-              "Confirm Password",
-              "Confirm your password",
-              confirmPassTextController,
-              "assets/images_register/Password_icon.png",
-              isPassword: true,
-              isHidden: confirmhiddenText,
-              onToggleVisibility: () {
-                setState(() {
-                  confirmhiddenText = !confirmhiddenText;
-                });
-              },
-            ),
-            SizedBox(height: height * 0.02),
-            PrivacyPolicyCheckBox(),
-            SizedBox(height: height * 0.01),
-            RegisterButton(),
-            SizedBox(height: height * 0.035),
-          ],
-        ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              RichTextFormat(
+                "Already have an account?",
+                fontSize: width * 0.0325,
+                color: Colors.black38,
+              ),
+              TextButton(
+                onPressed: _navigateToLogin,
+                child: RichTextFormat(
+                  " Log in",
+                  fontSize: width * 0.0325,
+                  color: const Color.fromRGBO(114, 75, 230, 1),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget InputFieldLabelAndField(
-    String label,
-    String hintText,
-    TextEditingController textController,
-    String pathImage, {
+  Widget textFormLayout({
+    required bool isPassword,
+    required String labelText,
+    required String pathImage,
+    double? sizedBoxHeight,
     double? formFieldHeight,
-    bool isPassword = false,
+    TextEditingController? textController,
+    String? hintText,
     bool? isHidden,
     VoidCallback? onToggleVisibility,
   }) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          alignment: Alignment.centerLeft,
-          padding: EdgeInsets.symmetric(horizontal: width * 0.05),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: width * 0.035),
           child: RichTextFormat(
-            label,
+            labelText,
             color: Colors.black,
-            fontSize: width * 0.035,
+            fontSize: width * 0.0325,
             fontWeight: FontWeight.bold,
           ),
         ),
-        SizedBox(height: height * 0.005),
+        SizedBox(
+          height: (sizedBoxHeight != null) ? sizedBoxHeight : height * 0.00725,
+        ),
         Padding(
           padding: EdgeInsets.symmetric(
             horizontal: width * 0.035,
@@ -276,22 +348,24 @@ class RegisterPageUi extends State<RegisterPage> {
             height: (formFieldHeight != null) ? formFieldHeight : height * 0.05,
             child: TextFormField(
               controller: textController,
-              obscureText: (isPassword) ? isHidden! : false,
+              obscureText: (isPassword) ? (isHidden ?? true) : false,
               cursorHeight: (height * 0.045) * 0.6,
               decoration: InputDecoration(
                 isDense: true,
-                hintText: hintText,
+                hintText: (hintText != null) ? hintText : "Enter",
                 prefixIcon: Padding(
                   padding: EdgeInsets.symmetric(
                     horizontal: width * 0.013,
                     vertical: width * 0.01,
                   ),
-                  child: Image.asset(pathImage),
+                  child: Image.asset(
+                    pathImage,
+                  ),
                 ),
                 suffixIcon: (isPassword)
                     ? (IconButton(
                         icon: Icon(
-                          isHidden!
+                          (isHidden ?? true)
                               ? Icons.visibility_off_outlined
                               : Icons.visibility_outlined,
                           color: Colors.black38,
@@ -335,7 +409,7 @@ class RegisterPageUi extends State<RegisterPage> {
           value: isChecked,
           onChanged: (value) {
             setState(() {
-              isChecked = value!;
+              isChecked = value ?? false;
             });
           },
         ),

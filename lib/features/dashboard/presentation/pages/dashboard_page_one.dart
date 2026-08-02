@@ -1,19 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:noteswap/features/admin_events/presentation/screens/AdminEvent.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
-import 'package:noteswap/features/events/presentation/screens/create_event.dart';
-import 'package:noteswap/features/events/presentation/screens/event%20detail%20page.dart';
-import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
 import 'package:noteswap/features/posts/presentation/pages/campus_feed_screen.dart';
-import 'package:noteswap/features/private_chat/page_controller.dart';
-import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_feed_usecase.dart';
 import 'package:noteswap/features/posts/data/post_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
@@ -366,10 +359,8 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                       cardColor,
                                       textColor,
                                       onTap: () {
-                                        if (Get.isRegistered<
-                                            MainPageController>()) {
-                                          Get.find<MainPageController>()
-                                              .changeIndex(1);
+                                        if (authState is Authenticated) {
+                                          Get.to(() => GroupsDisplayPage());
                                         }
                                       },
                                     ),
@@ -854,63 +845,87 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
         ? post.authorName.split('@').first
         : post.authorName;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    return GestureDetector(
+      onTap: () {
+        final PostController controller = Get.isRegistered<PostController>()
+            ? Get.find<PostController>()
+            : Get.put(_createPostController());
+        Get.to(() => PostDetailPage(
+              post: post,
+              controller: controller,
+            ));
+      },
+      child: Container(
+        color: Colors.transparent,
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Text(
-                post.title,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 11,
-                  color: textColor,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    post.title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                      color: textColor,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: brandColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    post.commentCount.toString(),
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: brandColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '$formattedAuthor • ${formatTimeAgo(post.createdAt)}',
+              style: TextStyle(
+                fontSize: 9,
+                color: subTextColor,
               ),
             ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: brandColor.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                post.commentCount.toString(),
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  color: brandColor,
+            if (post.imageUrl != null && post.imageUrl!.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  post.imageUrl!,
+                  height: 80,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    height: 80,
+                    color: isLightMode
+                        ? const Color(0xFFF3F4F6)
+                        : const Color(0xFF2D2D2D),
+                    child: const Center(
+                      child: Icon(Icons.image_not_supported_outlined,
+                          color: Colors.grey, size: 24),
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          '$formattedAuthor • ${formatTimeAgo(post.createdAt)}',
-          style: TextStyle(
-            fontSize: 9,
-            color: subTextColor,
-          ),
-        ),
-        if (post.imageUrl != null && post.imageUrl!.isNotEmpty) ...[
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              'assets/Screenshot 2026-07-24 111253.png',
-              height: 80,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
-          ),
-        ],
-      ],
+      ),
     );
   }
 

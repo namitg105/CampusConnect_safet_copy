@@ -34,6 +34,12 @@ class MainPageController extends GetxController {
   var currentIndex = 0.obs;
   var privateChatSelectedTab = 0.obs;
 
+  @override
+  void onInit() {
+    super.onInit();
+    currentIndex.value = 0;
+  }
+
   void changeIndex(int index) {
     currentIndex.value = index;
   }

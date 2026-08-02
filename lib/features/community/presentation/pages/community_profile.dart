@@ -10,6 +10,8 @@ import '../../../chat/presentation/pages/chatPage.dart';
 import '../../../events/presentation/screens/event_community.dart';
 import 'assign_role.dart';
 import 'media_link.dart';
+import 'package:get/get.dart';
+import 'package:noteswap/features/private_chat/presentation/Design_By_Opencode_2/chat_screen.dart';
 
 String get currentUserId => FirebaseAuth.instance.currentUser?.uid ?? "";
 
@@ -104,15 +106,9 @@ class _GroupProfilePageState extends State<GroupProfilePage>
 
   Future<void> loadGroup() async {
     try {
-      if (currentUserId.isEmpty) {
-        if (mounted) {
-          setState(() {
-            isLoading = false;
-            hasError = true;
-          });
-        }
-        return;
-      }
+      final uid = currentUserId.isNotEmpty
+          ? currentUserId
+          : (FirebaseAuth.instance.currentUser?.uid ?? '');
 
       final groupDoc = await FirebaseFirestore.instance
           .collection('groups')
@@ -129,48 +125,62 @@ class _GroupProfilePageState extends State<GroupProfilePage>
         return;
       }
 
-      final memberDoc = await FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.groupId)
-          .collection('members')
-          .doc(currentUserId)
-          .get();
+      DocumentSnapshot? memberDoc;
+      DocumentSnapshot? requestDoc;
+      DocumentSnapshot? reviewDoc;
 
-      final requestDoc = await FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.groupId)
-          .collection('join_requests')
-          .doc(currentUserId)
-          .get();
+      if (uid.isNotEmpty) {
+        try {
+          memberDoc = await FirebaseFirestore.instance
+              .collection('groups')
+              .doc(widget.groupId)
+              .collection('members')
+              .doc(uid)
+              .get();
+        } catch (_) {}
 
-      // Fetch user's existing review if present
-      final reviewDoc = await FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.groupId)
-          .collection('reviews')
-          .doc(currentUserId)
-          .get();
+        try {
+          requestDoc = await FirebaseFirestore.instance
+              .collection('groups')
+              .doc(widget.groupId)
+              .collection('join_requests')
+              .doc(uid)
+              .get();
+        } catch (_) {}
 
-      final data = groupDoc.data()!;
+        try {
+          reviewDoc = await FirebaseFirestore.instance
+              .collection('groups')
+              .doc(widget.groupId)
+              .collection('reviews')
+              .doc(uid)
+              .get();
+        } catch (_) {}
+      }
+
+      final data = groupDoc.data() ?? {};
       creatorUid =
           (data["createdBy"] ?? data["adminId"] ?? "").toString().trim();
 
       if (creatorUid.isNotEmpty) {
-        final creatorDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(creatorUid)
-            .get();
-        if (creatorDoc.exists) {
-          creatorName = creatorDoc.data()?['name'] ??
-              creatorDoc.data()?['displayName'] ??
-              'Admin';
-        }
+        try {
+          final creatorDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(creatorUid)
+              .get();
+          if (creatorDoc.exists) {
+            final creatorData = creatorDoc.data() as Map<String, dynamic>?;
+            creatorName = creatorData?['name'] ??
+                creatorData?['displayName'] ??
+                'Admin';
+          }
+        } catch (_) {}
       }
 
       if (!mounted) return;
 
       setState(() {
-        groupName = data["name"] ?? "AI & ML Society";
+        groupName = data["name"] ?? "Community";
         groupImage = data["imageUrl"] ?? "";
         bannerImage = data["bannerUrl"] ?? "";
         groupDescription = data["description"] ?? "";
@@ -185,8 +195,8 @@ class _GroupProfilePageState extends State<GroupProfilePage>
         averageRating = (data["averageRating"] ?? 0.0).toDouble();
         ratingCount = data["ratingCount"] ?? 0;
 
-        if (reviewDoc.exists) {
-          final reviewData = reviewDoc.data();
+        if (reviewDoc != null && reviewDoc.exists) {
+          final reviewData = reviewDoc.data() as Map<String, dynamic>?;
           userExistingRating = (reviewData?['rating'] ?? 0).toInt();
           userExistingReview = reviewData?['review'] ?? "";
         }
@@ -203,11 +213,13 @@ class _GroupProfilePageState extends State<GroupProfilePage>
           createdOn = data["createdOn"] ?? "Recently";
         }
 
-        isCurrentMember = memberDoc.exists;
-        hasPendingRequest = requestDoc.exists;
+        isCurrentMember = memberDoc?.exists ?? false;
+        hasPendingRequest = requestDoc?.exists ?? false;
         isLoading = false;
+        hasError = false;
       });
     } catch (e) {
+      print("Error loading group: $e");
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -594,39 +606,78 @@ class _GroupProfilePageState extends State<GroupProfilePage>
     );
   }
 
-  // --- SUBMIT JOIN REQUEST ---
+  // --- SUBMIT JOIN REQUEST OR DIRECT JOIN ---
   Future<void> requestToJoinGroup() async {
     if (currentUserId.isEmpty || isCurrentMember || hasPendingRequest) return;
 
     setState(() => isLoading = true);
     try {
-      final requestRef = FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.groupId)
-          .collection('join_requests')
-          .doc(currentUserId);
+      if (isPublic) {
+        // Public Community: Automatically join directly without sending a request to admin!
+        final groupRef = FirebaseFirestore.instance
+            .collection('groups')
+            .doc(widget.groupId);
+        final memberRef = groupRef.collection('members').doc(currentUserId);
+        final joinedGroupRef = FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUserId)
+            .collection('joinedGroups')
+            .doc(widget.groupId);
 
-      await requestRef.set({
-        'requestedAt': FieldValue.serverTimestamp(),
-        'userId': currentUserId,
-        'status': 'pending',
-      });
-
-      if (mounted) {
-        setState(() {
-          hasPendingRequest = true;
-          isLoading = false;
+        await FirebaseFirestore.instance.runTransaction((transaction) async {
+          transaction.set(memberRef, {
+            'uid': currentUserId,
+            'joinedAt': FieldValue.serverTimestamp(),
+          });
+          transaction.set(joinedGroupRef, {
+            'joinedAt': FieldValue.serverTimestamp(),
+          });
+          transaction.update(groupRef, {
+            'memberCount': FieldValue.increment(1),
+            'remainingSeats': FieldValue.increment(-1),
+          });
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Join request sent! Waiting for admin approval.')),
-        );
+
+        if (mounted) {
+          setState(() {
+            isCurrentMember = true;
+            isLoading = false;
+            memberCount += 1;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Joined $groupName!')),
+          );
+        }
+      } else {
+        // Private Community: Send join request to admin for approval
+        final requestRef = FirebaseFirestore.instance
+            .collection('groups')
+            .doc(widget.groupId)
+            .collection('join_requests')
+            .doc(currentUserId);
+
+        await requestRef.set({
+          'requestedAt': FieldValue.serverTimestamp(),
+          'userId': currentUserId,
+          'status': 'pending',
+        });
+
+        if (mounted) {
+          setState(() {
+            hasPendingRequest = true;
+            isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Join request sent! Waiting for admin approval.')),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
         setState(() => isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to send request: $e")),
+          SnackBar(content: Text("Failed to join: $e")),
         );
       }
     }
@@ -2873,22 +2924,105 @@ class GroupMemberCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: () {
-                  if (isCurrentUserAdmin && uid != currentGroupCreatorUid) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AssignRolePage(
-                          groupId: groupId,
-                          targetUid: uid,
-                          targetName: displayName,
-                          targetUsername: username,
-                          targetImageUrl: displayImage,
-                          currentGroupCreatorUid: currentGroupCreatorUid,
-                        ),
-                      ),
+                onPressed: () async {
+                  final currentUid = FirebaseAuth.instance.currentUser?.uid;
+                  if (currentUid == null || currentUid.isEmpty) {
+                    Get.snackbar(
+                      "Authentication Required",
+                      "Please log in to send messages or friend requests.",
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.orange,
+                      colorText: Colors.white,
                     );
+                    return;
                   }
+
+                  if (currentUid == uid) {
+                    Get.snackbar(
+                      "Your Profile",
+                      "You cannot message yourself.",
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: const Color(0xFF6366F1),
+                      colorText: Colors.white,
+                    );
+                    return;
+                  }
+
+                  bool isFriend = false;
+                  try {
+                    final friendDoc = await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(currentUid)
+                        .collection('friends')
+                        .doc(uid)
+                        .get();
+                    isFriend = friendDoc.exists;
+                  } catch (_) {
+                    isFriend = false;
+                  }
+
+                  if (isFriend) {
+                    // Already friends -> Navigate directly to ChatScreen
+                    final List<String> ids = [currentUid, uid]..sort();
+                    final String roomId = ids.join('_');
+
+                    Get.to(() => ChatScreen(
+                          roomId: roomId,
+                          currentUid: currentUid,
+                          friendUid: uid,
+                          friendName: displayName,
+                          friendInitials: displayName.isNotEmpty
+                              ? displayName[0].toUpperCase()
+                              : 'U',
+                          friendAvatarColor: const Color(0xFF6366F1),
+                          friendImageUrl: displayImage,
+                        ));
+                    return;
+                  }
+
+                  // Not friends -> Check if request already pending in friend_requests
+                  bool isPending = false;
+                  try {
+                    final reqDoc = await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(uid)
+                        .collection('friend_requests')
+                        .doc(currentUid)
+                        .get();
+                    isPending = reqDoc.exists;
+                  } catch (_) {}
+
+                  if (isPending) {
+                    Get.snackbar(
+                      "Request Pending",
+                      "Friend request already sent to $displayName.",
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.blueAccent,
+                      colorText: Colors.white,
+                    );
+                    return;
+                  }
+
+                  // Show message dialog that user must be a friend before direct messaging
+                  Get.dialog(
+                    AlertDialog(
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                      title: const Text("Add Friend",
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      content: Text(
+                          "Add $displayName as a friend before Direct messaging."),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Get.back(),
+                          child: const Text("OK",
+                              style: TextStyle(
+                                  color: Color(0xFF6366F1),
+                                  fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  );
                 },
                 child: const Text(
                   "Message",

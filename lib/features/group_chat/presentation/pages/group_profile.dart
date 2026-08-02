@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Support for Clipboard deep links
 import 'package:noteswap/features/group_chat/presentation/pages/groups_page.dart';
-import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 import '../../../community/Widgets/community_profile.dart';
 
 class GroupDetailsPage extends StatefulWidget {

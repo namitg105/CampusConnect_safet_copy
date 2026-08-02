@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:noteswap/Constents/AppConstents.dart';
-import '../../Widgets/ReusableWidgets.dart';
+import 'OnboardingFlowScreen.dart';
 
 class OnboardingScreenThree extends StatelessWidget {
+  const OnboardingScreenThree({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: ReusableWidgets(imagePath: AppConstants.onboardingThree, text: AppConstants.onboardingTextThree,),
-    );
+    return const OnboardingFlowScreen(initialPage: 3);
   }
 }

@@ -84,6 +84,12 @@ class FirebaseAuthRepo implements AuthRepo {
       return user;
     } catch (e) {
       print("Firebase login error: $e");
+      if (e is FirebaseAuthException && e.code == 'network-request-failed') {
+        throw Exception('Network error: Please check your device internet connection and try again.');
+      }
+      if (e.toString().contains('network-request-failed') || e.toString().contains('UnknownHostException')) {
+        throw Exception('Network error: Unable to connect to Firebase. Please check your internet connection.');
+      }
       throw Exception('Login failed: $e');
     }
   }
@@ -126,6 +132,12 @@ class FirebaseAuthRepo implements AuthRepo {
 
       return user;
     } catch (e) {
+      if (e is FirebaseAuthException && e.code == 'network-request-failed') {
+        throw Exception('Network error: Please check your device internet connection and try again.');
+      }
+      if (e.toString().contains('network-request-failed') || e.toString().contains('UnknownHostException')) {
+        throw Exception('Network error: Unable to connect to Firebase. Please check your internet connection.');
+      }
       throw Exception("Register failed: $e");
     }
   }
@@ -232,14 +244,20 @@ class FirebaseAuthRepo implements AuthRepo {
     try {
       final currentUid = firebaseAuth.currentUser?.uid;
       if (currentUid != null) {
-        await firestore.collection('users').doc(currentUid).update({
-          'isOnline': false,
-        });
+        try {
+          await firestore.collection('users').doc(currentUid).update({
+            'isOnline': false,
+          });
+        } catch (_) {}
       }
-      await firebaseAuth.signOut();
-      await _googleAuthService.signOut();
+      try {
+        await firebaseAuth.signOut();
+      } catch (_) {}
+      try {
+        await _googleAuthService.signOut();
+      } catch (_) {}
     } catch (e) {
-      throw Exception("Logout failed: $e");
+      print("Logout exception: $e");
     }
   }
 

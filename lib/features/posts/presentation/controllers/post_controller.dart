@@ -147,6 +147,9 @@ class PostController extends GetxController {
     required String tag,
     String? imagePath,
     String? imageName,
+    String? mediaType,
+    String? mediaName,
+    PollData? poll,
   }) async {
     if (title.trim().isEmpty || body.trim().isEmpty) {
       errorMessage.value = 'Title and body cannot be empty.';
@@ -159,7 +162,6 @@ class PostController extends GetxController {
     try {
       String? imageUrl;
       if (imagePath != null && imageName != null) {
-        // Temporarily set a dummy URL to bypass Google Storage delinquency block
         imageUrl = 'dummy_image_url';
       }
 
@@ -179,6 +181,9 @@ class PostController extends GetxController {
         tag: tag,
         createdAt: DateTime.now(),
         imageUrl: imageUrl,
+        mediaType: mediaType,
+        mediaName: mediaName,
+        poll: poll,
       );
 
       await createPostUseCase.call(newPost);
@@ -274,7 +279,8 @@ class PostController extends GetxController {
     if (trendingIndex != -1) {
       final currentPost = trendingPosts[trendingIndex];
       final updatedCount = (currentPost.upvotes + delta).toInt();
-      trendingPosts[trendingIndex] = currentPost.copyWith(upvotes: updatedCount);
+      trendingPosts[trendingIndex] =
+          currentPost.copyWith(upvotes: updatedCount);
     }
   }
 
@@ -368,6 +374,23 @@ class PostController extends GetxController {
 
   bool getCommentLikeState(String commentId) =>
       likedComments[commentId] ?? false;
+
+  bool isCommentLiked(String commentId) => getCommentLikeState(commentId);
+
+  Future<void> toggleLikeComment(
+      String postId, String commentId, String userId) async {
+    await toggleCommentLike(postId, commentId, userId);
+  }
+
+  Future<void> deleteComment(String postId, String commentId,
+      [String? userId]) async {
+    final uid = userId ?? '';
+    await removeComment(
+      postId: postId,
+      commentId: commentId,
+      userId: uid,
+    );
+  }
 
   Future<void> removeComment({
     required String postId,

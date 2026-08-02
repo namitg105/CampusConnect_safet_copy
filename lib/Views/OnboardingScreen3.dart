@@ -17,8 +17,8 @@ class Onboardingscreen3 extends StatelessWidget {
       body: Stack(
         children: [
           // Main central illustration layered at the bottom of the Stack
-          
- Positioned(
+
+          Positioned(
             top: 0,
             left: 0,
             child: Image.asset(
@@ -36,7 +36,7 @@ class Onboardingscreen3 extends StatelessWidget {
               fit: BoxFit.contain,
             ),
           ),
-          
+
           Positioned(
             top: screenHeight * 0.12,
             left: -20,
@@ -46,7 +46,7 @@ class Onboardingscreen3 extends StatelessWidget {
               fit: BoxFit.contain,
             ),
           ),
-          
+
           // SafeArea protects the top navigation bar from device notches
           SafeArea(
             child: Padding(

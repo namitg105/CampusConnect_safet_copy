@@ -10,6 +10,7 @@ import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
 import 'package:noteswap/features/private_chat/data/private-chat-services/user_friend_add.dart';
 import 'package:noteswap/features/private_chat/domain/repos/chat_controller.dart';
 import 'package:noteswap/features/private_chat/domain/repos/online_user_controller.dart';
+import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepo authRepo;
@@ -31,6 +32,23 @@ class AuthCubit extends Cubit<AuthState> {
 
   //get current user
   AppUser? get currentUser => _currentUser;
+
+  //update current user name in memory & state
+  void updateCurrentUserName(String newName) {
+    if (_currentUser != null) {
+      _currentUser = AppUser(
+        uid: _currentUser!.uid,
+        email: _currentUser!.email,
+        name: newName,
+        collegeId: _currentUser!.collegeId,
+        isOnline: _currentUser!.isOnline,
+        isImageExists: _currentUser!.isImageExists,
+        imageURL: _currentUser!.imageURL,
+        phoneNumber: _currentUser!.phoneNumber,
+      );
+      emit(Authenticated(_currentUser!));
+    }
+  }
 
   //login with email pw
   Future<void> login(String email, String pw) async {
@@ -72,6 +90,9 @@ class AuthCubit extends Cubit<AuthState> {
 
   //logout
   Future<void> logout() async {
+    if (Get.isRegistered<MainPageController>()) {
+      Get.delete<MainPageController>(force: true);
+    }
     if (Get.isRegistered<ChatController>()) {
       Get.delete<ChatController>(force: true);
     }
@@ -102,7 +123,11 @@ class AuthCubit extends Cubit<AuthState> {
       }
     } catch (e) {
       print("LOGIN ERROR: $e");
-      emit(AuthError(e.toString()));
+      String errorMsg = e.toString();
+      if (errorMsg.contains('10:') || errorMsg.contains('ApiException: 10')) {
+        errorMsg = "Google Sign-In failed: Please ensure SHA-1 fingerprint is added in your Firebase Console.";
+      }
+      emit(AuthError(errorMsg));
       emit(Unauthenticated());
     }
   }

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -38,9 +39,7 @@ const String shareSvg = '''
 </svg>
 ''';
 
-/// Day 4: Individual Post Card component
-/// Displays a single post's title, body preview, author, tag, and vote count
-/// Styled dynamically to align with the uniConnect Figma specifications
+/// Individual Post Card component
 class PostCard extends StatelessWidget {
   final PostEntity post;
   final VoidCallback onTap;
@@ -53,7 +52,7 @@ class PostCard extends StatelessWidget {
   final bool isLightMode;
 
   const PostCard({
-    Key? key,
+    super.key,
     required this.post,
     required this.onTap,
     required this.onProfileTap,
@@ -63,7 +62,7 @@ class PostCard extends StatelessWidget {
     this.isUpvoted = false,
     this.isDownvoted = false,
     required this.isLightMode,
-  }) : super(key: key);
+  });
 
   String getInitials(String name) {
     final cleanName = name.contains('@') ? name.split('@').first : name;
@@ -73,6 +72,90 @@ class PostCard extends StatelessWidget {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
     return cleanName[0].toUpperCase();
+  }
+
+  Widget _buildMediaWidget(
+      BuildContext context, PostEntity post, bool isLightMode) {
+    if (post.imageUrl == null || post.imageUrl!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final mediaType = post.mediaType ?? 'image';
+
+    if (mediaType == 'document') {
+      return Container(
+        margin: const EdgeInsets.only(top: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color:
+              isLightMode ? const Color(0xFFECE7FF) : const Color(0xFF2D2D2D),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF6139ED).withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.description, color: Color(0xFF6139ED), size: 28),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                post.mediaName ?? 'Attached Document',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: isLightMode ? const Color(0xFF1A1A1E) : Colors.white,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const Icon(Icons.download_rounded,
+                color: Color(0xFF6139ED), size: 20),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          constraints: const BoxConstraints(maxHeight: 220),
+          width: double.infinity,
+          child: Image.network(
+            post.imageUrl!,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Container(
+              height: 120,
+              color: isLightMode
+                  ? const Color(0xFFF3F4F6)
+                  : const Color(0xFF2D2D2D),
+              child: const Center(
+                child: Icon(Icons.image_not_supported_outlined,
+                    color: Colors.grey, size: 36),
+              ),
+            ),
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Container(
+                height: 150,
+                color: isLightMode
+                    ? const Color(0xFFF3F4F6)
+                    : const Color(0xFF2D2D2D),
+                child: const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Color(0xFF6139ED)),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -236,19 +319,12 @@ class PostCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
 
+            if (post.poll != null) ...[
+              PollWidget(post: post, isLightMode: isLightMode),
+            ],
+
             if (post.imageUrl != null && post.imageUrl!.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  constraints: const BoxConstraints(maxHeight: 200),
-                  width: double.infinity,
-                  child: Image.asset(
-                    'assets/Screenshot 2026-07-24 111253.png',
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
+              _buildMediaWidget(context, post, isLightMode),
             ],
             const SizedBox(height: 14),
 
@@ -264,7 +340,7 @@ class PostCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -322,23 +398,16 @@ class PostCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 16),
 
-                // Comment Count Capsule
-                Container(
-                  decoration: BoxDecoration(
-                    color: isLightMode
-                        ? const Color(0xFFF3F4F6)
-                        : const Color(0xFF2D2D2D),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                // Comment Action Button
+                GestureDetector(
+                  onTap: onTap,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       SvgPicture.string(
                         commentSvg,
-                        width: 14,
-                        height: 14,
+                        width: 16,
+                        height: 16,
                         colorFilter: ColorFilter.mode(
                           isLightMode ? Colors.grey[600]! : Colors.grey[400]!,
                           BlendMode.srcIn,
@@ -346,11 +415,12 @@ class PostCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        post.commentCount.toString(),
-                        style: GoogleFonts.poppins(
+                        '${post.commentCount} Comments',
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: textColor,
+                          color:
+                              isLightMode ? Colors.grey[600] : Colors.grey[400],
                         ),
                       ),
                     ],
@@ -358,7 +428,7 @@ class PostCard extends StatelessWidget {
                 ),
                 const Spacer(),
 
-                // Share Action Button (NO capsule background!)
+                // Share Action Button
                 GestureDetector(
                   onTap: () {
                     Share.share(
@@ -393,6 +463,184 @@ class PostCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class PollWidget extends StatefulWidget {
+  final PostEntity post;
+  final bool isLightMode;
+
+  const PollWidget({
+    super.key,
+    required this.post,
+    required this.isLightMode,
+  });
+
+  @override
+  State<PollWidget> createState() => _PollWidgetState();
+}
+
+class _PollWidgetState extends State<PollWidget> {
+  late PollData _poll;
+
+  @override
+  void initState() {
+    super.initState();
+    _poll = widget.post.poll!;
+  }
+
+  @override
+  void didUpdateWidget(covariant PollWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.post.poll != null) {
+      _poll = widget.post.poll!;
+    }
+  }
+
+  void _vote(PollOption option, String currentUid) {
+    if (currentUid.isEmpty) return;
+
+    final isVoted = option.votes.contains(currentUid);
+    final newOptions = _poll.options.map((opt) {
+      final newVotes = List<String>.from(opt.votes);
+      if (opt.text == option.text) {
+        if (isVoted) {
+          newVotes.remove(currentUid);
+        } else {
+          newVotes.add(currentUid);
+        }
+      } else {
+        newVotes.remove(currentUid);
+      }
+      return PollOption(text: opt.text, votes: newVotes);
+    }).toList();
+
+    final updatedPoll = PollData(question: _poll.question, options: newOptions);
+
+    // 1. INSTANT UI UPDATE (0ms delay)
+    setState(() {
+      _poll = updatedPoll;
+    });
+
+    // 2. BACKGROUND FIREBASE FIRESTORE SYNC
+    FirebaseFirestore.instance
+        .collection('posts')
+        .doc(widget.post.id)
+        .update({'poll': updatedPoll.toJson()}).catchError((e) {
+      // Background sync error handling
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final totalVotes = _poll.totalVotes;
+    final isLightMode = widget.isLightMode;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isLightMode ? const Color(0xFFF8F9FE) : const Color(0xFF25252A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF6139ED).withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.poll_outlined,
+                  color: Color(0xFF6139ED), size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _poll.question,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: isLightMode ? const Color(0xFF1A1A1E) : Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ..._poll.options.map((option) {
+            final isVoted = option.votes.contains(currentUid);
+            final percentage = totalVotes > 0
+                ? (option.votes.length / totalVotes * 100).round()
+                : 0;
+
+            return GestureDetector(
+              onTap: () => _vote(option, currentUid),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isVoted
+                      ? const Color(0xFF6139ED).withOpacity(0.12)
+                      : (isLightMode ? Colors.white : const Color(0xFF1E1E22)),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isVoted
+                        ? const Color(0xFF6139ED)
+                        : (isLightMode
+                            ? const Color(0xFFE5E7EB)
+                            : const Color(0xFF374151)),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          isVoted
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                          color:
+                              isVoted ? const Color(0xFF6139ED) : Colors.grey,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          option.text,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight:
+                                isVoted ? FontWeight.bold : FontWeight.w500,
+                            color: isLightMode
+                                ? const Color(0xFF1A1A1E)
+                                : Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '$percentage%',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF6139ED),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+          const SizedBox(height: 4),
+          Text(
+            '$totalVotes ${totalVotes == 1 ? 'vote' : 'votes'}',
+            style: const TextStyle(fontSize: 11, color: Colors.grey),
+          ),
+        ],
       ),
     );
   }

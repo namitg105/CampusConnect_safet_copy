@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -184,16 +186,36 @@ class GroupCard extends StatelessWidget {
                   ),
                 ),
                 onPressed: () async {
-                  await context.read<GroupCubit>().joinGroup(group.id);
-
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          "Joined ${group.name}",
-                        ),
-                      ),
-                    );
+                  if (group.isPublic) {
+                    await context.read<GroupCubit>().joinGroup(group.id);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Joined ${group.name}")),
+                      );
+                    }
+                  } else {
+                    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+                    if (userId.isNotEmpty) {
+                      await FirebaseFirestore.instance
+                          .collection('groups')
+                          .doc(group.id)
+                          .collection('join_requests')
+                          .doc(userId)
+                          .set({
+                        'userId': userId,
+                        'status': 'pending',
+                        'requestedAt': FieldValue.serverTimestamp(),
+                      });
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              "Join request sent to ${group.name} admin!",
+                            ),
+                          ),
+                        );
+                      }
+                    }
                   }
                 },
                 child: const Text("Join"),

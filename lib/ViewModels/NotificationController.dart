@@ -37,14 +37,49 @@ class NotificationController extends GetxController {
   void _listen(String uid) {
     _cancelSubs();
 
-    // Listen to top-level notifications collection
+    final user = FirebaseAuth.instance.currentUser;
+    final currentUid = user?.uid ?? '';
+    final userEmail = user?.email?.toLowerCase().trim() ?? '';
+    final userDomain = userEmail.contains('@') ? userEmail.split('@').last : '';
+
+    if (currentUid.isEmpty) {
+      unreadCount.value = 0;
+      return;
+    }
+
+    // Listen to notifications collection for real-time unread count
     _notifSub = FirebaseFirestore.instance
         .collection('notifications')
-        .where('recipientId', isEqualTo: uid)
-        .where('isRead', isEqualTo: false)
         .snapshots()
         .listen((snapshot) {
-      unreadCount.value = snapshot.docs.length;
+      int count = 0;
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final isRead = (data['isRead'] == true) || (data['isSeen'] == true);
+        if (isRead) continue;
+
+        final recipientId = data['recipientId'] as String?;
+        final senderEmail = (data['senderEmail'] as String?)?.toLowerCase().trim();
+        final collegeId = (data['collegeId'] as String?)?.toLowerCase().trim();
+
+        bool isForUser = false;
+        if (recipientId != null && recipientId.isNotEmpty) {
+          if (recipientId == currentUid) isForUser = true;
+        } else if (userDomain.isNotEmpty) {
+          if (senderEmail != null && senderEmail.contains('@')) {
+            final senderDomain = senderEmail.split('@').last.toLowerCase().trim();
+            if (senderDomain == userDomain) isForUser = true;
+          } else if (collegeId != null && collegeId.isNotEmpty) {
+            if (collegeId == userDomain) isForUser = true;
+          }
+        }
+
+        if (isForUser) {
+          count++;
+        }
+      }
+
+      unreadCount.value = count;
     }, onError: (e) {
       print('Top-level unread notification error: $e');
     });

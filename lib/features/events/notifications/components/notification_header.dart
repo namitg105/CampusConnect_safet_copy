@@ -46,22 +46,7 @@ class NotificationHeader extends StatelessWidget {
               ),
             ),
           ),
-          Container(
-            height: 24,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF7C5CFA),
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: Text(
-              '• $unreadCount unread',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+          const SizedBox.shrink(),
           TextButton(
             onPressed: onClearAllTap,
             child: const Text(

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'chat_request_model.dart';
 
@@ -54,22 +55,44 @@ class RequestAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = request.fromImageURL.isNotEmpty;
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(request.fromUid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final userData = (snapshot.hasData && snapshot.data!.exists)
+            ? snapshot.data!.data() as Map<String, dynamic>?
+            : null;
+        final liveImage = userData?['profileImage'] as String? ??
+            userData?['ImageURL'] as String? ??
+            request.fromImageURL;
+        final liveName = userData?['name'] as String? ?? request.fromName;
+        final nameParts = liveName.trim().split(' ').where((p) => p.isNotEmpty).toList();
+        final String initials = nameParts.length >= 2
+            ? '${nameParts[0][0]}${nameParts[1][0]}'.toUpperCase()
+            : (nameParts.isNotEmpty && nameParts[0].isNotEmpty
+                ? nameParts[0][0].toUpperCase()
+                : request.initials);
 
-    return CircleAvatar(
-      radius: 24,
-      backgroundColor: request.avatarColor,
-      backgroundImage: hasImage ? NetworkImage(request.fromImageURL) : null,
-      child: hasImage
-          ? null
-          : Text(
-              request.initials,
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF1F1F1F),
-              ),
-            ),
+        final hasImage = liveImage.isNotEmpty;
+
+        return CircleAvatar(
+          radius: 24,
+          backgroundColor: request.avatarColor,
+          backgroundImage: hasImage ? NetworkImage(liveImage) : null,
+          child: hasImage
+              ? null
+              : Text(
+                  initials,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1F1F1F),
+                  ),
+                ),
+        );
+      },
     );
   }
 }
@@ -182,13 +205,27 @@ class IncomingRequestCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  request.fromName,
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1F1F1F),
-                  ),
+                StreamBuilder<DocumentSnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(request.fromUid)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    final userData = (snapshot.hasData && snapshot.data!.exists)
+                        ? snapshot.data!.data() as Map<String, dynamic>?
+                        : null;
+                    final liveName = userData?['name'] as String? ?? request.fromName;
+                    final displayName =
+                        liveName.trim().isNotEmpty ? liveName.trim() : request.fromName;
+                    return Text(
+                      displayName,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1F1F1F),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -229,13 +266,27 @@ class SentRequestCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  request.fromName,
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1F1F1F),
-                  ),
+                StreamBuilder<DocumentSnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(request.fromUid)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    final userData = (snapshot.hasData && snapshot.data!.exists)
+                        ? snapshot.data!.data() as Map<String, dynamic>?
+                        : null;
+                    final liveName = userData?['name'] as String? ?? request.fromName;
+                    final displayName =
+                        liveName.trim().isNotEmpty ? liveName.trim() : request.fromName;
+                    return Text(
+                      displayName,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1F1F1F),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -312,13 +363,27 @@ class IgnoredRequestCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  request.fromName,
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1F1F1F),
-                  ),
+                StreamBuilder<DocumentSnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(request.fromUid)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    final userData = (snapshot.hasData && snapshot.data!.exists)
+                        ? snapshot.data!.data() as Map<String, dynamic>?
+                        : null;
+                    final liveName = userData?['name'] as String? ?? request.fromName;
+                    final displayName =
+                        liveName.trim().isNotEmpty ? liveName.trim() : request.fromName;
+                    return Text(
+                      displayName,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1F1F1F),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 4),
                 Text(

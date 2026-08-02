@@ -81,7 +81,9 @@ class DocumentPreviewScreen extends StatelessWidget {
                   barrierDismissible: false,
                 );
 
-                final chatController = Get.find<ChatController>();
+                final chatController = Get.isRegistered<ChatController>()
+                    ? Get.find<ChatController>()
+                    : Get.put(ChatController());
                 final authController = Get.find<UserService>();
                 final StorageService storageService = StorageService();
 

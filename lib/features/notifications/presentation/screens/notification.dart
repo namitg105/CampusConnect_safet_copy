@@ -1,7 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Run 'flutter pub add intl' for clean date formatting
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
+import 'package:noteswap/features/community/presentation/pages/community_profile.dart';
+import 'package:noteswap/features/private_chat/presentation/Design_By_Opencode_2/chat_screen.dart';
 
 import '../../domain/model.dart';
 
@@ -74,8 +78,43 @@ class NotificationPage extends StatelessWidget {
             );
           }
 
+          final currentUser = FirebaseAuth.instance.currentUser;
+          final currentUid = currentUser?.uid ?? '';
+          final currentUserEmail =
+              currentUser?.email?.toLowerCase().trim() ?? '';
+          final currentDomain = currentUserEmail.contains('@')
+              ? currentUserEmail.split('@').last.toLowerCase().trim()
+              : '';
+
           final notifications = snapshot.data!.docs
-              .map((doc) => NotificationModel.fromDoc(doc))
+              .map((doc) => MapEntry(doc, NotificationModel.fromDoc(doc)))
+              .where((entry) {
+                final docData = entry.key.data() as Map<String, dynamic>? ?? {};
+                final recipientId = docData['recipientId'] as String?;
+                final senderEmail = entry.value.senderEmail
+                        ?.toLowerCase()
+                        .trim() ??
+                    (docData['senderEmail'] as String?)?.toLowerCase().trim();
+
+                // If recipientId is specified, check recipient or domain match
+                if (recipientId != null &&
+                    recipientId.isNotEmpty &&
+                    recipientId != currentUid) {
+                  return false;
+                }
+
+                // If domain after @ is present, restrict notifications to same domain
+                if (currentDomain.isNotEmpty &&
+                    senderEmail != null &&
+                    senderEmail.contains('@')) {
+                  final senderDomain =
+                      senderEmail.split('@').last.toLowerCase().trim();
+                  return senderDomain == currentDomain;
+                }
+
+                return true;
+              })
+              .map((entry) => entry.value)
               .toList();
 
           return ListView.separated(
@@ -86,7 +125,7 @@ class NotificationPage extends StatelessWidget {
               final notification = notifications[index];
 
               // Formatting the date cleanly (e.g., "Oct 24" or "14:32")
-              final date = notification.createdAt?.toDate() ?? DateTime.now();
+              final date = notification.createdAt.toDate();
               final formattedDate = DateFormat('MMM d').format(date);
 
               return Container(
@@ -107,8 +146,41 @@ class NotificationPage extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: InkWell(
-                    onTap: () {
-                      // Handle notification tap (e.g., mark as read or navigate)
+                    onTap: () async {
+                      try {
+                        await FirebaseFirestore.instance
+                            .collection('notifications')
+                            .doc(notification.id)
+                            .update({'isRead': true, 'isSeen': true});
+                      } catch (_) {}
+
+                      if (notification.groupId != null &&
+                          notification.groupId!.isNotEmpty) {
+                        Get.to(() => GroupProfilePage(
+                              groupId: notification.groupId!,
+                            ));
+                      } else if (notification.senderId != null &&
+                          notification.senderId!.isNotEmpty) {
+                        final currentUid =
+                            FirebaseAuth.instance.currentUser?.uid ?? '';
+                        final friendUid = notification.senderId!;
+                        final List<String> ids = [currentUid, friendUid]
+                          ..sort();
+                        final String roomId =
+                            notification.chatId ?? ids.join('_');
+                        final name =
+                            notification.senderName ?? notification.title;
+
+                        Get.to(() => ChatScreen(
+                              roomId: roomId,
+                              currentUid: currentUid,
+                              friendUid: friendUid,
+                              friendName: name,
+                              friendInitials:
+                                  name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                              friendAvatarColor: const Color(0xFF6366F1),
+                            ));
+                      }
                     },
                     child: Padding(
                       padding: const EdgeInsets.all(16),

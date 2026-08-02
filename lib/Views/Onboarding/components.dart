@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 
 class Splash_Widget_Components {
   const Splash_Widget_Components({required this.width, required this.height});
@@ -6,9 +8,8 @@ class Splash_Widget_Components {
   final double width;
   final double height;
 
-  PreferredSizeWidget AppBarDesign() {
+  PreferredSizeWidget AppBarDesign({VoidCallback? onSkip}) {
     return AppBar(
-      automaticallyImplyLeading: false,
       title: Row(
         mainAxisAlignment: MainAxisAlignment.start,
         spacing: width * 0.025,
@@ -21,7 +22,20 @@ class Splash_Widget_Components {
           RichTextDesign(),
         ],
       ),
-      actions: const [],
+      actions: [
+        TextButton(
+          onPressed: onSkip ?? () => Get.offAll(() => const AuthPage()),
+          child: Text(
+            "Skip",
+            style: TextStyle(
+              color: const Color.fromRGBO(114, 75, 230, 1),
+              fontSize: width * 0.04,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        SizedBox(width: width * 0.03),
+      ],
     );
   }
 
@@ -51,7 +65,7 @@ class Splash_Widget_Components {
   }
 
   Widget CenterPageDesign({required String path}) {
-    return Image.asset(path);
+    return Container(child: Image.asset(path));
   }
 
   Widget CenterPageContentDesign({required List<String> contentArray}) {
