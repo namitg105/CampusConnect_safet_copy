@@ -36,7 +36,7 @@ class FirestoreNotesRepository implements NotesRepository {
     final snap =
         await _notes.orderBy('createdAt', descending: true).limit(20).get();
     return snap.docs
-        .where((d) => _isValidNote(d.data() ?? {}))
+        .where((d) => _isValidNote(d.data()))
         .take(2)
         .map(_toNote)
         .toList();
@@ -47,7 +47,7 @@ class FirestoreNotesRepository implements NotesRepository {
     final snap =
         await _notes.orderBy('createdAt', descending: true).limit(20).get();
     return snap.docs
-        .where((d) => _isValidNote(d.data() ?? {}))
+        .where((d) => _isValidNote(d.data()))
         .take(3)
         .map(_toNote)
         .toList();
@@ -57,15 +57,17 @@ class FirestoreNotesRepository implements NotesRepository {
   Future<List<Note>> searchNotes(String query) async {
     final snap = await _notes.limit(100).get();
     final notes = snap.docs
-        .where((d) => _isValidNote(d.data() ?? {}))
+        .where((d) => _isValidNote(d.data()))
         .map(_toNote)
         .toList();
     final q = query.trim().toLowerCase();
     if (q.isEmpty) return notes;
     return notes.where((note) {
-      return note.title.toLowerCase().contains(q) ||
-          note.subject.toLowerCase().contains(q) ||
-          note.author.toLowerCase().contains(q);
+      final t = note.title.toLowerCase();
+      final u = note.university.toLowerCase();
+      final c = note.courseName.toLowerCase();
+      final s = note.subjectName.toLowerCase();
+      return t.contains(q) || u.contains(q) || c.contains(q) || s.contains(q);
     }).toList();
   }
 
