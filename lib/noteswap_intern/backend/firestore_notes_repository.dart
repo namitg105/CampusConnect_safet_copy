@@ -64,10 +64,9 @@ class FirestoreNotesRepository implements NotesRepository {
     if (q.isEmpty) return notes;
     return notes.where((note) {
       final t = note.title.toLowerCase();
-      final u = note.university.toLowerCase();
-      final c = note.courseName.toLowerCase();
-      final s = note.subjectName.toLowerCase();
-      return t.contains(q) || u.contains(q) || c.contains(q) || s.contains(q);
+      final s = note.subject.toLowerCase();
+      final a = note.author.toLowerCase();
+      return t.contains(q) || s.contains(q) || a.contains(q);
     }).toList();
   }
 
@@ -147,7 +146,7 @@ class FirestoreNotesRepository implements NotesRepository {
     final snap =
         await _notes.where('authorId', isEqualTo: uid).get();
     return snap.docs
-        .where((d) => _isValidNote(d.data() ?? {}))
+        .where((d) => _isValidNote(d.data()))
         .map(_toDashboardNote)
         .toList();
   }
