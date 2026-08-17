@@ -1782,12 +1782,17 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         ),
                         const SizedBox(height: 12),
                         SpeakerCard(
-                          speakerName:
-                              widget.event.speakerName ?? 'Guest Speaker',
-                          speakerDescription: widget.event.speakerDescription ??
-                              'Event Host & Keynote Presenter',
-                          speakerAvatarUrl: widget.event.speakerAvatarUrl ??
-                              'https://picsum.photos/id/1027/200',
+                          speakerName: (widget.event.speakerName != null &&
+                                  widget.event.speakerName!.trim().isNotEmpty)
+                              ? widget.event.speakerName!.trim()
+                              : 'Guest Speaker',
+                          speakerDescription:
+                              (widget.event.speakerDescription != null &&
+                                      widget.event.speakerDescription!
+                                          .trim()
+                                          .isNotEmpty)
+                                  ? widget.event.speakerDescription!.trim()
+                                  : 'Event Host & Presenter',
                         ),
                         const SizedBox(height: 12),
                         RegisteredUsersFooter(
@@ -1850,17 +1855,40 @@ class EventHeroBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool hasValidCustomBanner = event.bannerUrl != null &&
+        event.bannerUrl!.trim().isNotEmpty &&
+        !event.bannerUrl!.contains('picsum.photos/id/237') &&
+        !event.bannerUrl!.contains('picsum.photos');
+
     return Container(
       height: 170,
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        image: DecorationImage(
-          image: NetworkImage(
-            event.bannerUrl ?? 'https://picsum.photos/id/237/900/500',
+        gradient: !hasValidCustomBanner
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF4F46E5),
+                  Color(0xFF7C3AED),
+                  Color(0xFF1E1B4B),
+                ],
+              )
+            : null,
+        image: hasValidCustomBanner
+            ? DecorationImage(
+                image: NetworkImage(event.bannerUrl!),
+                fit: BoxFit.cover,
+              )
+            : null,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6366F1).withOpacity(0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          fit: BoxFit.cover,
-        ),
+        ],
       ),
       child: Container(
         decoration: BoxDecoration(
@@ -2148,17 +2176,20 @@ class AboutEventCard extends StatelessWidget {
 class SpeakerCard extends StatelessWidget {
   final String speakerName;
   final String speakerDescription;
-  final String speakerAvatarUrl;
+  final String? speakerAvatarUrl;
 
   const SpeakerCard({
     super.key,
     required this.speakerName,
     required this.speakerDescription,
-    required this.speakerAvatarUrl,
+    this.speakerAvatarUrl,
   });
 
   @override
   Widget build(BuildContext context) {
+    final String displayName =
+        speakerName.trim().isEmpty ? 'Guest Speaker' : speakerName.trim();
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 14),
@@ -2182,19 +2213,17 @@ class SpeakerCard extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: _lightPurpleBg,
-                backgroundImage: speakerAvatarUrl.isNotEmpty
-                    ? NetworkImage(speakerAvatarUrl)
-                    : null,
-                child: speakerAvatarUrl.isEmpty
-                    ? const Icon(
-                        Icons.person,
-                        color: _primaryPurple,
-                        size: 22,
-                      )
-                    : null,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _primaryPurple.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.mic_none_rounded,
+                  color: _primaryPurple,
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -2202,24 +2231,28 @@ class SpeakerCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      speakerName,
+                      displayName,
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 13,
                         fontWeight: FontWeight.bold,
                         color: _textDark,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      speakerDescription,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: _textMuted,
-                        height: 1.3,
+                    if (speakerDescription.trim().isNotEmpty &&
+                        speakerDescription !=
+                            'Event Host & Keynote Presenter') ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        speakerDescription,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: _textMuted,
+                          height: 1.3,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),

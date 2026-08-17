@@ -1434,10 +1434,17 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         ),
                         const SizedBox(height: 12),
                         SpeakerCard(
-                          speakerName:
-                              widget.event.speakerName ?? 'Guest Speaker',
+                          speakerName: (widget.event.speakerName != null &&
+                                  widget.event.speakerName!.trim().isNotEmpty)
+                              ? widget.event.speakerName!.trim()
+                              : 'Guest Speaker',
                           speakerDescription:
-                              widget.event.speakerDescription ?? '',
+                              (widget.event.speakerDescription != null &&
+                                      widget.event.speakerDescription!
+                                          .trim()
+                                          .isNotEmpty)
+                                  ? widget.event.speakerDescription!.trim()
+                                  : '',
                         ),
                         const SizedBox(height: 12),
                         RegisteredUsersFooter(
@@ -1501,8 +1508,9 @@ class EventHeroBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool hasValidCustomBanner = event.bannerUrl != null &&
-        event.bannerUrl!.isNotEmpty &&
-        !event.bannerUrl!.contains('picsum.photos/id/237');
+        event.bannerUrl!.trim().isNotEmpty &&
+        !event.bannerUrl!.contains('picsum.photos/id/237') &&
+        !event.bannerUrl!.contains('picsum.photos');
 
     return Container(
       height: 170,
@@ -1842,6 +1850,9 @@ class SpeakerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String displayName =
+        speakerName.trim().isEmpty ? 'Guest Speaker' : speakerName.trim();
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 14),
@@ -1883,7 +1894,7 @@ class SpeakerCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      speakerName,
+                      displayName,
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,

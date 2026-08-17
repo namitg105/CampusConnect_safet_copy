@@ -131,12 +131,8 @@ class _CreateEventPageState extends State<CreateEventPage> {
         'speakerDescription': _speakerDescController.text.trim().isEmpty
             ? 'Event Host & Presenter'
             : _speakerDescController.text.trim(),
-        'speakerAvatarUrl': _speakerAvatarController.text.trim().isEmpty
-            ? 'https://picsum.photos/id/1027/200'
-            : _speakerAvatarController.text.trim(),
-        'bannerUrl': _bannerUrlController.text.trim().isEmpty
-            ? 'https://picsum.photos/id/237/900/500'
-            : _bannerUrlController.text.trim(),
+        'speakerAvatarUrl': _speakerAvatarController.text.trim(),
+        'bannerUrl': _bannerUrlController.text.trim(),
         'filledSpots': 0,
         'maxSpots': 100,
         'createdAt': Timestamp.now(),
