@@ -10,10 +10,12 @@ import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
 import 'package:noteswap/features/auth/presentation/pages/SplashScreen.dart';
 import 'package:noteswap/features/private_chat/data/private-chat-services/user_service.dart';
 import 'package:noteswap/firebase_options.dart';
-import 'ViewModels/DarkModeViewModels.dart'; // Retained member's theme controller
-import 'core/di/injection.dart'; // DI injection init
+
+import 'ViewModels/DarkModeViewModels.dart';
 import 'ViewModels/NotificationController.dart';
-import 'features/home/presentation/pages/main_page.dart'; // MainPage
+import 'core/di/injection.dart'; // DI injection init
+
+import 'features/home/presentation/pages/main_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

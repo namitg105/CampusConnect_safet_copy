@@ -227,8 +227,8 @@ class MainPage extends StatelessWidget {
 }
 
 class _NavBarIcon extends StatelessWidget {
-  final IconData? icon;
   final String? assetPath;
+  final IconData? icon;
   final String label;
   final bool isSelected;
   final Color activeColor;
@@ -236,88 +236,47 @@ class _NavBarIcon extends StatelessWidget {
   final VoidCallback onTap;
 
   const _NavBarIcon({
-    this.icon,
     this.assetPath,
+    this.icon,
     required this.label,
     required this.isSelected,
     required this.activeColor,
     required this.inactiveColor,
     required this.onTap,
-  }) : assert(
-          icon != null || assetPath != null,
-          'Either icon or assetPath must be provided',
-        );
+  });
 
   @override
   Widget build(BuildContext context) {
-    final currentColor = isSelected ? activeColor : inactiveColor;
-
-    final screenWidth = MediaQuery.of(context).size.width;
-    final bool compact = screenWidth < 400;
-    final double iconSize = compact ? 18 : 20;
-    final double fontSize = compact ? 8.5 : 9.5;
-    final EdgeInsets padding = EdgeInsets.symmetric(
-      horizontal: compact ? 6 : 10,
-      vertical: compact ? 5 : 8,
-    );
-
+    final color = isSelected ? activeColor : inactiveColor;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        padding: padding,
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: activeColor.withOpacity(0.15),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ]
-              : null,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (assetPath != null)
-              Image.asset(
-                assetPath!,
-                width: iconSize,
-                height: iconSize,
-                color:
-                    currentColor, // Tint the asset with active/inactive color
-                errorBuilder: (_, __, ___) => Icon(
-                  Icons.groups_rounded,
-                  size: iconSize,
-                  color: currentColor,
-                ),
-              )
-            else
-              Icon(
-                icon,
-                size: iconSize,
-                color: currentColor,
-              ),
-            const SizedBox(height: 2),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                label,
-                maxLines: 1,
-                style: TextStyle(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w700,
-                  color: currentColor,
-                ),
-              ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (assetPath != null)
+            Image.asset(
+              assetPath!,
+              width: 20,
+              height: 20,
+              color: color,
+            )
+          else if (icon != null)
+            Icon(
+              icon,
+              size: 20,
+              color: color,
             ),
-          ],
-        ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -327,27 +286,34 @@ class _CreateButton extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
 
-  const _CreateButton({required this.color, required this.onTap});
+  const _CreateButton({
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 44,
-        height: 44,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
           color: color,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
               color: color.withOpacity(0.35),
-              blurRadius: 12,
+              blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: const Icon(Icons.add_rounded, color: Colors.white, size: 26),
+        child: const Icon(
+          Icons.add_rounded,
+          color: Colors.white,
+          size: 28,
+        ),
       ),
     );
   }
