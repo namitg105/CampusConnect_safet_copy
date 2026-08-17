@@ -95,7 +95,6 @@ flutter:
     - assets/images_intro/
     - assets/images_register/
     - assets/chat_assets/
-    - assets/models/
     - assets/community/
     - assets/posts_screen_assets/
 
