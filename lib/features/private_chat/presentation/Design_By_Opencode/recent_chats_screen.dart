@@ -1,11 +1,12 @@
-import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../data/private-chat-services/user_friend_add.dart';
-import '../../domain/repos/chat_controller.dart';
+import '../../../auth/domain/entities/app_user.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../domain/entities/chat_room.dart';
+import '../bloc/chat_rooms/chat_rooms_bloc.dart';
+import '../bloc/friends/friends_bloc.dart';
+import '../common_widgets.dart';
 import '../Design_By_Opencode_2/chat_screen.dart';
 import 'recent_chats_model.dart';
 import 'recent_chats_components.dart';
@@ -25,79 +26,18 @@ class RecentChatsScreen extends StatefulWidget {
 }
 
 class _RecentChatsScreenState extends State<RecentChatsScreen> {
-  late ChatController _chatController;
-  late UserController _userController;
-
+  // Rebuilt from FriendsBloc + ChatRoomsBloc on every build.
   List<ConversationData> _activeConversations = [];
   List<ConversationData> _unreadConversations = [];
   List<ConversationData> _blockedConversations = [];
-  bool _isLoading = true;
-  String? _currentUid;
 
-  StreamSubscription? _friendsSub;
-  StreamSubscription? _roomsSub;
-  StreamSubscription? _statusSub;
-  StreamSubscription? _blockedSub;
-
-  @override
-  void initState() {
-    super.initState();
-    _chatController = Get.isRegistered<ChatController>()
-        ? Get.find<ChatController>()
-        : Get.put(ChatController());
-    _userController = Get.isRegistered<UserController>()
-        ? Get.find<UserController>()
-        : Get.put(UserController());
-
-    _currentUid = FirebaseAuth.instance.currentUser?.uid;
-
-    if (_currentUid != null) {
-      _userController.listenToFriendsList(_currentUid!);
-      _userController.listenToBlockedUsers(_currentUid!);
-      _chatController.listenToChatRooms(_currentUid!);
-    }
-
-    _friendsSub = _userController.friendsList.listen((_) => _rebuild());
-    _roomsSub = _chatController.chatRooms.listen((_) => _rebuild());
-    _statusSub = _userController.friendStatuses.listen((_) => _rebuild());
-    _blockedSub = _userController.blockedUids.listen((_) => _rebuild());
-
-    WidgetsBinding.instance.addPostFrameCallback((_) => _rebuild());
+  String? get _currentUid {
+    final authState = context.read<AuthBloc>().state;
+    return authState is Authenticated ? authState.user.uid : null;
   }
 
-  @override
-  void didUpdateWidget(covariant RecentChatsScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.searchQuery != widget.searchQuery ||
-        oldWidget.selectedTab != widget.selectedTab) {
-      _rebuild();
-    }
-  }
-
-  @override
-  void dispose() {
-    _friendsSub?.cancel();
-    _roomsSub?.cancel();
-    _statusSub?.cancel();
-    _blockedSub?.cancel();
-    super.dispose();
-  }
-
-  void _rebuild() {
-    if (!mounted) return;
-    _mergeData();
-    _isLoading = false;
-  }
-
-  String _generateRoomId(String uid1, String uid2) {
-    final ids = [uid1, uid2];
-    ids.sort();
-    return ids.join('_');
-  }
-
-  String _formatTimestamp(Timestamp? ts) {
-    if (ts == null) return '';
-    final dt = ts.toDate();
+  String _formatTimestamp(DateTime? dt) {
+    if (dt == null) return '';
     final now = DateTime.now();
     final diff = now.difference(dt);
     if (diff.inMinutes < 1) return 'Just now';
@@ -109,38 +49,28 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
     return '${dt.day}/${dt.month}/${dt.year}';
   }
 
-  void _mergeData() {
-    final friends = _userController.friendsList;
-    final rooms = _chatController.chatRooms;
-    final blocked = _userController.blockedUids;
+  /// Joins friends with their room (last message, unread count) and sorts
+  /// them into active / unread / blocked.
+  void _mergeData(FriendsState friendsState, List<ChatRoomSummary> rooms) {
+    final currentUid = _currentUid;
+    if (currentUid == null) return;
 
-    final roomsMap = <String, Map<String, dynamic>>{};
-    for (final room in rooms) {
-      roomsMap[room['id'] as String] = room;
-    }
-
+    final roomsById = {for (final room in rooms) room.id: room};
     final active = <ConversationData>[];
     final unread = <ConversationData>[];
     final blockedList = <ConversationData>[];
-
     final query = widget.searchQuery.toLowerCase();
 
-    for (final friend in friends) {
+    for (final AppUser friend in friendsState.friends) {
       if (query.isNotEmpty && !friend.name.toLowerCase().contains(query)) {
         continue;
       }
 
-      final roomId = _generateRoomId(_currentUid!, friend.uid);
-      final room = roomsMap[roomId];
-
-      final isOnline = _userController.isFriendOnline(friend.uid);
-      final unreadCount =
-          room != null ? (room['unreadCount_$_currentUid'] as int? ?? 0) : 0;
-
-      final ts = room?['lastMessageTimestamp'] as Timestamp?;
-      final time = _formatTimestamp(ts);
-
-      final isBlocked = blocked.contains(friend.uid);
+      final roomId = ChatRoomSummary.idFor(currentUid, friend.uid);
+      final room = roomsById[roomId];
+      final unreadCount = room?.unreadFor(currentUid) ?? 0;
+      final time = _formatTimestamp(room?.lastMessageAt);
+      final isBlocked = friendsState.isBlocked(friend.uid);
 
       final data = ConversationData(
         uid: friend.uid,
@@ -149,9 +79,9 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
         name: friend.name,
         initials: _initials(friend.name),
         avatarColor: _avatarColor(friend.uid),
-        lastMessage: room?['lastMessage'] as String?,
+        lastMessage: room?.lastMessage,
         time: time.isNotEmpty ? time : null,
-        isOnline: isOnline,
+        isOnline: friendsState.isOnline(friend.uid),
         unreadCount: isBlocked ? 0 : unreadCount,
         isBlocked: isBlocked,
       );
@@ -165,11 +95,9 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
       }
     }
 
-    setState(() {
-      _activeConversations = active;
-      _unreadConversations = unread;
-      _blockedConversations = blockedList;
-    });
+    _activeConversations = active;
+    _unreadConversations = unread;
+    _blockedConversations = blockedList;
   }
 
   String _initials(String name) {
@@ -194,22 +122,47 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
     return colors[uid.hashCode.abs() % colors.length];
   }
 
-  void _onFriendTap(ConversationData data) async {
-    if (_currentUid == null) return;
+  /// Identifies this tab when talking to the shared ChatRoomsBloc.
+  int get _requesterId => identityHashCode(this);
 
-    final roomId = await _chatController.getOrCreateChatRoom(
-      _currentUid!,
-      data.uid,
-    );
+  /// The room is created if needed; the listener in [build] opens it.
+  void _onFriendTap(ConversationData data) {
+    final currentUid = _currentUid;
+    if (currentUid == null) return;
+    context.read<ChatRoomsBloc>().add(
+        ChatRoomOpenRequested(
+          currentUid: currentUid,
+          friendUid: data.uid,
+          requesterId: _requesterId,
+        ));
+  }
 
-    if (!mounted) return;
+  void _onUnblock(ConversationData data) {
+    final currentUid = _currentUid;
+    if (currentUid == null) return;
+    context.read<FriendsBloc>().add(UserUnblockRequested(
+          targetUid: data.uid,
+          targetName: data.name,
+          roomId: ChatRoomSummary.idFor(currentUid, data.uid),
+        ));
+  }
+
+  void _openRoom(RoomToOpen room) {
+    final currentUid = _currentUid;
+    if (currentUid == null) return;
+    final data = [
+      ..._activeConversations,
+      ..._unreadConversations,
+      ..._blockedConversations,
+    ].where((c) => c.uid == room.friendUid).firstOrNull;
+    if (data == null) return;
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ChatScreen(
-          roomId: roomId,
-          currentUid: _currentUid!,
+          roomId: room.roomId,
+          currentUid: currentUid,
           friendUid: data.uid,
           friendName: data.name,
           friendInitials: data.initials,
@@ -220,19 +173,31 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
     );
   }
 
-  void _onUnblock(ConversationData data) async {
-    if (_currentUid == null) return;
-    final roomId = _generateRoomId(_currentUid!, data.uid);
-    await _userController.unblockUser(data.uid, roomId);
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    return _buildTabContent();
+    return BlocListener<ChatRoomsBloc, ChatRoomsState>(
+      // Both tabs share the bloc: only the tab that asked opens the room.
+      listenWhen: (p, c) =>
+          p.openId != c.openId && c.roomToOpen?.requesterId == _requesterId,
+      listener: (context, state) => _openRoom(state.roomToOpen!),
+      child: BlocListener<ChatRoomsBloc, ChatRoomsState>(
+        listenWhen: (p, c) =>
+            p.errorId != c.errorId && c.errorRequesterId == _requesterId,
+        listener: (context, state) => showErrorSnackbar(state.error),
+        child: BlocBuilder<FriendsBloc, FriendsState>(
+          builder: (context, friendsState) =>
+              BlocBuilder<ChatRoomsBloc, ChatRoomsState>(
+            builder: (context, roomsState) {
+              if (!friendsState.friendsLoaded) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              _mergeData(friendsState, roomsState.rooms);
+              return _buildTabContent();
+            },
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildTabContent() {

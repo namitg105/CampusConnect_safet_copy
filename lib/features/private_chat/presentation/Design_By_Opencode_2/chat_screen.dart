@@ -1,15 +1,15 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart' hide SnackPosition;
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:noteswap/core/di/injection.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:noteswap/features/private_chat/domain/repos/chat_controller.dart';
-import 'package:noteswap/features/private_chat/data/private-chat-services/user_friend_add.dart';
+import 'package:noteswap/features/private_chat/presentation/bloc/conversation/conversation_bloc.dart';
+import 'package:noteswap/features/private_chat/presentation/bloc/friends/friends_bloc.dart';
 import 'package:noteswap/features/private_chat/domain/entities/chat_message.dart'
     as domain;
 import 'package:noteswap/features/private_chat/presentation/Design_By_Opencode_2/components/component_media_dialog_box.dart';
-import 'package:noteswap/features/private_chat/domain/repos/online_user_controller.dart';
+import 'package:noteswap/features/private_chat/presentation/Design_By_Opencode_2/components/conversation_effects.dart';
 import 'package:noteswap/features/private_chat/presentation/Design_By_Opencode_4/chat_details_screen.dart';
-import 'package:noteswap/features/private_chat/presentation/Design_By_Opencode_4/phoneDialer.dart';
 import '../common_widgets.dart';
 import 'widgets/chat_header.dart';
 import 'widgets/pinned_message_widget.dart';
@@ -47,43 +47,41 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  late final ChatController _chatController;
-  late final UserController _userController;
+  /// Owned by this screen: created on open, closed on leave.
+  late final ConversationBloc _conversation;
   final TextEditingController _messageController = TextEditingController();
   domain.ChatMessage? _replyMessage;
   late final ComponentMediaDialog _mediaDialog;
-  late final UserOnlineController _onlineController;
 
   @override
   void initState() {
     super.initState();
-    _chatController = Get.isRegistered<ChatController>()
-        ? Get.find<ChatController>()
-        : Get.put(ChatController());
-    _userController = Get.isRegistered<UserController>()
-        ? Get.find<UserController>()
-        : Get.put(UserController());
-    _chatController.listenToMessages(widget.roomId);
-    _chatController.listenToPinnedMessage(widget.roomId);
-    _chatController.markMessagesAsRead(widget.roomId, widget.currentUid);
-    _chatController.listenToRoomInfo(widget.roomId, widget.currentUid);
-    _mediaDialog = ComponentMediaDialog(targetUser: widget.friendUid);
-    _onlineController = UserOnlineController(
-      targetUser: {'uid': widget.friendUid, 'name': widget.friendName},
+    _conversation = sl<ConversationBloc>()
+      ..add(ConversationStarted(
+        roomId: widget.roomId,
+        currentUid: widget.currentUid,
+        friendUid: widget.friendUid,
+      ));
+    _mediaDialog = ComponentMediaDialog(
+      targetUser: widget.friendUid,
+      conversation: _conversation,
     );
-    _onlineController.onInit();
   }
 
   void _openChatDetails() {
-    AppNavigator.push(ChatDetailsScreen(
+    // Details shares this conversation (for the Call button).
+    AppNavigator.push(BlocProvider.value(
+      value: _conversation,
+      child: ChatDetailsScreen(
           roomId: widget.roomId,
           currentUid: widget.currentUid,
           friendUid: widget.friendUid,
           friendName: widget.friendName,
           friendInitials: widget.friendInitials,
           friendAvatarColor: widget.friendAvatarColor,
-          isOnline: _onlineController.isOnline.value,
-        ));
+          isOnline: _conversation.state.friendOnline,
+        ),
+    ));
   }
 
   Future<void> _openDocument(String? url) async {
@@ -97,47 +95,36 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _messageController.dispose();
-    _chatController.disposeMessages();
-    _chatController.disposePinnedPipeline();
-    _onlineController.onClose();
+    _conversation.close();
     super.dispose();
   }
 
   void _sendMessage() {
     if (_messageController.text.trim().isEmpty) return;
-    final isFriendBlocked =
-        _userController.blockedUids.contains(widget.friendUid);
-    _chatController.sendMessage(
-      roomId: widget.roomId,
-      senderId: widget.currentUid,
-      receiverId: widget.friendUid,
-      message: _messageController.text.trim(),
-      repliedMessageId: _replyMessage?.messageId,
-      repliedMessageContent: _replyMessage?.message,
-      repliedMessageSender: _replyMessage?.senderId == widget.currentUid
+    _conversation.add(ConversationTextSent(
+      text: _messageController.text,
+      replyTo: _replyMessage,
+      replyToSenderLabel: _replyMessage?.senderId == widget.currentUid
           ? 'You'
           : widget.friendName,
-      repliedMessageType: _replyMessage?.type.name,
-      skipUnreadIncrement: isFriendBlocked,
-    );
+      friendIsBlocked:
+          context.read<FriendsBloc>().state.isBlocked(widget.friendUid),
+    ));
     _messageController.clear();
     setState(() => _replyMessage = null);
   }
 
   void _unblockUser() {
-    _userController.unblockUser(widget.friendUid, widget.roomId);
-    showSuccessSnackbar('${widget.friendName} has been unblocked');
+    // The result snackbar comes from the app-wide FriendsBloc listener.
+    context.read<FriendsBloc>().add(UserUnblockRequested(
+          targetUid: widget.friendUid,
+          targetName: widget.friendName,
+          roomId: widget.roomId,
+        ));
   }
 
-  Future<void> _voiceCall() async {
-    try {
-      await PhoneDialer().dial(widget.friendUid);
-    } catch (e) {
-      if (mounted) {
-        showErrorSnackbar('Phone number not set');
-      }
-    }
-  }
+  /// Looks up the number; [ConversationEffects] opens the dialer.
+  void _voiceCall() => _conversation.add(const ConversationCallRequested());
 
   void _videoCall() {
     showInfoSnackbar('Video call coming soon');
@@ -148,14 +135,10 @@ class _ChatScreenState extends State<ChatScreen> {
       context: context,
       messageText: msg.message,
       onReply: () => setState(() => _replyMessage = msg),
-      onPin: () => _chatController.pinAMessage(msg, widget.currentUid),
-      onDelete: () => _chatController.removeMessage(msg, widget.currentUid),
-      onReact: (emoji) => _chatController.toggleReaction(
-        roomId: widget.roomId,
-        messageId: msg.messageId,
-        userId: widget.currentUid,
-        emoji: emoji,
-      ),
+      onPin: () => _conversation.add(ConversationMessagePinned(msg)),
+      onDelete: () => _conversation.add(ConversationMessageDeleted(msg)),
+      onReact: (emoji) =>
+          _conversation.add(ConversationReactionToggled(msg, emoji)),
     );
   }
 
@@ -173,7 +156,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BlocProvider.value(
+      value: _conversation,
+      child: ConversationEffects(
+        child: Scaffold(
       backgroundColor: const Color(0xFF5A48E6),
       resizeToAvoidBottomInset: true,
       body: SafeArea(
@@ -184,25 +170,30 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             Column(
               children: [
-                Obx(() => ChatHeader(
+                BlocBuilder<ConversationBloc, ConversationState>(
+                  buildWhen: (p, c) => p.friendOnline != c.friendOnline,
+                  builder: (context, state) => ChatHeader(
                       name: widget.friendName,
                       initials: widget.friendInitials,
                       avatarColor: widget.friendAvatarColor,
-                      isOnline: _onlineController.isOnline.value,
+                      isOnline: state.friendOnline,
                       imageUrl: widget.friendImageUrl,
                       onTap: _openChatDetails,
                       onVideoCall: _videoCall,
                       onVoiceCall: _voiceCall,
                       onInfo: _openChatDetails,
                     )),
-                Obx(() {
-                  final pinned = _chatController.currentPinnedMessage.value;
-                  if (pinned == null || pinned.pinnedMessageContent.isEmpty) {
+                BlocBuilder<ConversationBloc, ConversationState>(
+                    buildWhen: (p, c) => p.pinned != c.pinned,
+                    builder: (context, state) {
+                  final pinned = state.visiblePin;
+                  if (pinned == null) {
                     return const SizedBox.shrink();
                   }
                   return PinnedMessageWidget(
                     message: pinned.pinnedMessageContent,
-                    onClose: () => _chatController.unpinMessage(),
+                    onClose: () =>
+                        _conversation.add(const ConversationUnpinned()),
                   );
                 }),
                 Expanded(
@@ -219,8 +210,10 @@ class _ChatScreenState extends State<ChatScreen> {
                         topLeft: Radius.circular(24),
                         topRight: Radius.circular(24),
                       ),
-                      child: Obx(() {
-                        final msgs = _chatController.messages;
+                      child: BlocBuilder<ConversationBloc, ConversationState>(
+                        buildWhen: (p, c) => p.messages != c.messages,
+                        builder: (context, state) {
+                        final msgs = state.messages;
                         if (msgs.isEmpty) {
                           return const Center(
                             child: Text(
@@ -330,9 +323,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ),
                 ),
-                Obx(() {
-                  final isBlocked =
-                      _userController.blockedUids.contains(widget.friendUid);
+                BlocBuilder<FriendsBloc, FriendsState>(
+                    builder: (context, friends) {
+                  final isBlocked = friends.isBlocked(widget.friendUid);
                   if (isBlocked) {
                     return Container(
                       padding: const EdgeInsets.symmetric(
@@ -382,6 +375,8 @@ class _ChatScreenState extends State<ChatScreen> {
               ],
             ),
           ],
+        ),
+      ),
         ),
       ),
     );

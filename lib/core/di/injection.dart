@@ -34,6 +34,18 @@ import '../../features/community/presentation/bloc/membership/membership_bloc.da
 import '../../features/group_chat/data/firebase_group_chat_repo.dart';
 import '../../features/group_chat/domain/repo/group_chat_repo.dart';
 import '../../features/security/aes_service.dart';
+import '../../features/private_chat/data/datasources/friends_remote_data_source.dart';
+import '../../features/private_chat/data/datasources/private_chat_remote_data_source.dart';
+import '../../features/private_chat/data/repositories/friends_repository_impl.dart';
+import '../../features/private_chat/data/repositories/private_chat_repository_impl.dart';
+import '../../features/private_chat/domain/repositories/friends_repository.dart';
+import '../../features/private_chat/domain/repositories/private_chat_repository.dart';
+import '../../features/private_chat/domain/usecases/friends_usecases.dart';
+import '../../features/private_chat/domain/usecases/private_chat_usecases.dart';
+import '../../features/private_chat/presentation/bloc/friends/friends_bloc.dart';
+import '../../features/private_chat/presentation/bloc/chat_rooms/chat_rooms_bloc.dart';
+import '../../features/private_chat/presentation/bloc/conversation/conversation_bloc.dart';
+import '../../features/private_chat/presentation/bloc/chat_details/chat_details_bloc.dart';
 
 import '../../features/theme/data/datasources/theme_local_data_source.dart';
 import '../../features/theme/data/repositories/theme_repository_impl.dart';
@@ -95,6 +107,7 @@ Future<void> init() async {
   sl.registerLazySingleton<AESService>(() => AESService());
   _initCommunity();
   _initChat();
+  _initPrivateChat();
 
   // Not used by any screen yet (group_chat feature).
   sl.registerLazySingleton<GroupChatRepo>(
@@ -252,5 +265,89 @@ void _initChat() {
           deleteMessage: sl(),
           pinMessage: sl(),
           unpinMessage: sl(),
+        ));
+}
+
+void _initPrivateChat() {
+  sl
+    // Data
+    ..registerLazySingleton<FriendsRemoteDataSource>(
+      () => FriendsRemoteDataSourceImpl(firestore: sl(), auth: sl()),
+    )
+    ..registerLazySingleton<PrivateChatRemoteDataSource>(
+      () => PrivateChatRemoteDataSourceImpl(
+        firestore: sl(),
+        storage: FirebaseStorage.instance,
+      ),
+    )
+    ..registerLazySingleton<FriendsRepository>(() => FriendsRepositoryImpl(sl()))
+    ..registerLazySingleton<PrivateChatRepository>(
+        () => PrivateChatRepositoryImpl(sl()))
+    // Friends use cases
+    ..registerLazySingleton(() => WatchFriends(sl()))
+    ..registerLazySingleton(() => WatchOnlineStatuses(sl()))
+    ..registerLazySingleton(() => WatchBlockedUids(sl()))
+    ..registerLazySingleton(() => WatchIncomingRequests(sl()))
+    ..registerLazySingleton(() => WatchSentRequestUids(sl()))
+    ..registerLazySingleton(() => WatchIgnoredRequests(sl()))
+    ..registerLazySingleton(() => WatchDirectory(sl()))
+    ..registerLazySingleton(() => SendFriendRequest(sl()))
+    ..registerLazySingleton(() => AcceptFriendRequest(sl()))
+    ..registerLazySingleton(() => DeclineFriendRequest(sl()))
+    ..registerLazySingleton(() => AcceptIgnoredRequest(sl()))
+    ..registerLazySingleton(() => BlockUser(sl()))
+    ..registerLazySingleton(() => UnblockUser(friends: sl(), chat: sl()))
+    // Chat use cases
+    ..registerLazySingleton(() => WatchChatRooms(sl()))
+    ..registerLazySingleton(() => GetOrCreateChatRoom(sl()))
+    ..registerLazySingleton(() => WatchRoomMessages(sl()))
+    ..registerLazySingleton(() => WatchPinnedMessage(sl()))
+    ..registerLazySingleton(() => WatchUserOnline(sl()))
+    ..registerLazySingleton(() => MarkRoomAsRead(sl()))
+    ..registerLazySingleton(() => SendPrivateMessage(sl()))
+    ..registerLazySingleton(() => ToggleReaction(sl()))
+    ..registerLazySingleton(() => DeletePrivateMessage(sl()))
+    ..registerLazySingleton(() => PinPrivateMessage(sl()))
+    ..registerLazySingleton(() => UnpinPrivateMessage(sl()))
+    ..registerLazySingleton(() => GetRoomDetails(sl()))
+    ..registerLazySingleton(() => GetSharedImages(sl()))
+    ..registerLazySingleton(() => GetSharedDocuments(sl()))
+    ..registerLazySingleton(() => GetPhoneNumber(sl()))
+    // Blocs
+    ..registerFactory(() => FriendsBloc(
+          watchFriends: sl(),
+          watchOnlineStatuses: sl(),
+          watchBlockedUids: sl(),
+          watchIncomingRequests: sl(),
+          watchSentRequestUids: sl(),
+          watchIgnoredRequests: sl(),
+          watchDirectory: sl(),
+          sendFriendRequest: sl(),
+          acceptFriendRequest: sl(),
+          declineFriendRequest: sl(),
+          acceptIgnoredRequest: sl(),
+          blockUser: sl(),
+          unblockUser: sl(),
+        ))
+    ..registerFactory(() => ChatRoomsBloc(
+          watchChatRooms: sl(),
+          getOrCreateChatRoom: sl(),
+        ))
+    ..registerFactory(() => ConversationBloc(
+          watchRoomMessages: sl(),
+          watchPinnedMessage: sl(),
+          watchUserOnline: sl(),
+          markRoomAsRead: sl(),
+          sendPrivateMessage: sl(),
+          toggleReaction: sl(),
+          deletePrivateMessage: sl(),
+          pinPrivateMessage: sl(),
+          unpinPrivateMessage: sl(),
+          getPhoneNumber: sl(),
+        ))
+    ..registerFactory(() => ChatDetailsBloc(
+          getRoomDetails: sl(),
+          getSharedImages: sl(),
+          getSharedDocuments: sl(),
         ));
 }

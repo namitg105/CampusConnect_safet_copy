@@ -1,11 +1,11 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart' hide SnackPosition;
+import 'package:noteswap/core/di/injection.dart';
 
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:noteswap/features/private_chat/data/private-chat-services/user_friend_add.dart';
-import 'package:noteswap/features/private_chat/domain/repos/chat_controller.dart';
+import 'package:noteswap/features/private_chat/presentation/bloc/chat_rooms/chat_rooms_bloc.dart';
+import 'package:noteswap/features/private_chat/presentation/bloc/friends/friends_bloc.dart';
 import 'presentation/Design_By_Opencode_3/directory_screen.dart';
 import 'presentation/Design_By_Opencode_5/chat_request_screen.dart';
 import 'presentation/Design_By_Opencode/recent_chats_screen.dart';
@@ -23,25 +23,24 @@ class PrivateChatPageController extends StatefulWidget {
 
 class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
   late TextEditingController _searchController;
-  UserController? _userController;
+  /// Shared by both Recent Chats tabs (one Firestore listener).
+  final ChatRoomsBloc _chatRooms = sl<ChatRoomsBloc>();
   String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
-    if (!Get.isRegistered<ChatController>()) {
-      Get.put(ChatController(), permanent: true);
+    final authState = context.read<AuthBloc>().state;
+    if (authState is Authenticated) {
+      _chatRooms.add(ChatRoomsWatchStarted(authState.user.uid));
     }
-    if (!Get.isRegistered<UserController>()) {
-      Get.put(UserController(), permanent: true);
-    }
-    _userController = Get.find<UserController>();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _chatRooms.close();
     super.dispose();
   }
 
@@ -62,7 +61,9 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTextStyle(
+    return BlocProvider.value(
+      value: _chatRooms,
+      child: DefaultTextStyle(
       style: const TextStyle(fontFamily: 'Quicksand'),
       child: BlocBuilder<MainNavBloc, MainNavState>(
           builder: (context, nav) {
@@ -86,10 +87,10 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
                   controller: _searchController,
                   onChanged: _onSearchChanged,
                 ),
-                Obx(() {
-                  final friendsCount = _userController?.friendsList.length ?? 0;
-                  final onlineCount = _getOnlineCount();
-                  final blockedCount = _userController?.blockedUids.length ?? 0;
+                BlocBuilder<FriendsBloc, FriendsState>(builder: (context, friends) {
+                  final friendsCount = friends.friends.length;
+                  final onlineCount = _onlineCount(friends);
+                  final blockedCount = friends.blockedUids.length;
                   return ChatStatisticsCard(
                     friendsCount: friendsCount,
                     onlineCount: onlineCount,
@@ -124,15 +125,12 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
           ),
         );
       }),
+    ),
     );
   }
 
-  int _getOnlineCount() {
-    return _userController?.friendStatuses.values
-            .where((v) => v == true)
-            .length ??
-        0;
-  }
+  int _onlineCount(FriendsState friends) =>
+      friends.onlineStatuses.values.where((online) => online).length;
 
   Widget _buildHeader() {
     return Padding(
@@ -154,9 +152,9 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Obx(() {
-                  final friendsCount = _userController?.friendsList.length ?? 0;
-                  final onlineCount = _getOnlineCount();
+                BlocBuilder<FriendsBloc, FriendsState>(builder: (context, friends) {
+                  final friendsCount = friends.friends.length;
+                  final onlineCount = _onlineCount(friends);
                   return Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

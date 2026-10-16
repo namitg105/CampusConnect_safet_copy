@@ -1,9 +1,9 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../common_widgets.dart';
 import 'chat_details_model.dart';
-import 'phoneDialer.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/conversation/conversation_bloc.dart';
 import 'full_screen_image.dart';
 
 class ChatDetailsAppBar extends StatelessWidget {
@@ -269,15 +269,10 @@ class QuickActionsRow extends StatelessWidget {
           QuickActionButton(
             icon: Icons.call_outlined,
             label: 'Call',
-            onTap: () async {
-              try {
-                await PhoneDialer().dial(friendUid);
-              } catch (e) {
-                if (context.mounted) {
-                  showErrorSnackbar('Phone number not set');
-                }
-              }
-            },
+            // The conversation looks up the number; the screen dials it.
+            onTap: () => context
+                .read<ConversationBloc>()
+                .add(const ConversationCallRequested()),
           ),
           QuickActionButton(
             icon: Icons.info_outline,

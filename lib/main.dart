@@ -8,6 +8,8 @@ import 'package:noteswap/firebase_options.dart';
 
 import 'features/home/presentation/bloc/main_nav_bloc.dart';
 import 'features/notification_badge/presentation/bloc/notification_badge_bloc.dart';
+import 'features/private_chat/presentation/bloc/friends/friends_bloc.dart';
+import 'features/private_chat/presentation/common_widgets.dart';
 import 'features/theme/presentation/bloc/theme_bloc.dart';
 import 'core/di/injection.dart'; // DI injection init
 import 'core/navigation/app_navigator.dart';
@@ -54,6 +56,7 @@ class MyApp extends StatelessWidget {
         BlocProvider<NotificationBadgeBloc>(
           create: (_) => sl<NotificationBadgeBloc>(),
         ),
+        BlocProvider<FriendsBloc>(create: (_) => sl<FriendsBloc>()),
       ],
       child: _SessionListener(
         child: BlocBuilder<ThemeBloc, ThemeState>(
@@ -89,17 +92,36 @@ class _SessionListener extends StatelessWidget {
       listenWhen: (previous, current) => _uidOf(previous) != _uidOf(current),
       listener: (context, state) {
         final badge = context.read<NotificationBadgeBloc>();
+        final friends = context.read<FriendsBloc>();
         if (state is Authenticated) {
           badge.add(NotificationBadgeStarted(
             uid: state.user.uid,
             email: state.user.email,
           ));
+          friends.add(FriendsWatchStarted(state.user.uid));
         } else {
           badge.add(const NotificationBadgeStopped());
+          friends.add(const FriendsWatchStopped());
           context.read<MainNavBloc>().add(const MainNavReset());
         }
       },
-      child: child,
+      child: BlocListener<FriendsBloc, FriendsState>(
+        // Friend actions (requests, block...) report here, whatever screen
+        // the user is on.
+        listenWhen: (p, c) => p.outcomeId != c.outcomeId,
+        listener: (context, state) {
+          final outcome = state.outcome!;
+          switch (outcome.kind) {
+            case FriendsOutcomeKind.success:
+              showSuccessSnackbar(outcome.message);
+            case FriendsOutcomeKind.info:
+              showInfoSnackbar(outcome.message);
+            case FriendsOutcomeKind.error:
+              showErrorSnackbar(outcome.message);
+          }
+        },
+        child: child,
+      ),
     );
   }
 }

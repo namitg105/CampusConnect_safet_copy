@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:noteswap/features/private_chat/domain/repos/chat_controller.dart';
-import 'package:noteswap/features/private_chat/data/private-chat-services/user_friend_add.dart';
-import '../common_widgets.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:noteswap/core/di/injection.dart';
+import 'package:noteswap/features/private_chat/presentation/bloc/chat_details/chat_details_bloc.dart';
+import 'package:noteswap/features/private_chat/presentation/bloc/friends/friends_bloc.dart';
+import 'package:noteswap/features/private_chat/presentation/Design_By_Opencode_2/components/conversation_effects.dart';
 import 'chat_details_model.dart';
 import 'chat_details_components.dart';
 
@@ -31,74 +32,39 @@ class ChatDetailsScreen extends StatefulWidget {
 }
 
 class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
-  late final ChatController _chatController;
-  late final UserController _userController;
-
-  List<String> _imageUrls = [];
-  List<SharedDocument> _docs = [];
-  bool _isLoadingImages = true;
-  bool _isLoadingDocs = true;
+  /// Owned by this screen: loads room info, photos and documents.
+  late final ChatDetailsBloc _details;
   bool _showAllImages = false;
   bool _showAllDocs = false;
-  String _lastMessage = '';
-  DateTime? _createdAt;
 
   @override
   void initState() {
     super.initState();
-    _chatController = Get.isRegistered<ChatController>()
-        ? Get.find<ChatController>()
-        : Get.put(ChatController());
-    _userController = Get.isRegistered<UserController>()
-        ? Get.find<UserController>()
-        : Get.put(UserController());
-    _loadImages();
-    _loadDocs();
-    _loadRoomInfo();
+    _details = sl<ChatDetailsBloc>()
+      ..add(ChatDetailsStarted(
+          roomId: widget.roomId, currentUid: widget.currentUid));
   }
 
-  Future<void> _loadRoomInfo() async {
-    final info = await _chatController.getRoomInfo(widget.roomId, widget.currentUid);
-    if (mounted) {
-      setState(() {
-        _lastMessage = info['lastMessage'] as String? ?? '';
-        _createdAt = (info['createdAt'] as dynamic)?.toDate();
-      });
-    }
+  @override
+  void dispose() {
+    _details.close();
+    super.dispose();
   }
 
-  Future<void> _loadImages() async {
-    final urls = await _chatController.fetchAllImagesForRoom(widget.roomId);
-    if (mounted) {
-      setState(() {
-        _imageUrls = urls;
-        _isLoadingImages = false;
-      });
-    }
-  }
-
-  Future<void> _loadDocs() async {
-    final docsData = await _chatController.fetchAllDocsForRoom(widget.roomId);
-    if (mounted) {
-      setState(() {
-        _docs = docsData
-            .map((d) => SharedDocument(
-                  name: d['name'] as String? ?? 'Unknown',
-                  url: d['url'] as String? ?? '',
-                  timestamp: d['timestamp'] as DateTime? ?? DateTime.now(),
-                ))
-            .toList();
-        _isLoadingDocs = false;
-      });
-    }
-  }
+  List<SharedDocument> _toSharedDocuments(ChatDetailsState state) => state
+      .documents
+      .map((d) => SharedDocument(name: d.name, url: d.url, timestamp: d.timestamp))
+      .toList();
 
   void _onBlockTapped(BuildContext context, bool isBlocked) {
+    // Result snackbars come from the app-wide FriendsBloc listener.
+    final friends = context.read<FriendsBloc>();
     if (isBlocked) {
-      final ids = [widget.currentUid, widget.friendUid]..sort();
-      final roomId = ids.join('_');
-      _userController.unblockUser(widget.friendUid, roomId);
-      showSuccessSnackbar('${widget.friendName} has been unblocked');
+      friends.add(UserUnblockRequested(
+        targetUid: widget.friendUid,
+        targetName: widget.friendName,
+        roomId: widget.roomId,
+      ));
     } else {
       showDialog(
         context: context,
@@ -132,8 +98,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
             TextButton(
               onPressed: () {
                 Navigator.pop(ctx);
-                _userController.blockUser(widget.friendUid);
-                showSuccessSnackbar('${widget.friendName} has been blocked');
+                friends.add(UserBlockRequested(widget.friendUid, widget.friendName));
               },
               child: const Text(
                 'Block',
@@ -151,8 +116,14 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final isBlocked = _userController.blockedUids.contains(widget.friendUid);
+    return BlocProvider.value(
+      value: _details,
+      child: ConversationEffects(
+        child: BlocBuilder<FriendsBloc, FriendsState>(
+            builder: (context, friends) =>
+                BlocBuilder<ChatDetailsBloc, ChatDetailsState>(
+                    builder: (context, details) {
+      final isBlocked = friends.isBlocked(widget.friendUid);
 
       return Scaffold(
         backgroundColor: Colors.white,
@@ -177,8 +148,8 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
                       QuickActionsRow(
                         friendUid: widget.friendUid,
                         friendName: widget.friendName,
-                        lastMessage: _lastMessage,
-                        createdAt: _createdAt,
+                        lastMessage: details.details?.lastMessage ?? '',
+                        createdAt: details.details?.createdAt,
                         roomId: widget.roomId,
                         currentUid: widget.currentUid,
                         isBlocked: isBlocked,
@@ -187,7 +158,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
                       const SizedBox(height: 20),
                       const Divider(height: 1, color: Color(0xFFEFEFEF)),
                       const SizedBox(height: 14),
-                      _isLoadingImages
+                      !details.imagesLoaded
                           ? const Padding(
                               padding: EdgeInsets.all(16),
                               child: Center(
@@ -195,13 +166,13 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
                                       CircularProgressIndicator(strokeWidth: 2)),
                             )
                           : SharedImagesGrid(
-                              imageUrls: _imageUrls,
+                              imageUrls: details.images,
                               showAll: _showAllImages,
                               onToggle: () =>
                                   setState(() => _showAllImages = !_showAllImages),
                             ),
                       const SizedBox(height: 22),
-                      _isLoadingDocs
+                      !details.documentsLoaded
                           ? const Padding(
                               padding: EdgeInsets.all(16),
                               child: Center(
@@ -209,7 +180,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
                                       CircularProgressIndicator(strokeWidth: 2)),
                             )
                           : SharedDocumentsList(
-                              documents: _docs,
+                              documents: _toSharedDocuments(details),
                               showAll: _showAllDocs,
                               onToggle: () =>
                                   setState(() => _showAllDocs = !_showAllDocs),
@@ -222,6 +193,6 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
           ),
         ),
       );
-    });
+    }))));
   }
 }

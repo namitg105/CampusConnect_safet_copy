@@ -1,16 +1,13 @@
 // image_preview_screen.dart
-import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart' hide SnackPosition;
 import 'package:image_picker/image_picker.dart';
 
-import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:noteswap/features/private_chat/data/private-chat-storage-service/storage_service.dart';
 import 'package:noteswap/features/private_chat/domain/entities/chat_message.dart';
-import 'package:noteswap/features/private_chat/domain/repos/chat_controller.dart';
+import 'attachment_send.dart';
 
+/// Shows the picked photo before sending. Needs the open conversation's
+/// `ConversationBloc` (handed over by `ComponentMediaDialog`).
 class ImagePreviewScreen extends StatelessWidget {
   final String imagePath;
   final String targetUser;
@@ -24,95 +21,40 @@ class ImagePreviewScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
+    return AttachmentSendListener(
+      child: Scaffold(
         backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.white),
-        title:
-            const Text('Preview Image', style: TextStyle(color: Colors.white)),
-      ),
-      body: Stack(
-        children: [
-          Center(
-            child: Image.file(
-              File(imagePath),
-              fit: BoxFit.contain,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          iconTheme: const IconThemeData(color: Colors.white),
+          title: const Text('Preview Image',
+              style: TextStyle(color: Colors.white)),
+        ),
+        body: Stack(
+          children: [
+            Center(
+              child: Image.file(
+                File(imagePath),
+                fit: BoxFit.contain,
+              ),
             ),
-          ),
-          Positioned(
-            bottom: 24,
-            right: 24,
-            child: // Inside ImagePreviewScreen floating action button:
-                FloatingActionButton(
-              backgroundColor: Colors.blueAccent,
-              onPressed: () async {
-                AppNavigator.showAppDialog(
-                  const Center(
-                      child:
-                          CircularProgressIndicator(color: Colors.blueAccent)),
-                  barrierDismissible: false,
-                );
-
-                final chatController = Get.isRegistered<ChatController>()
-                    ? Get.find<ChatController>()
-                    : Get.put(ChatController());
-                final authState = context.read<AuthBloc>().state;
-                final StorageService storageService = StorageService();
-
-                final myUid =
-                    authState is Authenticated ? authState.user.uid : null;
-                final roomId = chatController.currentRoomId.value;
-                final targetUid = targetUser;
-
-                if (myUid != null &&
-                    roomId.isNotEmpty &&
-                    targetUid.isNotEmpty) {
-                  final String? uploadedUrl =
-                      await storageService.uploadChatImage(
-                    imageFile: imageFile,
-                    senderUid: myUid,
-                  );
-                  if (uploadedUrl != null) {
-                    // 2. Publish new item document mapping payload to firestore sub-collection
-                    await chatController.sendMessage(
-                      roomId: roomId,
-                      senderId: myUid,
-                      receiverId:
-                          targetUser, // Assuming your passed variable acts as the raw Target Participant Uid String here
-                      message: "📷 Photo",
-                      type: MessageType.image,
-                      imageUrl: uploadedUrl,
-                    );
-                  }
-                }
-
-                AppNavigator.popTimes(2);
-                /*
-                  chatController.sendMessage(
-                    roomId: roomId,
-                    senderId: myUid,
-                    receiverId: targetUid,
-                    message: "image by $myUid",
-                    type: MessageType.image,
-                    imageUrl: uploadedUrl,
-                  );
-                }
-                AppNavigator.pop();*/
-              },
-              child: const Icon(Icons.send, color: Colors.white),
+            Positioned(
+              bottom: 24,
+              right: 24,
+              child: FloatingActionButton(
+                backgroundColor: Colors.blueAccent,
+                onPressed: () => AttachmentSendListener.send(
+                  context,
+                  path: imageFile.path,
+                  name: imageFile.name,
+                  type: MessageType.image,
+                  friendUid: targetUser,
+                ),
+                child: const Icon(Icons.send, color: Colors.white),
+              ),
             ),
-            /*
-            FloatingActionButton(
-              backgroundColor: Colors.blueAccent,
-              onPressed: () {
-                // TODO: Handle sending image to Firestore later
-                AppNavigator.pop();
-              },
-              child: const Icon(Icons.send, color: Colors.white),
-            ),*/
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

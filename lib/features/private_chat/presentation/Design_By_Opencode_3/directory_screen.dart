@@ -1,10 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../data/private-chat-services/user_friend_add.dart';
-import '../../domain/repos/chat_controller.dart';
-import '../common_widgets.dart';
+import '../bloc/friends/friends_bloc.dart';
 import 'directory_components.dart';
 import 'directory_model.dart';
 
@@ -23,74 +20,34 @@ class DirectoryScreen extends StatefulWidget {
 }
 
 class _DirectoryScreenState extends State<DirectoryScreen> {
+  // Rebuilt from FriendsBloc on every build.
   List<DirectoryUser> _filteredUsers = [];
   List<DirectoryUser> _allDirectoryUsers = [];
   bool _isLoading = true;
   int _displayCount = 5;
 
-  late ChatController _chatController;
-  late UserController _userController;
-
   @override
   void initState() {
     super.initState();
-    _chatController = Get.isRegistered<ChatController>()
-        ? Get.find<ChatController>()
-        : Get.put(ChatController());
-    _userController = Get.isRegistered<UserController>()
-        ? Get.find<UserController>()
-        : Get.put(UserController());
-
-    final currentUid = FirebaseAuth.instance.currentUser?.uid;
-
-    if (currentUid != null) {
-      _chatController.listenToDirectory(currentUid);
-      _userController.listenToFriendsList(currentUid);
-      _userController.listenToFriendRequests(currentUid);
-    }
-
-    _chatController.usersDirectory.listen((_) => _rebuildFromData());
-    _userController.friendsList.listen((_) => _rebuildFromData());
-    _userController.sentRequestUids.listen((_) => _rebuildFromData());
-    _userController.incomingRequestUids.listen((_) => _rebuildFromData());
-    _chatController.isDirectoryLoading.listen((loading) {
-      if (mounted) setState(() => _isLoading = loading);
-    });
+    // Everyone else in the app; friends and requests are already watched.
+    context.read<FriendsBloc>().add(const DirectoryWatchRequested());
   }
 
-  @override
-  void didUpdateWidget(covariant DirectoryScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.searchQuery != widget.searchQuery) {
-      _rebuildFromData();
-    }
-  }
+  void _rebuildFromData(FriendsState friends) {
+    final friendUids = friends.friends.map((u) => u.uid).toSet();
+    final requestedUids = friends.sentRequestUids;
+    final incomingRequestUids = friends.incomingRequestUids;
 
-  void _rebuildFromData() {
-    final friendUids = _userController.friendsList.map((u) => u.uid).toSet();
-    final requestedUids = _userController.sentRequestUids.value;
-    final incomingRequestUids = _userController.incomingRequestUids.value;
-
-    final users = _chatController.usersDirectory.map((map) {
-      return DirectoryUser.fromMap(
-        map,
-        isFollowing: friendUids.contains(map['uid']),
-        hasRequested: requestedUids.contains(map['uid']),
-        hasIncomingRequest: incomingRequestUids.contains(map['uid']),
+    _allDirectoryUsers = friends.directory.map((user) {
+      return DirectoryUser.fromUser(
+        user,
+        isFollowing: friendUids.contains(user.uid),
+        hasRequested: requestedUids.contains(user.uid),
+        hasIncomingRequest: incomingRequestUids.contains(user.uid),
       );
     }).toList();
-
-    if (mounted) {
-      setState(() {
-        _allDirectoryUsers = users;
-        _applyFilters();
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
+    _isLoading = !friends.directoryLoaded;
+    _applyFilters();
   }
 
   void _applyFilters() {
@@ -122,27 +79,24 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     _filteredUsers = result;
   }
 
-  Future<void> _addFriend(DirectoryUser user) async {
-    try {
-      await _userController.sendFriendRequest(user.uid);
-      if (mounted) {
-        showSuccessSnackbar('Friend request sent to ${user.name}');
-      }
-    } catch (e) {
-      if (mounted) {
-        showErrorSnackbar('Failed to send request: $e');
-      }
-    }
+  /// Result snackbar comes from the app-wide FriendsBloc listener.
+  void _addFriend(DirectoryUser user) {
+    context.read<FriendsBloc>().add(FriendRequestSent(user.uid, user.name));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 8),
-        Expanded(child: _buildBody()),
-      ],
+    return BlocBuilder<FriendsBloc, FriendsState>(
+      builder: (context, friends) {
+        _rebuildFromData(friends);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 8),
+            Expanded(child: _buildBody()),
+          ],
+        );
+      },
     );
   }
 

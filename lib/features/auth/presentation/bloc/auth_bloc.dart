@@ -1,13 +1,9 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:get/get.dart';
 
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecase/usecase.dart';
-import '../../../private_chat/data/private-chat-services/user_friend_add.dart';
-import '../../../private_chat/domain/repos/chat_controller.dart';
-import '../../../private_chat/domain/repos/online_user_controller.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/usecases/get_current_user.dart';
 import '../../domain/usecases/user_login.dart';
@@ -89,7 +85,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthLogoutRequested event,
     Emitter<AuthState> emit,
   ) async {
-    _disposeSessionControllers();
     await _userLogout(const NoParams());
     emit(const Unauthenticated());
   }
@@ -114,19 +109,5 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       (user) =>
           emit(user != null ? Authenticated(user) : const Unauthenticated()),
     );
-  }
-
-  /// Removes per-user GetX controllers so the next account starts clean.
-  /// Goes away once those features are migrated to Bloc.
-  void _disposeSessionControllers() {
-    if (Get.isRegistered<ChatController>()) {
-      Get.delete<ChatController>(force: true);
-    }
-    if (Get.isRegistered<UserController>()) {
-      Get.delete<UserController>(force: true);
-    }
-    if (Get.isRegistered<UserOnlineController>()) {
-      Get.delete<UserOnlineController>(force: true);
-    }
   }
 }

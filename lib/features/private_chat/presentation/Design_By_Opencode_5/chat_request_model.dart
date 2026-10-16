@@ -1,34 +1,26 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-class ChatRequest {
-  final String fromUid;
-  final String fromName;
-  final String fromEmail;
-  final String fromImageURL;
-  final String status;
-  final DateTime timestamp;
+import '../../domain/entities/friend_request.dart';
 
+/// A [FriendRequest] plus what the request cards need to draw it.
+class ChatRequest extends FriendRequest {
   const ChatRequest({
-    required this.fromUid,
-    required this.fromName,
-    required this.fromEmail,
-    required this.fromImageURL,
-    required this.status,
-    required this.timestamp,
+    required super.fromUid,
+    required super.fromName,
+    required super.fromEmail,
+    required super.fromImageURL,
+    required super.status,
+    required super.timestamp,
   });
 
-  factory ChatRequest.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return ChatRequest(
-      fromUid: data['fromUid'] ?? '',
-      fromName: data['fromName'] ?? '',
-      fromEmail: data['fromEmail'] ?? '',
-      fromImageURL: data['fromImageURL'] ?? '',
-      status: data['status'] ?? 'pending',
-      timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
-    );
-  }
+  factory ChatRequest.fromEntity(FriendRequest r) => ChatRequest(
+        fromUid: r.fromUid,
+        fromName: r.fromName,
+        fromEmail: r.fromEmail,
+        fromImageURL: r.fromImageURL,
+        status: r.status,
+        timestamp: r.timestamp,
+      );
 
   String get initials {
     final parts = fromName.trim().split(' ').where((p) => p.isNotEmpty).toList();

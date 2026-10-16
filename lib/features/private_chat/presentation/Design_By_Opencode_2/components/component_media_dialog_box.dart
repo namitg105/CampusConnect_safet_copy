@@ -4,15 +4,25 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../bloc/conversation/conversation_bloc.dart';
 
 import './document_preview_screen.dart';
 import './image_preview_screen.dart';
 import '../../common_widgets.dart';
 
 class ComponentMediaDialog {
-  ComponentMediaDialog({required this.targetUser});
+  ComponentMediaDialog({required this.targetUser, required this.conversation});
 
   final String targetUser;
+
+  /// The open chat; previews send through it.
+  final ConversationBloc conversation;
+
+  void _openPreview(Widget preview) {
+    AppNavigator.push(BlocProvider.value(value: conversation, child: preview));
+  }
   final ImagePicker _picker = ImagePicker();
   final List<String> allowedExtensions = ['pdf', 'xlsx', 'xls', 'doc', 'docx'];
   final String errTitle = "Unsupported file type";
@@ -43,7 +53,7 @@ class ComponentMediaDialog {
                       showErrorSnackbar('Image exceeds 10 MB limit');
                       return;
                     }
-                    AppNavigator.push(ImagePreviewScreen(
+                    _openPreview(ImagePreviewScreen(
                         imageFile: pickedFile,
                         imagePath: pickedFile.path,
                         targetUser: targetUser));
@@ -74,7 +84,7 @@ class ComponentMediaDialog {
                       name: pickedPlatformFile.name,
                     );
 
-                    AppNavigator.push(DocumentPreviewScreen(
+                    _openPreview(DocumentPreviewScreen(
                         docFile: docXFile,
                         docPath: docXFile.path,
                         targetUser: targetUser));

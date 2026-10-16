@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../auth/domain/entities/app_user.dart';
+
 class DirectoryUser {
   final String uid;
   final String name;
@@ -54,11 +56,11 @@ class DirectoryUser {
     'outlook.com': '',
   };
 
-  factory DirectoryUser.fromMap(Map<String, dynamic> map,
+  factory DirectoryUser.fromUser(AppUser user,
       {bool isFollowing = false, bool hasRequested = false, bool hasIncomingRequest = false}) {
-    final uid = map['uid'] as String? ?? '';
-    final name = map['name'] as String? ?? '';
-    final email = map['email'] as String? ?? '';
+    final uid = user.uid;
+    final name = user.name;
+    final email = user.email;
 
     final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
     final initials = parts.length >= 2
@@ -83,12 +85,12 @@ class DirectoryUser {
       email: email,
       affiliation: affiliation,
       avatarColor: _avatarColors[colorIndex],
-      isOnline: map['isOnline'] as bool? ?? false,
+      isOnline: user.isOnline,
       isFollowing: isFollowing,
       hasRequested: hasRequested,
       hasIncomingRequest: hasIncomingRequest,
-      imageURL: map['ImageURL'] as String? ?? '',
-      isImageExists: map['isImageExists'] as bool? ?? false,
+      imageURL: user.imageURL,
+      isImageExists: user.isImageExists,
     );
   }
 

@@ -1,15 +1,9 @@
 // document_preview_screen.dart
-import 'package:noteswap/core/navigation/app_navigator.dart';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart' hide SnackPosition;
 import 'package:image_picker/image_picker.dart';
 
-import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:noteswap/features/private_chat/data/private-chat-storage-service/storage_service.dart';
 import 'package:noteswap/features/private_chat/domain/entities/chat_message.dart';
-import 'package:noteswap/features/private_chat/domain/repos/chat_controller.dart';
+import 'attachment_send.dart';
 
 class DocumentPreviewScreen extends StatelessWidget {
   final String docPath;
@@ -27,7 +21,8 @@ class DocumentPreviewScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final String extension = docFile.name.split('.').last.toUpperCase();
 
-    return Scaffold(
+    return AttachmentSendListener(
+      child: Scaffold(
       backgroundColor: Colors.grey[900],
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -75,62 +70,19 @@ class DocumentPreviewScreen extends StatelessWidget {
             right: 24,
             child: FloatingActionButton(
               backgroundColor: Colors.blueAccent,
-              onPressed: () async {
-                AppNavigator.showAppDialog(
-                  const Center(
-                      child:
-                          CircularProgressIndicator(color: Colors.blueAccent)),
-                  barrierDismissible: false,
-                );
-
-                final chatController = Get.isRegistered<ChatController>()
-                    ? Get.find<ChatController>()
-                    : Get.put(ChatController());
-                final authState = context.read<AuthBloc>().state;
-                final StorageService storageService = StorageService();
-
-                final myUid =
-                    authState is Authenticated ? authState.user.uid : null;
-                final roomId = chatController.currentRoomId.value;
-
-                if (myUid != null &&
-                    roomId.isNotEmpty &&
-                    targetUser.isNotEmpty) {
-                  // Upload using the new document function
-                  final String? uploadedUrl =
-                      await storageService.uploadChatDoc(
-                    docFile: docFile,
-                    senderUid: myUid,
-                  );
-
-                  if (uploadedUrl != null) {
-                    // Change your chatController.sendMessage block inside document preview FAB to look like this:
-                    await chatController.sendMessage(
-                      roomId: roomId,
-                      senderId: myUid,
-                      receiverId: targetUser,
-                      message: docFile.name,
-                      type: MessageType.doc,
-                      docUrl: uploadedUrl,
-                    );
-                    /*
-                    await chatController.sendMessage(
-                      roomId: roomId,
-                      senderId: myUid,
-                      receiverId: targetUser,
-                      message: "📄 ${docFile.name}",
-                      type: MessageType.text
-                    );*/
-                  }
-                }
-                AppNavigator.popTimes(
-                    2); // Closes dialog + pushes view profile pipeline backwards
-              },
+              onPressed: () => AttachmentSendListener.send(
+                context,
+                path: docFile.path,
+                name: docFile.name,
+                type: MessageType.doc,
+                friendUid: targetUser,
+              ),
               child: const Icon(Icons.send, color: Colors.white),
             ),
           ),
         ],
       ),
+    ),
     );
   }
 }
