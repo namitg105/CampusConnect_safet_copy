@@ -3,8 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
-import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
-import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
+import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
 import 'package:noteswap/features/posts/presentation/pages/create_post_page.dart';
@@ -73,7 +72,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
 
     // Load feed when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authState = context.read<AuthCubit>().state;
+      final authState = context.read<AuthBloc>().state;
       if (authState is Authenticated) {
         postController.loadFeed(authState.user);
       }
@@ -89,7 +88,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthCubit, AuthState>(
+    return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, authState) {
         if (authState is! Authenticated) {
           return Scaffold(

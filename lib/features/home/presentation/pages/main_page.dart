@@ -21,8 +21,7 @@ import 'package:noteswap/features/posts/domain/usecases/upvote_post_usecase.dart
 import 'package:noteswap/features/posts/domain/usecases/get_user_votes_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/delete_post_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_user_liked_comments_usecase.dart';
-import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
-import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
+import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/noteswap_intern/NotesScreen.dart';
 import 'package:noteswap/noteswap_intern/UploadNotesScreen.dart';
 
@@ -58,7 +57,7 @@ class MainPage extends StatelessWidget {
     void handleCenterButtonTap() {
       final index = controller.currentIndex.value;
       if (index == 0) {
-        final authState = context.read<AuthCubit>().state;
+        final authState = context.read<AuthBloc>().state;
         if (authState is Authenticated) {
           final currentUser = authState.user;
           final postRepo = PostRepoImpl();

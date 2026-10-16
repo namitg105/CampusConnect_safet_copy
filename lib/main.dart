@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:noteswap/Views/Onboarding/OnboardingFlowScreen.dart';
-import 'package:noteswap/features/auth/data/firebase_auth_repo.dart';
-import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
-import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
-import 'package:noteswap/features/auth/presentation/pages/SplashScreen.dart';
+import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/private_chat/data/private-chat-services/user_service.dart';
 import 'package:noteswap/firebase_options.dart';
 
@@ -55,27 +52,22 @@ class MyApp extends StatelessWidget {
     final LightModeController darkModeController =
         Get.find<LightModeController>();
 
-    return RepositoryProvider(
-      create: (context) => FirebaseAuthRepo(),
-      child: MultiBlocProvider(
-        providers: [
-          BlocProvider<AuthCubit>(
-            create: (context) => AuthCubit(
-              authRepo: context.read<FirebaseAuthRepo>(),
-            )..checkAuth(),
-          ),
-        ],
-        child: Obx(
-          () => GetMaterialApp(
-            debugShowCheckedModeBanner: false,
-            theme: ThemeData.light(),
-            darkTheme: ThemeData.dark(),
-            themeMode: darkModeController.isLightMode.value
-                ? ThemeMode.light
-                : ThemeMode.dark,
-            scrollBehavior: MyCustomScrollBehavior(),
-            home: const AuthWrapper(),
-          ),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthBloc>(
+          create: (_) => sl<AuthBloc>()..add(const AuthCheckRequested()),
+        ),
+      ],
+      child: Obx(
+        () => GetMaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData.light(),
+          darkTheme: ThemeData.dark(),
+          themeMode: darkModeController.isLightMode.value
+              ? ThemeMode.light
+              : ThemeMode.dark,
+          scrollBehavior: MyCustomScrollBehavior(),
+          home: const AuthWrapper(),
         ),
       ),
     );
@@ -97,7 +89,7 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<AuthCubit, AuthState>(
+    return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, authState) {
         if (authState is AuthError) {
           ScaffoldMessenger.of(context).showSnackBar(

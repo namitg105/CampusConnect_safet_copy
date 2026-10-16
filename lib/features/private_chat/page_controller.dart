@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 
-import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
+import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/private_chat/data/private-chat-services/user_friend_add.dart';
 import 'package:noteswap/features/private_chat/domain/repos/chat_controller.dart';
 import 'presentation/Design_By_Opencode_3/directory_screen.dart';
@@ -50,8 +50,8 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
   }
 
   void logout() {
-    final authCubit = context.read<AuthCubit>();
-    authCubit.logout();
+    final authBloc = context.read<AuthBloc>();
+    authBloc.add(const AuthLogoutRequested());
   }
 
   void _onSearchChanged(String query) {

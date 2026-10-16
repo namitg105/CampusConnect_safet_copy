@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:noteswap/features/admin_events/presentation/screens/AdminEvent.dart';
-import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
-import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
+import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
 import 'package:noteswap/features/posts/presentation/pages/campus_feed_screen.dart';
@@ -71,7 +70,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
   }
 
   Future<void> _handleRefresh() async {
-    final authState = context.read<AuthCubit>().state;
+    final authState = context.read<AuthBloc>().state;
     if (authState is Authenticated) {
       setState(() {
         _isRefreshing = true;
@@ -116,7 +115,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
 
     // Check if user is already authenticated at initialization
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authState = context.read<AuthCubit>().state;
+      final authState = context.read<AuthBloc>().state;
       if (authState is Authenticated) {
         _loadProfileForUser(authState.user);
       } else {
@@ -178,13 +177,13 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
     final subTextColor = isLightMode ? Colors.grey[600] : Colors.grey[400];
     final brandColor = const Color(0xFF6139ED);
 
-    return BlocListener<AuthCubit, AuthState>(
+    return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is Authenticated) {
           _loadProfileForUser(state.user);
         }
       },
-      child: BlocBuilder<AuthCubit, AuthState>(
+      child: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, authState) {
           String displayName = 'Naresh';
           if (authState is Authenticated) {
