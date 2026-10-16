@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import '../RentCard/OfferBottom.dart';
 import '../RentCard/OfferHeader.dart';
 
@@ -9,18 +8,16 @@ class SearchCard extends StatelessWidget {
   final Color color;
   SearchCard({super.key, required this.color});
 
-  final LightModeController lightModeController = Get.put(LightModeController());
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      ()=> Padding(
+    return Builder(builder: (context)=> Padding(
         padding: const EdgeInsets.all(8),
         child: Container(
           padding:
           const EdgeInsets.only(top: 10, right: 22, left: 24, bottom: 18),
           decoration: BoxDecoration(
-            color:lightModeController.isLightMode.value ? Colors.black : Colors.white,
+            color:context.isLightMode ? Colors.black : Colors.white,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Row(

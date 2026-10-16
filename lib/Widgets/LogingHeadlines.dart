@@ -19,13 +19,13 @@ class LoginHeadlines extends StatelessWidget {
       children: [
         Text(
           headingText,
-          style: AppStyles.loginHeading,
+          style: AppStyles.loginHeading(context),
         ),
         const SizedBox(height: 20),
         Text(
           subHeadingText,
           textAlign: TextAlign.center,
-          style: AppStyles.loginSubheading,
+          style: AppStyles.loginSubheading(context),
         ),
       ],
     );

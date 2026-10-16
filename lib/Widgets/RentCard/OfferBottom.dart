@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 
 class OfferBottom extends StatelessWidget {
   final Widget? title;
@@ -11,16 +10,15 @@ class OfferBottom extends StatelessWidget {
     this.title,
   });
 
-  final LightModeController lightModeController = Get.put(LightModeController());
   @override
   Widget build(BuildContext context) {
-    return Obx(()=> Row(
+    return Builder(builder: (context)=> Row(
         children: [
           Expanded(
             child: Text(
               "Computation of \nMathematics",
               style: TextStyle(
-                color: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+                color: context.isLightMode ? Colors.white : Colors.black,
                 fontSize: 24,
               ),
               softWrap: true,

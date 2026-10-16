@@ -1,8 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
-import '../../ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 
 class OfferHeader extends StatelessWidget {
   final Color color;
@@ -11,17 +10,15 @@ class OfferHeader extends StatelessWidget {
     required this.color
   });
 
-  final LightModeController lightModeController = Get.put(LightModeController());
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      ()=> Row(
+    return Builder(builder: (context)=> Row(
         children: [
           Text(
             "CSE 2005",
             style: TextStyle(
-              color: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+              color: context.isLightMode ? Colors.white : Colors.black,
               fontSize: 16,
             ),
           ),

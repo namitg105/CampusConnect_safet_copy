@@ -1,8 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import 'ContainerRow.dart';
 import 'RentButton.dart';
 import 'RentImages.dart';
@@ -13,19 +11,17 @@ class RentNotesCard extends StatelessWidget {
     super.key,
   });
 
-  final LightModeController lightModeController = Get.put(LightModeController());
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      ()=> Padding(
+    return Builder(builder: (context)=> Padding(
         padding: const EdgeInsets.all(16.0),
         child: Container(
           width: double.infinity,
           height: 500,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            color: lightModeController.isLightMode.value ? Colors.black : Colors.white,
+            color: context.isLightMode ? Colors.black : Colors.white,
           ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),

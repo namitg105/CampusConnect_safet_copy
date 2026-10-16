@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import '../Constents/AppConstents.dart';
 import '../Constents/AppStyles.dart';
 
@@ -12,17 +10,15 @@ class LibraryOptionWidget extends StatelessWidget {
 
   LibraryOptionWidget({super.key, required this.iconPath, required this.label});
 
-  final LightModeController lightModeController = Get.put(LightModeController());
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      ()=> Container(
+    return Builder(builder: (context)=> Container(
         height: AppConstants.containerHeight,
         width: AppConstants.containerWidth,
         padding: EdgeInsets.only(left: AppConstants.paddingLeft),
         decoration: BoxDecoration(
-          color: lightModeController.isLightMode.value ? AppConstants.darkContainerColor : AppConstants.lightContainerColor,
+          color: context.isLightMode ? AppConstants.darkContainerColor : AppConstants.lightContainerColor,
           borderRadius: BorderRadius.circular(AppConstants.borderRadius),
         ),
         child: Row(
@@ -35,7 +31,7 @@ class LibraryOptionWidget extends StatelessWidget {
                 iconPath,
                 fit: BoxFit.contain,
                 colorFilter: ColorFilter.mode(
-                  lightModeController.isLightMode.value ? Colors.black : Colors.white,
+                  context.isLightMode ? Colors.black : Colors.white,
                   BlendMode.srcIn,
                 ),
               ),
@@ -44,7 +40,7 @@ class LibraryOptionWidget extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: AppStyles.textStyle,
+                style: AppStyles.textStyle(context),
               ),
             ),
           ],

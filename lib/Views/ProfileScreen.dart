@@ -5,7 +5,7 @@ import 'package:noteswap/Constents/AppConstents.dart';
 import 'package:noteswap/Widgets/TextWidgets.dart';
 import '../Constents/AppStyles.dart';
 import '../Services/ImagePicker.dart';
-import '../ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import '../Widgets/BottonBar/BottomBar.dart';
 import '../Widgets/Buttons/BackWidgets.dart';
 import '../Widgets/NotesCard.dart';
@@ -17,14 +17,12 @@ class ProfileScreen extends StatelessWidget {
   ProfileScreen({super.key});
 
   final ImagePickerService imagePickerService = Get.put(ImagePickerService());
-  final LightModeController lightModeController =
-      Get.find<LightModeController>();
   final ProfileController profileController = Get.put(ProfileController());
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final isLight = lightModeController.isLightMode.value;
+      final isLight = context.isLightMode;
 
       return Scaffold(
         backgroundColor: isLight ? Colors.white : Colors.black,
@@ -38,7 +36,7 @@ class ProfileScreen extends StatelessWidget {
           ),
           title: Text(
             AppConstants.noteSwapTexts,
-            style: AppStyles.textStyleLargeBold,
+            style: AppStyles.textStyleLargeBold(context),
           ),
           centerTitle: true,
           actions: [
@@ -86,7 +84,7 @@ class ProfileScreen extends StatelessWidget {
                             profileController.userName.value.isNotEmpty
                                 ? profileController.userName.value
                                 : AppConstants.userName,
-                            style: AppStyles.textStyleLargeBold,
+                            style: AppStyles.textStyleLargeBold(context),
                           ),
                           const SizedBox(height: 4),
 
@@ -95,7 +93,7 @@ class ProfileScreen extends StatelessWidget {
                             profileController.userBio.value.isNotEmpty
                                 ? profileController.userBio.value
                                 : AppConstants.userBio,
-                            style: AppStyles.textStyleMedium,
+                            style: AppStyles.textStyleMedium(context),
                           ),
                           const SizedBox(height: 16),
 
@@ -105,27 +103,27 @@ class ProfileScreen extends StatelessWidget {
                             children: [
                               Text(
                                 AppConstants.notesPurchased,
-                                style: AppStyles.textStyleSmallBold,
+                                style: AppStyles.textStyleSmallBold(context),
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 AppConstants.notesPurchasedLabel,
-                                style: AppStyles.textStyleSmall,
+                                style: AppStyles.textStyleSmall(context),
                               ),
                               const SizedBox(width: 30),
                               Text(
                                 AppConstants.separator,
-                                style: AppStyles.textStyleSmallBold,
+                                style: AppStyles.textStyleSmallBold(context),
                               ),
                               const SizedBox(width: 30),
                               Text(
                                 AppConstants.notesSold,
-                                style: AppStyles.textStyleSmallBold,
+                                style: AppStyles.textStyleSmallBold(context),
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 AppConstants.notesSoldLabel,
-                                style: AppStyles.textStyleSmall,
+                                style: AppStyles.textStyleSmall(context),
                               ),
                             ],
                           ),
@@ -144,7 +142,7 @@ class ProfileScreen extends StatelessWidget {
                         children: [
                           Text(
                             "Offers Made",
-                            style: AppStyles.offerStyleLarge,
+                            style: AppStyles.offerStyleLarge(context),
                           ),
                           const SizedBox(height: 12),
                           NoteCard(),

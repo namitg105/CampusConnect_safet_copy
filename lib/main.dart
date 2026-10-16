@@ -8,7 +8,7 @@ import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/private_chat/data/private-chat-services/user_service.dart';
 import 'package:noteswap/firebase_options.dart';
 
-import 'ViewModels/DarkModeViewModels.dart';
+import 'features/theme/presentation/bloc/theme_bloc.dart';
 import 'ViewModels/NotificationController.dart';
 import 'core/di/injection.dart'; // DI injection init
 import 'core/navigation/app_navigator.dart';
@@ -38,7 +38,6 @@ void main() async {
   await init();
 
   // Initialize controllers
-  Get.put(LightModeController());
   Get.put(NotificationController());
   await Get.putAsync<UserService>(() async => UserService());
 
@@ -50,23 +49,21 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final LightModeController darkModeController =
-        Get.find<LightModeController>();
-
     return MultiBlocProvider(
       providers: [
         BlocProvider<AuthBloc>(
           create: (_) => sl<AuthBloc>()..add(const AuthCheckRequested()),
         ),
+        BlocProvider<ThemeBloc>(create: (_) => sl<ThemeBloc>()),
       ],
-      child: Obx(
-        () => MaterialApp(
+      child: BlocBuilder<ThemeBloc, ThemeState>(
+        builder: (context, themeState) => MaterialApp(
           navigatorKey: rootNavigatorKey,
           scaffoldMessengerKey: rootMessengerKey,
           debugShowCheckedModeBanner: false,
           theme: ThemeData.light(),
           darkTheme: ThemeData.dark(),
-          themeMode: darkModeController.isLightMode.value
+          themeMode: themeState.isLightMode
               ? ThemeMode.light
               : ThemeMode.dark,
           scrollBehavior: MyCustomScrollBehavior(),

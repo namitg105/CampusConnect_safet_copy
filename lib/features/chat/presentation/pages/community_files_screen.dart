@@ -1,7 +1,6 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart' hide SnackPosition;
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:noteswap/features/private_chat/page_controller.dart';
 
 class CommunityFilesScreen extends StatelessWidget {
@@ -9,11 +8,9 @@ class CommunityFilesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final LightModeController lightModeController =
-        Get.find<LightModeController>();
 
-    return Obx(() {
-      final isLightMode = lightModeController.isLightMode.value;
+    return Builder(builder: (context) {
+      final isLightMode = context.isLightMode;
 
       final backgroundColor =
           isLightMode ? const Color(0xFFF4F1FC) : const Color(0xFF121214);

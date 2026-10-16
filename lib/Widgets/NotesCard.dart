@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:noteswap/Constents/AppConstents.dart';
-import '../ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import 'RentCard/OfferBottom.dart';
 import 'RentCard/OfferHeader.dart';
 
 class NoteCard extends StatelessWidget {
   NoteCard({super.key});
 
-  final LightModeController lightModeController = Get.put(LightModeController());
 
   @override
   Widget build(BuildContext context) {
-    return Obx(()=> Padding(
+    return Builder(builder: (context)=> Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Container(
           padding: const EdgeInsets.only(top: 10, right: 22, left: 24, bottom: 18),
           decoration: BoxDecoration(
-            color: lightModeController.isLightMode.value ? Colors.black : Colors.white,
+            color: context.isLightMode ? Colors.black : Colors.white,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
@@ -35,7 +33,7 @@ class NoteCard extends StatelessWidget {
                       title: Text(
                         "150/-",
                         style: TextStyle(
-                          color: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+                          color: context.isLightMode ? Colors.white : Colors.black,
                           fontSize: 22,
                         ),
                       ),
@@ -69,7 +67,7 @@ class NoteCard extends StatelessWidget {
                       child: Text(
                         "+2",
                         style: TextStyle(
-                            color: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+                            color: context.isLightMode ? Colors.white : Colors.black,
                             fontSize: 16,
                             fontWeight: FontWeight.bold),
                       ),

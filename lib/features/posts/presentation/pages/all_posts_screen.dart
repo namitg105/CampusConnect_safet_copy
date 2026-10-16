@@ -7,7 +7,7 @@ import 'package:noteswap/features/posts/presentation/controllers/post_controller
 import 'package:noteswap/features/posts/presentation/widgets/post_card.dart';
 import 'package:noteswap/features/posts/presentation/pages/post_detail_page.dart';
 import 'package:noteswap/features/posts/presentation/pages/user_profile_screen.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 
 class AllPostsScreen extends StatelessWidget {
   final String title;
@@ -51,11 +51,9 @@ class AllPostsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final LightModeController lightModeController =
-        Get.find<LightModeController>();
 
     return Obx(() {
-      final isLightMode = lightModeController.isLightMode.value;
+      final isLightMode = context.isLightMode;
 
       final backgroundColor =
           isLightMode ? const Color(0xFFF4F1FC) : const Color(0xFF121214);
