@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/components/components.dart';
-import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
-import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
+import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 import 'package:noteswap/features/private_chat/presentation/common_widgets.dart';
@@ -116,9 +115,9 @@ class RegisterPageUi extends State<RegisterPage> {
       return;
     }
 
-    // Call AuthCubit to register user via Firebase
-    final authCubit = context.read<AuthCubit>();
-    authCubit.register(name, email, pw);
+    // Call AuthBloc to register user via Firebase
+    final authBloc = context.read<AuthBloc>();
+    authBloc.add(AuthSignUpRequested(name: name, email: email, password: pw));
   }
 
   void _navigateToLogin() {
@@ -145,7 +144,7 @@ class RegisterPageUi extends State<RegisterPage> {
     imageWidthAdjustment = width / 1.1;
     _splashAppWidget = Splash_Widget_Components(width: width, height: height);
 
-    return BlocListener<AuthCubit, AuthState>(
+    return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is Authenticated) {
           // This clears the navigation stack and safely lands them on MainPage
@@ -286,7 +285,7 @@ class RegisterPageUi extends State<RegisterPage> {
             alignment: Alignment.center,
             child: IconButton(
               onPressed: () {
-                context.read<AuthCubit>().loginWithGoogle();
+                context.read<AuthBloc>().add(const AuthGoogleLoginRequested());
               },
               icon: Image.asset("assets/images_register/Google_icon.png"),
             ),

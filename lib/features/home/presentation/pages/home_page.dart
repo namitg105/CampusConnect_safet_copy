@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
-import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
-import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
+import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 import 'package:noteswap/features/posts/presentation/pages/campus_feed_screen.dart';
 import 'package:noteswap/features/dashboard/presentation/pages/dashboard_page_one.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
-import 'package:noteswap/features/auth/presentation/pages/SplashScreen.dart';
 import 'package:noteswap/features/private_chat/page_controller.dart';
 
 class HomePage extends StatefulWidget {
@@ -18,15 +16,15 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  void logout() async {
-    await context.read<AuthCubit>().logout();
-    Get.offAll(() => const SplashScreen());
+  // Navigation happens in the BlocListener below once state is Unauthenticated.
+  void logout() {
+    context.read<AuthBloc>().add(const AuthLogoutRequested());
   }
 
   @override
   Widget build(BuildContext context) {
     final brandColor = const Color(0xFF6139ED);
-    return BlocListener<AuthCubit, AuthState>(
+    return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is Unauthenticated) {
           Get.offAll(() => const AuthPage());
