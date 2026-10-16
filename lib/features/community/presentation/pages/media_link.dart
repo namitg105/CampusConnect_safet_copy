@@ -1,8 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MediaLinksDocsPage extends StatefulWidget {
@@ -57,11 +56,9 @@ class _MediaLinksDocsPageState extends State<MediaLinksDocsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final LightModeController lightModeController =
-        Get.find<LightModeController>();
 
-    return Obx(() {
-      final isLightMode = lightModeController.isLightMode.value;
+    return Builder(builder: (context) {
+      final isLightMode = context.isLightMode;
 
       final backgroundColor =
           isLightMode ? const Color(0xFFF4F1FC) : const Color(0xFF121214);

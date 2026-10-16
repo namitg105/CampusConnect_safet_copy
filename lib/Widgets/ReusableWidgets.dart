@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../Constents/AppStyles.dart';
-import '../ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import 'ImageWidgets.dart';
 
 class ReusableWidgets extends StatelessWidget {
@@ -14,11 +13,9 @@ class ReusableWidgets extends StatelessWidget {
     required this.text,
   });
 
-  final LightModeController lightModeController = Get.put(LightModeController());
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      ()=> Stack(
+    return Builder(builder: (context)=> Stack(
           fit: StackFit.expand,
           children: [
             Align(
@@ -27,7 +24,7 @@ class ReusableWidgets extends StatelessWidget {
                 height: 300,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+                  color: context.isLightMode ? Colors.white : Colors.black,
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(40.0),
                     bottomRight: Radius.circular(40.0),
@@ -38,7 +35,7 @@ class ReusableWidgets extends StatelessWidget {
                   child: Text(
                     text,
                     textAlign: TextAlign.center,
-                    style: AppStyles.headingTextStyleTwo
+                    style: AppStyles.headingTextStyleTwo(context)
                     ),
                   ),
                 ),
@@ -49,7 +46,7 @@ class ReusableWidgets extends StatelessWidget {
                 width: double.infinity,
                 height: 570,
                 decoration: BoxDecoration(
-                  color:lightModeController.isLightMode.value ? Colors.black : Colors.white,
+                  color:context.isLightMode ? Colors.black : Colors.white,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(40.0),
                     topRight: Radius.circular(40.0),

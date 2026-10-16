@@ -1,8 +1,7 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart' hide SnackPosition;
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:noteswap/Views/AddUsers.dart';
 import 'package:noteswap/Views/Notification.dart';
 import 'package:noteswap/features/notes_swap/AddNotesPage.dart';
@@ -20,8 +19,6 @@ class NoteSwapSearchScreen extends StatefulWidget {
 }
 
 class _NoteSwapSearchScreenState extends State<NoteSwapSearchScreen> {
-  final LightModeController lightModeController =
-      Get.put(LightModeController());
   final TextEditingController searchController = TextEditingController();
 
   String selectedFilter = "All";
@@ -38,8 +35,8 @@ class _NoteSwapSearchScreenState extends State<NoteSwapSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final isLight = lightModeController.isLightMode.value;
+    return Builder(builder: (context) {
+      final isLight = context.isLightMode;
 
       final bgColor =
           isLight ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);

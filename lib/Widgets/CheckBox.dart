@@ -1,8 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 
 import '../Constents/AppConstents.dart';
 
@@ -13,7 +11,6 @@ class CheckBox extends StatelessWidget {
     required this.isChecked,
   });
 
-  final LightModeController lightModeController = Get.put(LightModeController());
 
   final VoidCallback onPressed;
   final bool isChecked;
@@ -26,11 +23,11 @@ class CheckBox extends StatelessWidget {
         width: 28,
         height: 28,
         decoration: BoxDecoration(
-          color: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+          color: context.isLightMode ? Colors.white : Colors.black,
           borderRadius: BorderRadius.circular(8),
         ),
         child: isChecked
-            ? Icon(Icons.check, color: lightModeController.isLightMode.value ? Colors.black : Colors.white, size: AppConstants.iconSize)
+            ? Icon(Icons.check, color: context.isLightMode ? Colors.black : Colors.white, size: AppConstants.iconSize)
             : null,
       ),
     );

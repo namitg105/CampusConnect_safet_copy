@@ -1,7 +1,7 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide SnackPosition;
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:noteswap/Views/AddUsers.dart';
 import 'package:noteswap/Views/Notification.dart';
 import 'package:noteswap/Views/SearchScreen.dart';
@@ -16,15 +16,13 @@ import '../features/home/presentation/pages/main_page.dart';
 class FeedScreen extends StatelessWidget {
   final ImageSectionController imageController =
       Get.put(ImageSectionController());
-  final LightModeController lightModeController =
-      Get.put(LightModeController());
 
   FeedScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final isLight = lightModeController.isLightMode.value;
+    return Builder(builder: (context) {
+      final isLight = context.isLightMode;
 
       // Color Palette Definition
       final bgColor =

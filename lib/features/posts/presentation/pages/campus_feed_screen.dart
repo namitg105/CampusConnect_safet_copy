@@ -13,7 +13,7 @@ import 'package:noteswap/features/posts/presentation/pages/user_profile_screen.d
 import 'package:noteswap/features/posts/presentation/widgets/post_card.dart';
 import 'package:noteswap/features/posts/presentation/pages/all_posts_screen.dart';
 import 'package:noteswap/features/posts/presentation/pages/all_announcements_screen.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:noteswap/features/posts/data/post_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/add_comment_usecase.dart';
@@ -42,8 +42,6 @@ class CampusFeedScreen extends StatefulWidget {
 
 class _CampusFeedScreenState extends State<CampusFeedScreen> {
   late PostController postController;
-  final LightModeController lightModeController =
-      Get.find<LightModeController>();
   final _searchQuery = ''.obs;
 
   @override
@@ -97,7 +95,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
               child: Text(
                 'Please login to view the feed',
                 style: TextStyle(
-                  color: lightModeController.isLightMode.value
+                  color: context.isLightMode
                       ? Colors.black
                       : Colors.white,
                 ),
@@ -107,7 +105,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
         }
 
         final currentUser = authState.user;
-        final isLightMode = lightModeController.isLightMode.value;
+        final isLightMode = context.isLightMode;
 
         // Custom colors matching the uniConnect Figma specification
         final backgroundColor =

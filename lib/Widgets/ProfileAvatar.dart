@@ -1,9 +1,7 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import '../Constents/AppConstents.dart'; // Fixed incorrect import
 
 class ProfileAvatar extends StatelessWidget {
@@ -11,14 +9,13 @@ class ProfileAvatar extends StatelessWidget {
   final double? radius;
   final VoidCallback? onCameraTap;
 
-  ProfileAvatar({
+  const ProfileAvatar({
     super.key,
     required this.imagePath,
     this.radius,
     this.onCameraTap,
   });
 
-  final LightModeController lightModeController = Get.put(LightModeController());
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +24,7 @@ class ProfileAvatar extends StatelessWidget {
     return GestureDetector(
       onTap: onCameraTap,
       child: CircleAvatar(
-        backgroundColor: lightModeController.isLightMode.value? Colors.black : Colors.grey,
+        backgroundColor: context.isLightMode? Colors.black : Colors.grey,
         radius: radius ?? 55.0,
         backgroundImage: isFileImage
             ? FileImage(File(imagePath))

@@ -1,10 +1,9 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final AppUser user;
@@ -61,10 +60,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final LightModeController lightModeController =
-        Get.find<LightModeController>();
-    return Obx(() {
-      final isLightMode = lightModeController.isLightMode.value;
+    return Builder(builder: (context) {
+      final isLightMode = context.isLightMode;
       final textColor = isLightMode ? Colors.black87 : Colors.white;
       final labelColor = isLightMode ? Colors.grey[600] : Colors.grey[400];
       final cardColor = isLightMode ? Colors.white : const Color(0xFF1E1E1E);

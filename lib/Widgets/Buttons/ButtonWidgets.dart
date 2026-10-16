@@ -25,7 +25,7 @@ class ButtonWidgets extends StatelessWidget {
           ),
           child: Text(
             buttonText,
-            style: AppStyles.goalTextStyle,
+            style: AppStyles.goalTextStyle(context),
           ),
         ),
       ),

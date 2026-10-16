@@ -1,7 +1,6 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart' hide SnackPosition;
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:noteswap/Views/AddUsers.dart';
 import 'package:noteswap/Views/Notification.dart';
 import 'package:noteswap/Views/SearchScreen.dart';
@@ -17,14 +16,12 @@ import '../features/notes_swap/noti.dart';
 class SearchScreen extends StatelessWidget {
   SearchScreen({super.key});
 
-  final LightModeController lightModeController =
-      Get.put(LightModeController());
   final TextEditingController searchController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final isLight = lightModeController.isLightMode.value;
+    return Builder(builder: (context) {
+      final isLight = context.isLightMode;
 
       // Color Palette Definition
       final bgColor =

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:noteswap/Constents/AppConstents.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 
 class ImageContainer extends StatelessWidget {
   final String imagePath;
@@ -14,7 +14,6 @@ class ImageContainer extends StatelessWidget {
     required this.currentPage,
   });
 
-  final LightModeController lightModeController = Get.put(LightModeController());
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +45,7 @@ class ImageContainer extends StatelessWidget {
                 width: 120,
                 height: 160,
                 decoration: BoxDecoration(
-                  color: lightModeController.isLightMode.value ? AppConstants.darkContainerColor : AppConstants.lightContainerColor,
+                  color: context.isLightMode ? AppConstants.darkContainerColor : AppConstants.lightContainerColor,
                   borderRadius: BorderRadius.circular(20),
                 ),
               );

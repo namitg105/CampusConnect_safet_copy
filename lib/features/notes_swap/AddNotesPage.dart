@@ -1,8 +1,7 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart' hide SnackPosition;
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:noteswap/Views/Notification.dart';
 import 'package:noteswap/features/notes_swap/searchScreen.dart';
 
@@ -19,8 +18,6 @@ class AddNotesPage extends StatefulWidget {
 }
 
 class _AddNotesPageState extends State<AddNotesPage> {
-  final LightModeController lightModeController =
-      Get.put(LightModeController());
 
   // Form Controllers & State Flags
   final _formKey = GlobalKey<FormState>();
@@ -106,8 +103,8 @@ class _AddNotesPageState extends State<AddNotesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final isLight = lightModeController.isLightMode.value;
+    return Builder(builder: (context) {
+      final isLight = context.isLightMode;
 
       final bgColor =
           isLight ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
