@@ -7,7 +7,7 @@ import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/posts/domain/entities/comment_entity.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
 import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:noteswap/utils/time_formatter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -100,8 +100,6 @@ class PostDetailPage extends StatefulWidget {
 class _PostDetailPageState extends State<PostDetailPage> {
   final commentController = TextEditingController();
   final focusNode = FocusNode();
-  final LightModeController lightModeController =
-      Get.find<LightModeController>();
 
   // Track collapsed comment threads
   final Set<String> collapsedCommentIds = {};
@@ -211,7 +209,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
     final brandColor = const Color(0xFF6139ED);
 
     return Obx(() {
-      final isLightMode = lightModeController.isLightMode.value;
+      final isLightMode = context.isLightMode;
       final cardColor = isLightMode ? Colors.white : const Color(0xFF1E1E1E);
       final textColor = isLightMode ? Colors.black87 : Colors.white;
       final subTextColor = isLightMode ? Colors.grey[600]! : Colors.grey[400]!;

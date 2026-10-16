@@ -1,6 +1,6 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:noteswap/Views/Authentication/SingUpScreen.dart';
 import 'package:noteswap/Widgets/Buttons/BackWidgets.dart';
 import '../../Constents/AppConstents.dart';
@@ -18,16 +18,15 @@ class LoginScreen extends StatelessWidget {
   LoginScreen({super.key,required this.togglePages});
 
   final TextEditingController passwordController = TextEditingController();
-  final LightModeController lightModeController = Get.put(LightModeController());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+      backgroundColor: context.isLightMode ? Colors.white : Colors.black,
         appBar: AppBar(
-          backgroundColor: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+          backgroundColor: context.isLightMode ? Colors.white : Colors.black,
           leading: BackWidget(
-            onTap:(){}/* Get.to(/*removed login screen for now  */);*/
+            onTap:(){}/* AppNavigator.push(/*removed login screen for now  */);*/
 ,
             imagePath: AppConstants.backBlackIcon,
           ),
@@ -40,7 +39,7 @@ class LoginScreen extends StatelessWidget {
               child: Container(
                 height: 268,
                 width: double.infinity,
-                color: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+                color: context.isLightMode ? Colors.white : Colors.black,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: LoginHeadlines(
                   headingText: AppConstants.loginTitle,
@@ -54,7 +53,7 @@ class LoginScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 670,
                 decoration: BoxDecoration(
-                  color: lightModeController.isLightMode.value ? Colors.black : Colors.white,
+                  color: context.isLightMode ? Colors.black : Colors.white,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(40.0),
                     topRight: Radius.circular(40.0),
@@ -97,7 +96,7 @@ class LoginScreen extends StatelessWidget {
                         padding: const EdgeInsets.all(35.0),
                         child: ButtonWidgets(
                           onTap: () {
-                            Get.to(ProfileScreen());
+                            AppNavigator.push(ProfileScreen());
                           },
                           buttonText: 'Log In',
                         ),
@@ -105,7 +104,7 @@ class LoginScreen extends StatelessWidget {
                       const SizedBox(height: 5),
                       BottomButton(
                         onTap: () {
-                          Get.to(SignUpScreen());
+                          AppNavigator.push(SignUpScreen());
                         },
                       )
                     ],

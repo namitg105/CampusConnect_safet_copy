@@ -1,10 +1,10 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/chat/domain/entities/chat_room_entity.dart';
 import 'package:noteswap/features/chat/presentation/pages/chat_room_page.dart';
 import 'package:noteswap/features/chat/presentation/pages/create_chat_room_page.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 
 class ChatRoomsPage extends StatefulWidget {
   final AppUser currentUser;
@@ -75,11 +75,9 @@ class _ChatRoomsPageState extends State<ChatRoomsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final LightModeController lightModeController =
-        Get.find<LightModeController>();
 
-    return Obx(() {
-      final isLightMode = lightModeController.isLightMode.value;
+    return Builder(builder: (context) {
+      final isLightMode = context.isLightMode;
 
       final backgroundColor =
           isLightMode ? const Color(0xFFF4F1FC) : const Color(0xFF121214);
@@ -96,7 +94,7 @@ class _ChatRoomsPageState extends State<ChatRoomsPage> {
           backgroundColor: cardColor,
           leading: IconButton(
             icon: Icon(Icons.arrow_back, color: textColor),
-            onPressed: () => Get.back(),
+            onPressed: () => AppNavigator.pop(),
           ),
           title: Text(
             'Chat Rooms',
@@ -111,8 +109,7 @@ class _ChatRoomsPageState extends State<ChatRoomsPage> {
             IconButton(
               icon: Icon(Icons.add_comment_outlined, color: brandColor),
               onPressed: () {
-                Get.to(
-                    () => CreateChatRoomPage(currentUser: widget.currentUser));
+                AppNavigator.push(CreateChatRoomPage(currentUser: widget.currentUser));
               },
             ),
           ],
@@ -180,7 +177,7 @@ class _ChatRoomsPageState extends State<ChatRoomsPage> {
                             child: _ChatRoomTile(
                               room: room,
                               onTap: () {
-                                Get.to(() => ChatRoomPage(
+                                AppNavigator.push(ChatRoomPage(
                                       currentUser: widget.currentUser,
                                       chatRoom: room,
                                     ));

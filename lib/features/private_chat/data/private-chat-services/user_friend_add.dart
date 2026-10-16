@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'package:noteswap/features/auth/data/models/app_user_model.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/private_chat/data/private-chat-functions/add_friend_function.dart';
 import 'package:noteswap/features/private_chat/domain/repos/chat_controller.dart';
@@ -114,7 +115,7 @@ class UserController extends GetxController {
 
       // Convert the Firestore documents back into a clean List of AppUser entities
       List<AppUser> users = querySnapshot.docs.map((doc) {
-        return AppUser.fromJson(doc.data() as Map<String, dynamic>);
+        return AppUserModel.fromJson(doc.data() as Map<String, dynamic>);
       }).toList();
 
       // Update the reactive GetX variable so the UI updates automatically

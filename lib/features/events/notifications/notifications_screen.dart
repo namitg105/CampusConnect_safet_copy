@@ -1,8 +1,8 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:get/get.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noteswap/core/di/injection.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
@@ -281,7 +281,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       final friendData = friendDoc.data() ?? {};
       final friendName = friendData['name'] ?? 'Friend';
 
-      Get.to(() => ChatScreen(
+      AppNavigator.push(ChatScreen(
             roomId: targetRoomId,
             currentUid: currentUid,
             friendUid: friendUid,
@@ -357,13 +357,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             GetUserLikedCommentsUseCase(repository: postRepo),
       );
 
-      Get.to(() => PostDetailPage(
+      AppNavigator.push(PostDetailPage(
             post: post,
             controller: postController,
             currentUser: currentUser,
           ));
     } else if (notification.type == NotificationType.event) {
-      Get.to(() => AllCommunityEventsPage());
+      AppNavigator.push(AllCommunityEventsPage());
     }
   }
 

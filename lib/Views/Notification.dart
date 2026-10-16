@@ -1,7 +1,6 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import '../Constents/AppConstents.dart';
 import '../Constents/AppStyles.dart';
 import '../Widgets/BottonBar/BottomBar.dart';
@@ -13,41 +12,39 @@ import 'RentScreen.dart';
 class NotificationScreen extends StatelessWidget {
   NotificationScreen({super.key});
 
-  final LightModeController lightModeController = Get.put(LightModeController());
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      ()=> Scaffold(
-        backgroundColor: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+    return Builder(builder: (context)=> Scaffold(
+        backgroundColor: context.isLightMode ? Colors.white : Colors.black,
         appBar: AppBar(
-          backgroundColor: lightModeController.isLightMode.value ? Colors.black : Colors.white,
+          backgroundColor: context.isLightMode ? Colors.black : Colors.white,
           leading: BackWidget(
             onTap: () {},
-            imagePath: lightModeController.isLightMode.value ? AppConstants.backWhiteIcon : AppConstants.backBlackIcon,
+            imagePath: context.isLightMode ? AppConstants.backWhiteIcon : AppConstants.backBlackIcon,
           ),
           title: Text(
             AppConstants.noteSwapTexts,
-            style: AppStyles.textStyleLargeBold,
+            style: AppStyles.textStyleLargeBold(context),
           ),
           centerTitle: true,
           actions: [
             BackWidget(
               onTap: () {},
-              imagePath: lightModeController.isLightMode.value ? AppConstants.whiteSettingIcon : AppConstants.blackSettingIcon,
+              imagePath: context.isLightMode ? AppConstants.whiteSettingIcon : AppConstants.blackSettingIcon,
             ),
           ],
         ),
         body: Column(
           children: [
-            NarrowContainer(isLightMode: lightModeController.isLightMode.value,),
+            NarrowContainer(isLightMode: context.isLightMode,),
             Expanded(
               child: ListView.builder(
                 itemCount: 10,
                 itemBuilder: (context, index) {
                   return GestureDetector(
                     onTap: (){
-                     Get.to(RentCard());
+                     AppNavigator.push(RentCard());
                     },
                     child: RentCardCustom(),
                   );

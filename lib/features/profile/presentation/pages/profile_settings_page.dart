@@ -1,9 +1,8 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart';
-import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
-import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
+import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/update_profile_usecase.dart';
@@ -37,7 +36,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
   }
 
   Future<void> _loadProfile() async {
-    final authState = context.read<AuthCubit>().state;
+    final authState = context.read<AuthBloc>().state;
     if (authState is Authenticated) {
       final data = await profileUseCase.call(authState.user.uid);
       if (mounted) {
@@ -78,11 +77,11 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     final brandColor = const Color(0xFF6139ED);
 
     // CHANGED: Using BlocConsumer to listen to state changes and trigger navigation
-    return BlocConsumer<AuthCubit, AuthState>(
+    return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, authState) {
         if (authState is Unauthenticated) {
           // Clears the stack and routes to the first Onboarding Screen
-          Get.offAll(() => const OnboardingFlowScreen(initialPage: 0));
+          AppNavigator.replaceAll(const OnboardingFlowScreen(initialPage: 0));
         }
       },
       builder: (context, authState) {
@@ -425,13 +424,11 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                 ],
                               ),
                               child: GestureDetector(
-                                onTap: () async {
-                                  try {
-                                    await context.read<AuthCubit>().logout();
-                                    // The BlocConsumer listener at the top will handle the navigation automatically when the state changes
-                                  } catch (e) {
-                                    debugPrint("Logout error: $e");
-                                  }
+                                onTap: () {
+                                  // The BlocConsumer listener at the top handles navigation once the state becomes Unauthenticated
+                                  context
+                                      .read<AuthBloc>()
+                                      .add(const AuthLogoutRequested());
                                 },
                                 child: _buildSettingItem(
                                   Icons.logout_outlined,
@@ -734,7 +731,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     final inputBg = isLightMode ? Colors.grey[100] : const Color(0xFF2A2A2A);
     final textColor = isLightMode ? Colors.black87 : Colors.white;
 
-    final authState = context.read<AuthCubit>().state;
+    final authState = context.read<AuthBloc>().state;
     if (authState is! Authenticated) return;
     final userId = authState.user.uid;
 
@@ -1008,8 +1005,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       if (context.mounted &&
                                           finalName.isNotEmpty) {
                                         context
-                                            .read<AuthCubit>()
-                                            .updateCurrentUserName(finalName);
+                                            .read<AuthBloc>()
+                                            .add(AuthUserNameUpdated(finalName));
                                       }
 
                                       // Close the sheet safely
@@ -1019,10 +1016,10 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
 
                                       _loadProfile();
 
-                                    Get.snackbar(
+                                    AppNavigator.showSnackbar(
                                       'Success',
                                       'Profile updated successfully',
-                                      snackPosition: SnackPosition.BOTTOM,
+                                      snackPosition: SnackPosition.bottom,
                                       backgroundColor: const Color(0xFF6139ED),
                                       colorText: Colors.white,
                                     );
@@ -1030,10 +1027,10 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                     setModalState(() {
                                       isSaving = false;
                                     });
-                                    Get.snackbar(
+                                    AppNavigator.showSnackbar(
                                       'Error',
                                       'Failed to update profile: $e',
-                                      snackPosition: SnackPosition.BOTTOM,
+                                      snackPosition: SnackPosition.bottom,
                                       backgroundColor: Colors.redAccent,
                                       colorText: Colors.white,
                                     );

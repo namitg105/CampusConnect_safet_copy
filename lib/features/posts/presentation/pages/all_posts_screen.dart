@@ -1,12 +1,13 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
 import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
 import 'package:noteswap/features/posts/presentation/widgets/post_card.dart';
 import 'package:noteswap/features/posts/presentation/pages/post_detail_page.dart';
 import 'package:noteswap/features/posts/presentation/pages/user_profile_screen.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 
 class AllPostsScreen extends StatelessWidget {
   final String title;
@@ -50,11 +51,9 @@ class AllPostsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final LightModeController lightModeController =
-        Get.find<LightModeController>();
 
     return Obx(() {
-      final isLightMode = lightModeController.isLightMode.value;
+      final isLightMode = context.isLightMode;
 
       final backgroundColor =
           isLightMode ? const Color(0xFFF4F1FC) : const Color(0xFF121214);
@@ -99,12 +98,12 @@ class AllPostsScreen extends StatelessWidget {
                   final post = displayedPosts[index];
                   return PostCard(
                     post: post,
-                    onTap: () => Get.to(() => PostDetailPage(
+                    onTap: () => AppNavigator.push(PostDetailPage(
                           post: post,
                           controller: controller,
                           currentUser: currentUser,
                         )),
-                    onProfileTap: () => Get.to(() => UserProfileScreen(
+                    onProfileTap: () => AppNavigator.push(UserProfileScreen(
                             user: AppUser(
                           uid: post.authorId,
                           email: '',

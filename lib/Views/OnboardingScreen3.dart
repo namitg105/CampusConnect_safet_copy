@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
 
 class Onboardingscreen3 extends StatelessWidget {
   Onboardingscreen3({super.key});
 
-  final LightModeController lightModeController =
-      Get.put(LightModeController());
 
   @override
   Widget build(BuildContext context) {

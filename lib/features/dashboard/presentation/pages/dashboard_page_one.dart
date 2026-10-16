@@ -1,9 +1,9 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/features/admin_events/presentation/screens/AdminEvent.dart';
-import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
-import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
+import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
 import 'package:noteswap/features/posts/presentation/pages/campus_feed_screen.dart';
@@ -14,7 +14,7 @@ import 'package:noteswap/utils/time_formatter.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/group_chat/presentation/pages/groups_page.dart';
 import 'package:noteswap/features/events/notifications/notifications_screen.dart';
-import 'package:noteswap/ViewModels/NotificationController.dart';
+import 'package:noteswap/features/notification_badge/presentation/bloc/notification_badge_bloc.dart';
 import 'package:noteswap/features/posts/presentation/pages/post_detail_page.dart';
 import 'package:noteswap/features/posts/presentation/pages/all_announcements_screen.dart';
 import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
@@ -71,7 +71,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
   }
 
   Future<void> _handleRefresh() async {
-    final authState = context.read<AuthCubit>().state;
+    final authState = context.read<AuthBloc>().state;
     if (authState is Authenticated) {
       setState(() {
         _isRefreshing = true;
@@ -116,7 +116,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
 
     // Check if user is already authenticated at initialization
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authState = context.read<AuthCubit>().state;
+      final authState = context.read<AuthBloc>().state;
       if (authState is Authenticated) {
         _loadProfileForUser(authState.user);
       } else {
@@ -178,13 +178,13 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
     final subTextColor = isLightMode ? Colors.grey[600] : Colors.grey[400];
     final brandColor = const Color(0xFF6139ED);
 
-    return BlocListener<AuthCubit, AuthState>(
+    return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is Authenticated) {
           _loadProfileForUser(state.user);
         }
       },
-      child: BlocBuilder<AuthCubit, AuthState>(
+      child: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, authState) {
           String displayName = 'Naresh';
           if (authState is Authenticated) {
@@ -248,20 +248,18 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                             ),
                           ],
                         ),
-                        Builder(
-                          builder: (context) {
-                            final notifCtrl = Get.put(NotificationController());
-                            return Obx(
-                              () => Stack(
+                        BlocBuilder<NotificationBadgeBloc,
+                            NotificationBadgeState>(
+                          builder: (context, badge) {
+                            return Stack(
                                 alignment: Alignment.center,
                                 children: [
                                   IconButton(
-                                    onPressed: () => Get.to(
-                                        () => const NotificationsScreen()),
+                                    onPressed: () => AppNavigator.push(const NotificationsScreen()),
                                     icon: Icon(Icons.notifications_none,
                                         color: textColor),
                                   ),
-                                  if (notifCtrl.unreadCount.value > 0)
+                                  if (badge.hasUnread)
                                     Positioned(
                                       top: 12,
                                       right: 12,
@@ -275,7 +273,6 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                       ),
                                     ),
                                 ],
-                              ),
                             );
                           },
                         ),
@@ -360,7 +357,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                       textColor,
                                       onTap: () {
                                         if (authState is Authenticated) {
-                                          Get.to(() => GroupsDisplayPage());
+                                          AppNavigator.push(GroupsDisplayPage());
                                         }
                                       },
                                     ),
@@ -373,8 +370,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                       brandColor,
                                       cardColor,
                                       textColor,
-                                      onTap: () => Get.to(
-                                          () => const CampusFeedScreen()),
+                                      onTap: () => AppNavigator.push(const CampusFeedScreen()),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -385,8 +381,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                       brandColor,
                                       cardColor,
                                       textColor,
-                                      onTap: () => Get.to(
-                                          () => AllCommunityEventsPage()),
+                                      onTap: () => AppNavigator.push(AllCommunityEventsPage()),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -401,7 +396,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                   if (authState is Authenticated) {
                                     final postController =
                                         _createPostController();
-                                    Get.to(() => AllAnnouncementsScreen(
+                                    AppNavigator.push(AllAnnouncementsScreen(
                                           controller: postController,
                                           currentUser: authState.user,
                                         ));
@@ -455,7 +450,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                               if (authState is Authenticated) {
                                                 final postController =
                                                     _createPostController();
-                                                Get.to(() => PostDetailPage(
+                                                AppNavigator.push(PostDetailPage(
                                                       post: post,
                                                       controller:
                                                           postController,
@@ -514,8 +509,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                           ),
                                         ),
                                         GestureDetector(
-                                          onTap: () => Get.to(
-                                              () => const CampusFeedScreen()),
+                                          onTap: () => AppNavigator.push(const CampusFeedScreen()),
                                           child: Text(
                                             'View all',
                                             style: TextStyle(
@@ -850,7 +844,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
         final PostController controller = Get.isRegistered<PostController>()
             ? Get.find<PostController>()
             : Get.put(_createPostController());
-        Get.to(() => PostDetailPage(
+        AppNavigator.push(PostDetailPage(
               post: post,
               controller: controller,
             ));

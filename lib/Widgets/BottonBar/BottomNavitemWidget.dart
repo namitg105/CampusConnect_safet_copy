@@ -5,7 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../Constents/AppConstents.dart';
 import '../../ViewModels/NavController.dart';
-import '../../ViewModels/NotificationController.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:noteswap/features/notification_badge/presentation/bloc/notification_badge_bloc.dart';
 
 class BottomNavItemWidget extends StatelessWidget {
   final String assetPath;
@@ -22,7 +23,7 @@ class BottomNavItemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final BottomNavController controller = Get.find();
-    final NotificationController notifCtrl = Get.put(NotificationController());
+    final hasUnread = context.watch<NotificationBadgeBloc>().state.hasUnread;
     return Obx(
       () => Stack(
         clipBehavior: Clip.none,
@@ -38,7 +39,7 @@ class BottomNavItemWidget extends StatelessWidget {
               BlendMode.srcIn,
             ),
           ),
-          if (index == 3 && notifCtrl.unreadCount.value > 0)
+          if (index == 3 && hasUnread)
             Positioned(
               right: -4,
               top: -4,

@@ -1,7 +1,7 @@
 // component_media_dialog.dart
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -43,7 +43,7 @@ class ComponentMediaDialog {
                       showErrorSnackbar('Image exceeds 10 MB limit');
                       return;
                     }
-                    Get.to(() => ImagePreviewScreen(
+                    AppNavigator.push(ImagePreviewScreen(
                         imageFile: pickedFile,
                         imagePath: pickedFile.path,
                         targetUser: targetUser));
@@ -74,7 +74,7 @@ class ComponentMediaDialog {
                       name: pickedPlatformFile.name,
                     );
 
-                    Get.to(() => DocumentPreviewScreen(
+                    AppNavigator.push(DocumentPreviewScreen(
                         docFile: docXFile,
                         docPath: docXFile.path,
                         targetUser: targetUser));
@@ -90,7 +90,7 @@ class ComponentMediaDialog {
                         pickedFile.name.split('.').last.toLowerCase();
 
                     if (allowedExtensions.contains(extension)) {
-                      Get.to(() => DocumentPreviewScreen(
+                      AppNavigator.push(DocumentPreviewScreen(
                           docFile: pickedFile,
                           docPath: pickedFile.path,
                           targetUser: targetUser));
@@ -102,7 +102,7 @@ class ComponentMediaDialog {
                   }
                   
                   if (pickedFile != null) {
-                    Get.to(() => DocumentPreviewScreen(
+                    AppNavigator.push(DocumentPreviewScreen(
                         docFile: pickedFile,
                         docPath: pickedFile.path,
                         targetUser: targetUser));

@@ -1,4 +1,5 @@
-import 'package:get/get.dart';
+import 'package:noteswap/core/navigation/app_navigator.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/Views/AddUsers.dart';
 
 import '../Views/FeedScreen.dart';
@@ -13,19 +14,19 @@ class BottomNavController extends GetxController {
     selectedIndex.value = index;
     switch (index) {
       case 0:
-        Get.to(FeedScreen());
+        AppNavigator.push(FeedScreen());
         break;
       case 1:
-        Get.to(SearchScreen());
+        AppNavigator.push(SearchScreen());
         break;
       case 2:
-        Get.to(AddUsers());
+        AppNavigator.push(AddUsers());
         break;
       case 3:
-        Get.to(NotificationScreen());
+        AppNavigator.push(NotificationScreen());
         break;
       case 4:
-        Get.to(ProfileScreen());
+        AppNavigator.push(ProfileScreen());
         break;
     }
   }

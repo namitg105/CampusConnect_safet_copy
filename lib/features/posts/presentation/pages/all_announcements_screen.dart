@@ -1,9 +1,10 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
 import 'package:noteswap/features/posts/presentation/pages/post_detail_page.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:noteswap/utils/time_formatter.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -56,11 +57,9 @@ class _AllAnnouncementsScreenState extends State<AllAnnouncementsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final LightModeController lightModeController =
-        Get.find<LightModeController>();
 
     return Obx(() {
-      final isLightMode = lightModeController.isLightMode.value;
+      final isLightMode = context.isLightMode;
 
       final backgroundColor =
           isLightMode ? const Color(0xFFF4F1FC) : const Color(0xFF121214);
@@ -118,7 +117,7 @@ class _AllAnnouncementsScreenState extends State<AllAnnouncementsScreen> {
                       final date = formatTimeAgo(post.createdAt);
 
                       return GestureDetector(
-                        onTap: () => Get.to(() => PostDetailPage(
+                        onTap: () => AppNavigator.push(PostDetailPage(
                               post: post,
                               controller: widget.controller,
                               currentUser: widget.currentUser,

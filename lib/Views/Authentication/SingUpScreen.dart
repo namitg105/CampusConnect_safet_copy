@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:noteswap/Widgets/Buttons/BackWidgets.dart';
 import '../../Constents/AppConstents.dart';
 import '../../Constents/AppStyles.dart';
@@ -18,14 +18,13 @@ class SignUpScreen extends StatelessWidget {
 
   final TextEditingController passwordController = TextEditingController();
   final CheckBoxController controller = Get.put(CheckBoxController());
-  final LightModeController lightModeController = Get.put(LightModeController());
 
   @override
   Widget build(BuildContext context) {
     return Obx(
       ()=> Scaffold(
         appBar: AppBar(
-          backgroundColor: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+          backgroundColor: context.isLightMode ? Colors.white : Colors.black,
           leading: BackWidget(onTap: () {}, imagePath: AppConstants.backBlackIcon,),
         ),
         body: Stack(
@@ -36,7 +35,7 @@ class SignUpScreen extends StatelessWidget {
               child: Container(
                 height: 268,
                 width: double.infinity,
-                color: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+                color: context.isLightMode ? Colors.white : Colors.black,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: LoginHeadlines(
                   headingText: AppConstants.signupTitle,
@@ -50,7 +49,7 @@ class SignUpScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 670,
                 decoration: BoxDecoration(
-                  color: lightModeController.isLightMode.value ? Colors.black : Colors.white,
+                  color: context.isLightMode ? Colors.black : Colors.white,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(40.0),
                     topRight: Radius.circular(40.0),
@@ -109,7 +108,7 @@ class SignUpScreen extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 AppConstants.termsText,
-                                style: AppStyles.normalText.copyWith(fontSize: 14),
+                                style: AppStyles.normalText(context).copyWith(fontSize: 14),
                               ),
                             ),
                           ],

@@ -1,9 +1,9 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/chat/domain/entities/chat_room_entity.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 
 class LocalChatMessage {
   final String senderName;
@@ -446,11 +446,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
   @override
   Widget build(BuildContext context) {
-    final LightModeController lightModeController =
-        Get.find<LightModeController>();
 
-    return Obx(() {
-      final isLightMode = lightModeController.isLightMode.value;
+    return Builder(builder: (context) {
+      final isLightMode = context.isLightMode;
 
       final backgroundColor =
           isLightMode ? Colors.white : const Color(0xFF121214);
@@ -476,7 +474,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   icon: Icon(Icons.arrow_back, color: textColor),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  onPressed: () => Get.back(),
+                  onPressed: () => AppNavigator.pop(),
                 ),
                 const SizedBox(width: 8),
                 // AI & ML Logo container

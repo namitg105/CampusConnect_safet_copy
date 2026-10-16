@@ -1,110 +1,108 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import '../ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 
 class AppStyles {
-  static final LightModeController lightModeController = Get.find<LightModeController>();
 
   // **Dynamic Text Styles Based on Theme**
-  static TextStyle get socialButtonTextStyle => TextStyle(
-    color: lightModeController.isLightMode.value ? Colors.black : Colors.white,
+  static TextStyle socialButtonTextStyle(BuildContext context) => TextStyle(
+    color: context.isLightMode ? Colors.black : Colors.white,
   );
 
-  static TextStyle get textStyle => TextStyle(
+  static TextStyle textStyle(BuildContext context) => TextStyle(
     fontSize: 9,
     fontWeight: FontWeight.w500,
-    color: lightModeController.isLightMode.value ? Colors.black87 : Colors.white70,
+    color: context.isLightMode ? Colors.black87 : Colors.white70,
   );
 
-  static TextStyle get textStyleLargeBold => TextStyle(
-    color: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+  static TextStyle textStyleLargeBold(BuildContext context) => TextStyle(
+    color: context.isLightMode ? Colors.white : Colors.black,
     fontSize: 20,
     fontWeight: FontWeight.bold,
   );
 
-  static TextStyle get textAddUserStyleLargeBold => TextStyle(
-    color: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+  static TextStyle textAddUserStyleLargeBold(BuildContext context) => TextStyle(
+    color: context.isLightMode ? Colors.white : Colors.black,
     fontSize: 20,
     fontWeight: FontWeight.bold,
   );
 
-  static TextStyle get offerStyleLarge => TextStyle(
-    color: lightModeController.isLightMode.value ? Colors.black : Colors.white,
+  static TextStyle offerStyleLarge(BuildContext context) => TextStyle(
+    color: context.isLightMode ? Colors.black : Colors.white,
     fontSize: 28,
   );
 
-  static TextStyle get textStyleMedium => TextStyle(
-    color: lightModeController.isLightMode.value ? Colors.white70 : Colors.black54,
+  static TextStyle textStyleMedium(BuildContext context) => TextStyle(
+    color: context.isLightMode ? Colors.white70 : Colors.black54,
     fontSize: 16,
   );
 
-  static TextStyle get textStyleSmallBold => TextStyle(
-    color: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+  static TextStyle textStyleSmallBold(BuildContext context) => TextStyle(
+    color: context.isLightMode ? Colors.white : Colors.black,
     fontWeight: FontWeight.bold,
   );
 
-  static TextStyle get textStyleSmall => TextStyle(
-    color: lightModeController.isLightMode.value ? Colors.white70 : Colors.black54,
+  static TextStyle textStyleSmall(BuildContext context) => TextStyle(
+    color: context.isLightMode ? Colors.white70 : Colors.black54,
     fontSize: 12,
   );
 
-  static TextStyle get welcomeTextStyle => TextStyle(
-    color: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+  static TextStyle welcomeTextStyle(BuildContext context) => TextStyle(
+    color: context.isLightMode ? Colors.white : Colors.black,
     fontSize: 42,
     fontWeight: FontWeight.bold,
   );
 
-  static TextStyle get appNameTextStyle => TextStyle(
-    color: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+  static TextStyle appNameTextStyle(BuildContext context) => TextStyle(
+    color: context.isLightMode ? Colors.white : Colors.black,
     fontSize: 38,
     fontWeight: FontWeight.bold,
   );
 
-  static TextStyle get taglineTextStyle => TextStyle(
-    color: lightModeController.isLightMode.value ? Colors.black87 : Colors.white70,
+  static TextStyle taglineTextStyle(BuildContext context) => TextStyle(
+    color: context.isLightMode ? Colors.black87 : Colors.white70,
     fontSize: 38,
   );
 
-  static TextStyle get headingTextStyle => TextStyle(
-    color: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+  static TextStyle headingTextStyle(BuildContext context) => TextStyle(
+    color: context.isLightMode ? Colors.white : Colors.black,
     fontSize: 36,
     fontWeight: FontWeight.bold,
   );
 
-  static TextStyle get headingTextStyleTwo => TextStyle(
+  static TextStyle headingTextStyleTwo(BuildContext context) => TextStyle(
     fontSize: 36,
     fontWeight: FontWeight.bold,
   );
 
-  static TextStyle get goalTextStyle => TextStyle(
+  static TextStyle goalTextStyle(BuildContext context) => TextStyle(
     fontSize: 18,
-    color: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+    color: context.isLightMode ? Colors.white : Colors.black,
     fontWeight: FontWeight.w700,
   );
 
-  static TextStyle get authTextStyle => TextStyle(
+  static TextStyle authTextStyle(BuildContext context) => TextStyle(
     fontSize: 28,
-    color: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+    color: context.isLightMode ? Colors.white : Colors.black,
     fontWeight: FontWeight.w700,
   );
 
-  static TextStyle get loginHeading => TextStyle(
+  static TextStyle loginHeading(BuildContext context) => TextStyle(
     fontSize: 28,
     fontWeight: FontWeight.bold,
   );
 
-  static TextStyle get loginSubheading => TextStyle(
+  static TextStyle loginSubheading(BuildContext context) => TextStyle(
     fontSize: 18,
-    color: lightModeController.isLightMode.value ? Colors.black54 : Colors.white60,
+    color: context.isLightMode ? Colors.black54 : Colors.white60,
   );
 
-  static TextStyle get normalText => TextStyle(
-    color: lightModeController.isLightMode.value ? Colors.white70 : Colors.black87,
+  static TextStyle normalText(BuildContext context) => TextStyle(
+    color: context.isLightMode ? Colors.white70 : Colors.black87,
     fontSize: 14,
   );
 
-  static TextStyle get boldUnderlinedText => TextStyle(
-    color: lightModeController.isLightMode.value ? Colors.white : Colors.black,
+  static TextStyle boldUnderlinedText(BuildContext context) => TextStyle(
+    color: context.isLightMode ? Colors.white : Colors.black,
     fontSize: 14,
     fontWeight: FontWeight.bold,
     decoration: TextDecoration.underline,

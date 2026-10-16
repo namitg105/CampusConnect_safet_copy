@@ -14,14 +14,14 @@ class BottomButton extends StatelessWidget {
       children: <Widget>[
         Text(
           AppConstants.haveAccount,
-          style: AppStyles.normalText,
+          style: AppStyles.normalText(context),
         ),
         const SizedBox(width: 5),
         GestureDetector(
           onTap: onTap,
           child: Text(
             AppConstants.signIn,
-            style: AppStyles.boldUnderlinedText,
+            style: AppStyles.boldUnderlinedText(context),
           ),
         ),
       ],

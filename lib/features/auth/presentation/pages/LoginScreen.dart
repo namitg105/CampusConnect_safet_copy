@@ -1,8 +1,9 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:noteswap/features/auth/presentation/cubits/auth_cubit.dart';
-import 'package:noteswap/features/auth/presentation/cubits/auth_states.dart';
-import 'package:get/get.dart';
+import 'package:noteswap/core/di/injection.dart';
+import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:noteswap/features/auth/presentation/bloc/password_reset_bloc.dart';
 import 'package:noteswap/features/auth/presentation/pages/register_page_ui.dart';
 import 'package:noteswap/features/private_chat/presentation/common_widgets.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
@@ -26,10 +27,31 @@ class _LoginscreenState extends State<Loginscreen> {
     final resetEmailController =
         TextEditingController(text: emailController.text);
 
+    final messenger = ScaffoldMessenger.of(context);
+
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
+      builder: (_) => BlocProvider(
+        create: (_) => sl<PasswordResetBloc>(),
+        child: BlocConsumer<PasswordResetBloc, PasswordResetState>(
+          listener: (context, state) {
+            if (state is PasswordResetSent) {
+              Navigator.pop(context);
+              messenger.showSnackBar(
+                const SnackBar(
+                    content: Text("Reset link sent! Check your email."),
+                    backgroundColor: Colors.green),
+              );
+            } else if (state is PasswordResetFailure) {
+              messenger.showSnackBar(
+                SnackBar(
+                    content: Text(state.message), backgroundColor: Colors.red),
+              );
+            }
+          },
+          builder: (context, state) {
+            final isLoading = state is PasswordResetLoading;
+            return AlertDialog(
           backgroundColor: Colors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -73,46 +95,30 @@ class _LoginscreenState extends State<Loginscreen> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF6139ED)),
-              onPressed: () async {
-                final email = resetEmailController.text.trim();
-                if (email.isEmpty) return;
-
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (context) =>
-                      const Center(child: CircularProgressIndicator()),
-                );
-
-                try {
-                  await context.read<AuthCubit>().sendPasswordResetEmail(email);
-
-                  if (context.mounted) {
-                    Navigator.pop(context); // pop loading
-                    Navigator.pop(context); // pop dialog
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text("Reset link sent! Check your email."),
-                          backgroundColor: Colors.green),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    Navigator.pop(context); // pop loading
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text(e.toString()),
-                          backgroundColor: Colors.red),
-                    );
-                  }
-                }
-              },
-              child: const Text("Send Link",
-                  style: TextStyle(color: Colors.white)),
+              onPressed: isLoading
+                  ? null
+                  : () {
+                      final email = resetEmailController.text.trim();
+                      if (email.isEmpty) return;
+                      context
+                          .read<PasswordResetBloc>()
+                          .add(PasswordResetRequested(email));
+                    },
+              child: isLoading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text("Send Link",
+                      style: TextStyle(color: Colors.white)),
             ),
           ],
         );
-      },
+          },
+        ),
+      ),
     );
   }
 
@@ -121,10 +127,10 @@ class _LoginscreenState extends State<Loginscreen> {
     final String email = emailController.text;
     final String pw = pwController.text;
 
-    final authCubit = context.read<AuthCubit>();
+    final authBloc = context.read<AuthBloc>();
 
     if (email.isNotEmpty && pw.isNotEmpty) {
-      authCubit.login(email, pw);
+      authBloc.add(AuthLoginRequested(email: email, password: pw));
     } else {
       showErrorSnackbar("Please enter both email and password");
     }
@@ -139,10 +145,10 @@ class _LoginscreenState extends State<Loginscreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthCubit, AuthState>(
+    return BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
-            Get.offAll(() => const MainPage());
+            AppNavigator.replaceAll(const MainPage());
           } else if (state is AuthError) {
             showErrorSnackbar(state.message);
           }
@@ -381,7 +387,7 @@ class _LoginscreenState extends State<Loginscreen> {
                                 ),
                                 child: IconButton(
                                   onPressed: () {
-                                    context.read<AuthCubit>().loginWithGoogle();
+                                    context.read<AuthBloc>().add(const AuthGoogleLoginRequested());
                                   },
                                   icon: Image.asset(
                                     "assets/google1.png",
@@ -402,7 +408,7 @@ class _LoginscreenState extends State<Loginscreen> {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  Get.to(() => RegisterPage());
+                                  AppNavigator.push(RegisterPage());
                                 },
                                 child: const Text(
                                   "Sign Up",

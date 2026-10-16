@@ -1,7 +1,7 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:noteswap/Views/AddUsers.dart';
 import 'package:noteswap/Views/Notification.dart';
 import 'package:noteswap/features/notes_swap/AddNotesPage.dart';
@@ -19,8 +19,6 @@ class NoteSwapSearchScreen extends StatefulWidget {
 }
 
 class _NoteSwapSearchScreenState extends State<NoteSwapSearchScreen> {
-  final LightModeController lightModeController =
-      Get.put(LightModeController());
   final TextEditingController searchController = TextEditingController();
 
   String selectedFilter = "All";
@@ -37,8 +35,8 @@ class _NoteSwapSearchScreenState extends State<NoteSwapSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final isLight = lightModeController.isLightMode.value;
+    return Builder(builder: (context) {
+      final isLight = context.isLightMode;
 
       final bgColor =
           isLight ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
@@ -57,7 +55,7 @@ class _NoteSwapSearchScreenState extends State<NoteSwapSearchScreen> {
           leading: Padding(
             padding: const EdgeInsets.all(8.0),
             child: BackWidget(
-              onTap: () => Get.back(),
+              onTap: () => AppNavigator.pop(),
               imagePath: isLight
                   ? AppConstants.backBlackIcon
                   : AppConstants.backWhiteIcon,
@@ -410,7 +408,7 @@ class _QuickNavBar extends StatelessWidget {
             activeColor: activeColor,
             bgColor: cardBg,
             textColor: textColor,
-            onTap: () => Get.off(() => NoteSwapFeedScreen()),
+            onTap: () => AppNavigator.replace(NoteSwapFeedScreen()),
           ),
           _NavChip(
             icon: Icons.search_rounded,
@@ -428,7 +426,7 @@ class _QuickNavBar extends StatelessWidget {
             activeColor: activeColor,
             bgColor: cardBg,
             textColor: textColor,
-            onTap: () => Get.to(() => const AddNotesPage()),
+            onTap: () => AppNavigator.push(const AddNotesPage()),
           ),
           _NavChip(
             icon: Icons.notifications_none_rounded,
@@ -437,7 +435,7 @@ class _QuickNavBar extends StatelessWidget {
             activeColor: activeColor,
             bgColor: cardBg,
             textColor: textColor,
-            onTap: () => Get.to(() => const NoteSwapNotificationScreen()),
+            onTap: () => AppNavigator.push(const NoteSwapNotificationScreen()),
           ),
         ],
       ),

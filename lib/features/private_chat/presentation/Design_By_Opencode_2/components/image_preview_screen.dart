@@ -1,10 +1,12 @@
 // image_preview_screen.dart
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:image_picker/image_picker.dart';
 
-import 'package:noteswap/features/private_chat/data/private-chat-services/user_service.dart';
+import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/private_chat/data/private-chat-storage-service/storage_service.dart';
 import 'package:noteswap/features/private_chat/domain/entities/chat_message.dart';
 import 'package:noteswap/features/private_chat/domain/repos/chat_controller.dart';
@@ -45,7 +47,7 @@ class ImagePreviewScreen extends StatelessWidget {
                 FloatingActionButton(
               backgroundColor: Colors.blueAccent,
               onPressed: () async {
-                Get.dialog(
+                AppNavigator.showAppDialog(
                   const Center(
                       child:
                           CircularProgressIndicator(color: Colors.blueAccent)),
@@ -55,10 +57,11 @@ class ImagePreviewScreen extends StatelessWidget {
                 final chatController = Get.isRegistered<ChatController>()
                     ? Get.find<ChatController>()
                     : Get.put(ChatController());
-                final authController = Get.find<UserService>();
+                final authState = context.read<AuthBloc>().state;
                 final StorageService storageService = StorageService();
 
-                final myUid = authController.currentUser?.uid;
+                final myUid =
+                    authState is Authenticated ? authState.user.uid : null;
                 final roomId = chatController.currentRoomId.value;
                 final targetUid = targetUser;
 
@@ -84,7 +87,7 @@ class ImagePreviewScreen extends StatelessWidget {
                   }
                 }
 
-                Get.close(2);
+                AppNavigator.popTimes(2);
                 /*
                   chatController.sendMessage(
                     roomId: roomId,
@@ -95,7 +98,7 @@ class ImagePreviewScreen extends StatelessWidget {
                     imageUrl: uploadedUrl,
                   );
                 }
-                Get.back();*/
+                AppNavigator.pop();*/
               },
               child: const Icon(Icons.send, color: Colors.white),
             ),
@@ -104,7 +107,7 @@ class ImagePreviewScreen extends StatelessWidget {
               backgroundColor: Colors.blueAccent,
               onPressed: () {
                 // TODO: Handle sending image to Firestore later
-                Get.back();
+                AppNavigator.pop();
               },
               child: const Icon(Icons.send, color: Colors.white),
             ),*/

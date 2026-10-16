@@ -45,7 +45,7 @@ class AddFriendFunction {
       DocumentSnapshot doc =
           await firestore.collection('users').doc(currentUid).get();
       if (doc.exists) {
-        return AppUser.fromJson(doc.data() as Map<String, dynamic>);
+        return AppUserModel.fromJson(doc.data() as Map<String, dynamic>);
       }
       return null;
     } catch (e) {
@@ -56,6 +56,7 @@ class AddFriendFunction {
 }*/
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:noteswap/features/auth/data/models/app_user_model.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import '../../presentation/Design_By_Opencode_5/chat_request_model.dart';
 
@@ -98,8 +99,8 @@ class AddFriendFunction {
         throw Exception("Target friend profile not found.");
       }
 
-      AppUser friendUser =
-          AppUser.fromJson(friendDoc.data() as Map<String, dynamic>);
+      AppUserModel friendUser =
+          AppUserModel.fromJson(friendDoc.data() as Map<String, dynamic>);
 
       final batch = firestore.batch();
 
@@ -149,8 +150,8 @@ class AddFriendFunction {
             "Current user profile doc does not exist in Firestore.");
       }
 
-      AppUser currentUser =
-          AppUser.fromJson(currentUserDoc.data() as Map<String, dynamic>);
+      AppUserModel currentUser =
+          AppUserModel.fromJson(currentUserDoc.data() as Map<String, dynamic>);
 
       // 2. Fetch targeted friend's data
       DocumentSnapshot friendDoc =
@@ -160,8 +161,8 @@ class AddFriendFunction {
         throw Exception("Target friend profile not found.");
       }
 
-      AppUser friendUser =
-          AppUser.fromJson(friendDoc.data() as Map<String, dynamic>);
+      AppUserModel friendUser =
+          AppUserModel.fromJson(friendDoc.data() as Map<String, dynamic>);
 
       final batch = firestore.batch();
 
@@ -303,16 +304,16 @@ class AddFriendFunction {
     if (!currentUserDoc.exists) {
       throw Exception("Current user profile not found.");
     }
-    AppUser currentUser =
-        AppUser.fromJson(currentUserDoc.data() as Map<String, dynamic>);
+    AppUserModel currentUser =
+        AppUserModel.fromJson(currentUserDoc.data() as Map<String, dynamic>);
 
     DocumentSnapshot requesterDoc =
         await firestore.collection('users').doc(requesterUid).get();
     if (!requesterDoc.exists) {
       throw Exception("Requester profile not found.");
     }
-    AppUser requesterUser =
-        AppUser.fromJson(requesterDoc.data() as Map<String, dynamic>);
+    AppUserModel requesterUser =
+        AppUserModel.fromJson(requesterDoc.data() as Map<String, dynamic>);
 
     final batch = firestore.batch();
 
@@ -417,7 +418,7 @@ class AddFriendFunction {
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.map((doc) {
-        return AppUser.fromJson(doc.data());
+        return AppUserModel.fromJson(doc.data());
       }).toList();
     });
   }

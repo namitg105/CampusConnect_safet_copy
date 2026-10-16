@@ -1,6 +1,7 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 
 import 'my_notes_data.dart';
 import 'backend/note_models.dart';
@@ -41,7 +42,7 @@ class _MyNotesScreenState extends State<MyNotesScreen> {
         (n) => (n.id.isEmpty ? n.title : n.id) == id,
       );
     } on NoteHasBuyersException {
-      Get.snackbar('buys exists at this notes', 'not allowed to delete');
+      AppNavigator.showSnackbar('buys exists at this notes', 'not allowed to delete');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
