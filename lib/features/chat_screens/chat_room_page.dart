@@ -1,6 +1,7 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/chat/domain/entities/chat_room_entity.dart';
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
@@ -476,7 +477,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   icon: Icon(Icons.arrow_back, color: textColor),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  onPressed: () => Get.back(),
+                  onPressed: () => AppNavigator.pop(),
                 ),
                 const SizedBox(width: 8),
                 // AI & ML Logo container

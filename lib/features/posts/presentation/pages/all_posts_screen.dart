@@ -1,5 +1,6 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
 import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
@@ -99,12 +100,12 @@ class AllPostsScreen extends StatelessWidget {
                   final post = displayedPosts[index];
                   return PostCard(
                     post: post,
-                    onTap: () => Get.to(() => PostDetailPage(
+                    onTap: () => AppNavigator.push(PostDetailPage(
                           post: post,
                           controller: controller,
                           currentUser: currentUser,
                         )),
-                    onProfileTap: () => Get.to(() => UserProfileScreen(
+                    onProfileTap: () => AppNavigator.push(UserProfileScreen(
                             user: AppUser(
                           uid: post.authorId,
                           email: '',

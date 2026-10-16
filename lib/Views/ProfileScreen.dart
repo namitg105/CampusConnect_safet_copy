@@ -1,5 +1,6 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/Constents/AppConstents.dart';
 import 'package:noteswap/Widgets/TextWidgets.dart';
 import '../Constents/AppStyles.dart';
@@ -30,7 +31,7 @@ class ProfileScreen extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: isLight ? Colors.black : Colors.white,
           leading: BackWidget(
-            onTap: () => Get.off(() => const MainPage()),
+            onTap: () => AppNavigator.replace(const MainPage()),
             imagePath: isLight
                 ? AppConstants.backWhiteIcon
                 : AppConstants.backBlackIcon,

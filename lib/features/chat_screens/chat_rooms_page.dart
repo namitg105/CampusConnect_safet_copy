@@ -1,5 +1,6 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/chat/domain/entities/chat_room_entity.dart';
 import 'package:noteswap/features/chat/presentation/pages/chat_room_page.dart';
@@ -96,7 +97,7 @@ class _ChatRoomsPageState extends State<ChatRoomsPage> {
           backgroundColor: cardColor,
           leading: IconButton(
             icon: Icon(Icons.arrow_back, color: textColor),
-            onPressed: () => Get.back(),
+            onPressed: () => AppNavigator.pop(),
           ),
           title: Text(
             'Chat Rooms',
@@ -111,8 +112,7 @@ class _ChatRoomsPageState extends State<ChatRoomsPage> {
             IconButton(
               icon: Icon(Icons.add_comment_outlined, color: brandColor),
               onPressed: () {
-                Get.to(
-                    () => CreateChatRoomPage(currentUser: widget.currentUser));
+                AppNavigator.push(CreateChatRoomPage(currentUser: widget.currentUser));
               },
             ),
           ],
@@ -180,7 +180,7 @@ class _ChatRoomsPageState extends State<ChatRoomsPage> {
                             child: _ChatRoomTile(
                               room: room,
                               onTap: () {
-                                Get.to(() => ChatRoomPage(
+                                AppNavigator.push(ChatRoomPage(
                                       currentUser: widget.currentUser,
                                       chatRoom: room,
                                     ));

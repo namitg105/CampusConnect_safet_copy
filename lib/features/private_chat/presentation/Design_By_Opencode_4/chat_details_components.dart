@@ -1,5 +1,5 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../common_widgets.dart';
 import 'chat_details_model.dart';
@@ -413,7 +413,7 @@ class SharedImagesGrid extends StatelessWidget {
               }
               final url = displayUrls[index];
               return GestureDetector(
-                onTap: () => Get.to(() => FullScreenImage(imageUrl: url)),
+                onTap: () => AppNavigator.push(FullScreenImage(imageUrl: url)),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: AspectRatio(

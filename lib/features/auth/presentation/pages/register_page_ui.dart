@@ -1,6 +1,6 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/components/components.dart';
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
@@ -124,7 +124,7 @@ class RegisterPageUi extends State<RegisterPage> {
     if (widget.togglePages != null) {
       widget.togglePages!();
     } else {
-      Get.offAll(() => const AuthPage());
+      AppNavigator.replaceAll(const AuthPage());
     }
   }
 
@@ -148,7 +148,7 @@ class RegisterPageUi extends State<RegisterPage> {
       listener: (context, state) {
         if (state is Authenticated) {
           // This clears the navigation stack and safely lands them on MainPage
-          Get.offAll(() => const MainPage());
+          AppNavigator.replaceAll(const MainPage());
         } else if (state is AuthError) {
           showErrorSnackbar(state.message);
         }

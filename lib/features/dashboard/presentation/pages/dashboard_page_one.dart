@@ -1,6 +1,7 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/features/admin_events/presentation/screens/AdminEvent.dart';
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
@@ -255,8 +256,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                 alignment: Alignment.center,
                                 children: [
                                   IconButton(
-                                    onPressed: () => Get.to(
-                                        () => const NotificationsScreen()),
+                                    onPressed: () => AppNavigator.push(const NotificationsScreen()),
                                     icon: Icon(Icons.notifications_none,
                                         color: textColor),
                                   ),
@@ -359,7 +359,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                       textColor,
                                       onTap: () {
                                         if (authState is Authenticated) {
-                                          Get.to(() => GroupsDisplayPage());
+                                          AppNavigator.push(GroupsDisplayPage());
                                         }
                                       },
                                     ),
@@ -372,8 +372,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                       brandColor,
                                       cardColor,
                                       textColor,
-                                      onTap: () => Get.to(
-                                          () => const CampusFeedScreen()),
+                                      onTap: () => AppNavigator.push(const CampusFeedScreen()),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -384,8 +383,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                       brandColor,
                                       cardColor,
                                       textColor,
-                                      onTap: () => Get.to(
-                                          () => AllCommunityEventsPage()),
+                                      onTap: () => AppNavigator.push(AllCommunityEventsPage()),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -400,7 +398,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                   if (authState is Authenticated) {
                                     final postController =
                                         _createPostController();
-                                    Get.to(() => AllAnnouncementsScreen(
+                                    AppNavigator.push(AllAnnouncementsScreen(
                                           controller: postController,
                                           currentUser: authState.user,
                                         ));
@@ -454,7 +452,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                               if (authState is Authenticated) {
                                                 final postController =
                                                     _createPostController();
-                                                Get.to(() => PostDetailPage(
+                                                AppNavigator.push(PostDetailPage(
                                                       post: post,
                                                       controller:
                                                           postController,
@@ -513,8 +511,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                           ),
                                         ),
                                         GestureDetector(
-                                          onTap: () => Get.to(
-                                              () => const CampusFeedScreen()),
+                                          onTap: () => AppNavigator.push(const CampusFeedScreen()),
                                           child: Text(
                                             'View all',
                                             style: TextStyle(
@@ -849,7 +846,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
         final PostController controller = Get.isRegistered<PostController>()
             ? Get.find<PostController>()
             : Get.put(_createPostController());
-        Get.to(() => PostDetailPage(
+        AppNavigator.push(PostDetailPage(
               post: post,
               controller: controller,
             ));

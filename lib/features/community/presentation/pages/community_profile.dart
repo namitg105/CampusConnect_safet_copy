@@ -1,3 +1,4 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +11,6 @@ import '../../../chat/presentation/pages/chatPage.dart';
 import '../../../events/presentation/screens/event_community.dart';
 import 'assign_role.dart';
 import 'media_link.dart';
-import 'package:get/get.dart';
 import 'package:noteswap/features/private_chat/presentation/Design_By_Opencode_2/chat_screen.dart';
 
 String get currentUserId => FirebaseAuth.instance.currentUser?.uid ?? "";
@@ -2927,10 +2927,10 @@ class GroupMemberCard extends StatelessWidget {
                 onPressed: () async {
                   final currentUid = FirebaseAuth.instance.currentUser?.uid;
                   if (currentUid == null || currentUid.isEmpty) {
-                    Get.snackbar(
+                    AppNavigator.showSnackbar(
                       "Authentication Required",
                       "Please log in to send messages or friend requests.",
-                      snackPosition: SnackPosition.BOTTOM,
+                      snackPosition: SnackPosition.bottom,
                       backgroundColor: Colors.orange,
                       colorText: Colors.white,
                     );
@@ -2938,10 +2938,10 @@ class GroupMemberCard extends StatelessWidget {
                   }
 
                   if (currentUid == uid) {
-                    Get.snackbar(
+                    AppNavigator.showSnackbar(
                       "Your Profile",
                       "You cannot message yourself.",
-                      snackPosition: SnackPosition.BOTTOM,
+                      snackPosition: SnackPosition.bottom,
                       backgroundColor: const Color(0xFF6366F1),
                       colorText: Colors.white,
                     );
@@ -2966,7 +2966,7 @@ class GroupMemberCard extends StatelessWidget {
                     final List<String> ids = [currentUid, uid]..sort();
                     final String roomId = ids.join('_');
 
-                    Get.to(() => ChatScreen(
+                    AppNavigator.push(ChatScreen(
                           roomId: roomId,
                           currentUid: currentUid,
                           friendUid: uid,
@@ -2993,10 +2993,10 @@ class GroupMemberCard extends StatelessWidget {
                   } catch (_) {}
 
                   if (isPending) {
-                    Get.snackbar(
+                    AppNavigator.showSnackbar(
                       "Request Pending",
                       "Friend request already sent to $displayName.",
-                      snackPosition: SnackPosition.BOTTOM,
+                      snackPosition: SnackPosition.bottom,
                       backgroundColor: Colors.blueAccent,
                       colorText: Colors.white,
                     );
@@ -3004,7 +3004,7 @@ class GroupMemberCard extends StatelessWidget {
                   }
 
                   // Show message dialog that user must be a friend before direct messaging
-                  Get.dialog(
+                  AppNavigator.showAppDialog(
                     AlertDialog(
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16)),
@@ -3014,7 +3014,7 @@ class GroupMemberCard extends StatelessWidget {
                           "Add $displayName as a friend before Direct messaging."),
                       actions: [
                         TextButton(
-                          onPressed: () => Get.back(),
+                          onPressed: () => AppNavigator.pop(),
                           child: const Text("OK",
                               style: TextStyle(
                                   color: Color(0xFF6366F1),

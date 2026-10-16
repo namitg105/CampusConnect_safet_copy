@@ -1,5 +1,6 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
@@ -91,7 +92,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           elevation: 0,
           leading: IconButton(
             icon: Icon(Icons.arrow_back_ios_new, size: 20, color: textColor),
-            onPressed: () => Get.back(),
+            onPressed: () => AppNavigator.pop(),
           ),
           title: Text(
             'Profile',

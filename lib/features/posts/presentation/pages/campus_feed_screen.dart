@@ -1,6 +1,7 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
@@ -142,7 +143,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
             actions: [
               IconButton(
                 onPressed: () {
-                  Get.to(ProfileSettingsPage());
+                  AppNavigator.push(ProfileSettingsPage());
                 },
                 icon: Icon(Icons.person, color: textColor),
               ),
@@ -308,12 +309,12 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                         final post = filteredPosts[index];
                         return PostCard(
                           post: post,
-                          onTap: () => Get.to(() => PostDetailPage(
+                          onTap: () => AppNavigator.push(PostDetailPage(
                                 post: post,
                                 controller: postController,
                                 currentUser: currentUser,
                               )),
-                          onProfileTap: () => Get.to(() => UserProfileScreen(
+                          onProfileTap: () => AppNavigator.push(UserProfileScreen(
                                   user: AppUser(
                                 uid: post.authorId,
                                 email: '',
@@ -345,7 +346,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                   // 3. Trending Discussions Block
                   _buildHeaderSection(
                     'Trending Discussions',
-                    onTap: () => Get.to(() => AllPostsScreen(
+                    onTap: () => AppNavigator.push(AllPostsScreen(
                           title: 'Trending Discussions',
                           postsSelector: () => postController.posts.toList()
                             ..sort((a, b) => b.upvotes.compareTo(a.upvotes)),
@@ -378,12 +379,12 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                           postController.trendingPosts.take(3).map((post) {
                         return PostCard(
                           post: post,
-                          onTap: () => Get.to(() => PostDetailPage(
+                          onTap: () => AppNavigator.push(PostDetailPage(
                                 post: post,
                                 controller: postController,
                                 currentUser: currentUser,
                               )),
-                          onProfileTap: () => Get.to(() => UserProfileScreen(
+                          onProfileTap: () => AppNavigator.push(UserProfileScreen(
                                   user: AppUser(
                                 uid: post.authorId,
                                 email: '',
@@ -415,7 +416,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                   // 4. Announcements Block
                   _buildHeaderSection(
                     'Announcements',
-                    onTap: () => Get.to(() => AllAnnouncementsScreen(
+                    onTap: () => AppNavigator.push(AllAnnouncementsScreen(
                           controller: postController,
                           currentUser: currentUser,
                         )),
@@ -452,12 +453,12 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                       children: announcements.take(3).map((post) {
                         return PostCard(
                           post: post,
-                          onTap: () => Get.to(() => PostDetailPage(
+                          onTap: () => AppNavigator.push(PostDetailPage(
                                 post: post,
                                 controller: postController,
                                 currentUser: currentUser,
                               )),
-                          onProfileTap: () => Get.to(() => UserProfileScreen(
+                          onProfileTap: () => AppNavigator.push(UserProfileScreen(
                                   user: AppUser(
                                 uid: post.authorId,
                                 email: '',
@@ -490,7 +491,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                   // 5. Latest Posts Block
                   _buildHeaderSection(
                     'Latest Posts',
-                    onTap: () => Get.to(() => AllPostsScreen(
+                    onTap: () => AppNavigator.push(AllPostsScreen(
                           title: 'Latest Posts',
                           postsSelector: () => postController.posts.toList()
                             ..sort(
@@ -523,12 +524,12 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                       children: postController.posts.take(3).map((post) {
                         return PostCard(
                           post: post,
-                          onTap: () => Get.to(() => PostDetailPage(
+                          onTap: () => AppNavigator.push(PostDetailPage(
                                 post: post,
                                 controller: postController,
                                 currentUser: currentUser,
                               )),
-                          onProfileTap: () => Get.to(() => UserProfileScreen(
+                          onProfileTap: () => AppNavigator.push(UserProfileScreen(
                                   user: AppUser(
                                 uid: post.authorId,
                                 email: '',
@@ -640,7 +641,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                     Positioned(
                       top: 0,
                       child: GestureDetector(
-                        onTap: () => Get.to(() => CreatePostPage(
+                        onTap: () => AppNavigator.push(CreatePostPage(
                               controller: postController,
                               currentUser: currentUser,
                             )),
@@ -779,7 +780,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
     final groupName = 'r/${post.tag.replaceAll(" ", "")}';
 
     return GestureDetector(
-      onTap: () => Get.to(() => PostDetailPage(
+      onTap: () => AppNavigator.push(PostDetailPage(
             post: post,
             controller: postController,
             currentUser: currentUser,

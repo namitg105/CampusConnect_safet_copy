@@ -1,7 +1,8 @@
 // image_preview_screen.dart
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:image_picker/image_picker.dart';
 
 import 'package:noteswap/features/private_chat/data/private-chat-services/user_service.dart';
@@ -45,7 +46,7 @@ class ImagePreviewScreen extends StatelessWidget {
                 FloatingActionButton(
               backgroundColor: Colors.blueAccent,
               onPressed: () async {
-                Get.dialog(
+                AppNavigator.showAppDialog(
                   const Center(
                       child:
                           CircularProgressIndicator(color: Colors.blueAccent)),
@@ -84,7 +85,7 @@ class ImagePreviewScreen extends StatelessWidget {
                   }
                 }
 
-                Get.close(2);
+                AppNavigator.popTimes(2);
                 /*
                   chatController.sendMessage(
                     roomId: roomId,
@@ -95,7 +96,7 @@ class ImagePreviewScreen extends StatelessWidget {
                     imageUrl: uploadedUrl,
                   );
                 }
-                Get.back();*/
+                AppNavigator.pop();*/
               },
               child: const Icon(Icons.send, color: Colors.white),
             ),
@@ -104,7 +105,7 @@ class ImagePreviewScreen extends StatelessWidget {
               backgroundColor: Colors.blueAccent,
               onPressed: () {
                 // TODO: Handle sending image to Firestore later
-                Get.back();
+                AppNavigator.pop();
               },
               child: const Icon(Icons.send, color: Colors.white),
             ),*/

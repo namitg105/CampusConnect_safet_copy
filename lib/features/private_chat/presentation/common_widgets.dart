@@ -1,11 +1,11 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 void showSuccessSnackbar(String message, {String title = 'Success'}) {
-  Get.snackbar(
+  AppNavigator.showSnackbar(
     '',
     '',
-    snackPosition: SnackPosition.TOP,
+    snackPosition: SnackPosition.top,
     backgroundColor: const Color(0xFF6139ED),
     colorText: Colors.white,
     borderRadius: 12,
@@ -34,10 +34,10 @@ void showSuccessSnackbar(String message, {String title = 'Success'}) {
 }
 
 void showErrorSnackbar(String message, {String title = 'Error'}) {
-  Get.snackbar(
+  AppNavigator.showSnackbar(
     '',
     '',
-    snackPosition: SnackPosition.TOP,
+    snackPosition: SnackPosition.top,
     backgroundColor: const Color(0xFFE53935),
     colorText: Colors.white,
     borderRadius: 12,
@@ -66,10 +66,10 @@ void showErrorSnackbar(String message, {String title = 'Error'}) {
 }
 
 void showInfoSnackbar(String message, {String title = 'Info'}) {
-  Get.snackbar(
+  AppNavigator.showSnackbar(
     '',
     '',
-    snackPosition: SnackPosition.TOP,
+    snackPosition: SnackPosition.top,
     backgroundColor: const Color(0xFF1A73E8),
     colorText: Colors.white,
     borderRadius: 12,

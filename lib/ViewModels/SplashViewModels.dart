@@ -1,6 +1,7 @@
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
+import 'package:noteswap/core/navigation/app_navigator.dart';
+import 'package:noteswap/Views/Onboarding/OnboardingFlowScreen.dart';
 import '../Constents/AppConstents.dart';
-import '../Routes/AppRoutes.dart';
 
 
 class SplashController extends GetxController {
@@ -12,7 +13,7 @@ class SplashController extends GetxController {
 
   void _navigateToHome() {
     Future.delayed(Duration(seconds: AppConstants.splashDuration), () {
-      Get.offNamed(AppRoutes.home);
+      AppNavigator.replace(const OnboardingFlowScreen());
     });
   }
 }

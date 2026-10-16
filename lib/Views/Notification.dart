@@ -1,5 +1,6 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:get/get_core/src/get_main.dart';
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
 import '../Constents/AppConstents.dart';
@@ -47,7 +48,7 @@ class NotificationScreen extends StatelessWidget {
                 itemBuilder: (context, index) {
                   return GestureDetector(
                     onTap: (){
-                     Get.to(RentCard());
+                     AppNavigator.push(RentCard());
                     },
                     child: RentCardCustom(),
                   );

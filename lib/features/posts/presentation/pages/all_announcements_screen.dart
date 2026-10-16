@@ -1,5 +1,6 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
 import 'package:noteswap/features/posts/presentation/pages/post_detail_page.dart';
@@ -118,7 +119,7 @@ class _AllAnnouncementsScreenState extends State<AllAnnouncementsScreen> {
                       final date = formatTimeAgo(post.createdAt);
 
                       return GestureDetector(
-                        onTap: () => Get.to(() => PostDetailPage(
+                        onTap: () => AppNavigator.push(PostDetailPage(
                               post: post,
                               controller: widget.controller,
                               currentUser: widget.currentUser,

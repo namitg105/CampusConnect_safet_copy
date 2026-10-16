@@ -1,5 +1,6 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:noteswap/features/private_chat/domain/repos/chat_controller.dart';
 import 'package:noteswap/features/private_chat/data/private-chat-services/user_friend_add.dart';
@@ -74,7 +75,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _openChatDetails() {
-    Get.to(() => ChatDetailsScreen(
+    AppNavigator.push(ChatDetailsScreen(
           roomId: widget.roomId,
           currentUid: widget.currentUid,
           friendUid: widget.friendUid,
