@@ -36,6 +36,13 @@ import '../../features/theme/domain/usecases/get_saved_theme.dart';
 import '../../features/theme/domain/usecases/save_theme.dart';
 import '../../features/theme/presentation/bloc/theme_bloc.dart';
 
+import '../../features/home/presentation/bloc/main_nav_bloc.dart';
+import '../../features/notification_badge/data/datasources/notification_badge_remote_data_source.dart';
+import '../../features/notification_badge/data/repositories/notification_badge_repository_impl.dart';
+import '../../features/notification_badge/domain/repositories/notification_badge_repository.dart';
+import '../../features/notification_badge/domain/usecases/watch_unread_count.dart';
+import '../../features/notification_badge/presentation/bloc/notification_badge_bloc.dart';
+
 final sl = GetIt.instance;
 
 const _settingsBoxName = 'settings';
@@ -55,6 +62,7 @@ Future<void> init() async {
 
   _initAuth();
   _initTheme(settingsBox);
+  _initShell();
 
   sl.registerLazySingleton<AESService>(
     () => AESService(),
@@ -131,4 +139,17 @@ void _initTheme(Box settingsBox) {
     ..registerLazySingleton(() => GetSavedTheme(sl()))
     ..registerLazySingleton(() => SaveTheme(sl()))
     ..registerFactory(() => ThemeBloc(getSavedTheme: sl(), saveTheme: sl()));
+}
+
+void _initShell() {
+  sl
+    ..registerLazySingleton<NotificationBadgeRemoteDataSource>(
+      () => NotificationBadgeRemoteDataSourceImpl(sl()),
+    )
+    ..registerLazySingleton<NotificationBadgeRepository>(
+      () => NotificationBadgeRepositoryImpl(sl()),
+    )
+    ..registerLazySingleton(() => WatchUnreadCount(sl()))
+    ..registerFactory(() => NotificationBadgeBloc(watchUnreadCount: sl()))
+    ..registerFactory(() => MainNavBloc());
 }
