@@ -1,5 +1,5 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 
 class Splash_Widget_Components {
@@ -24,7 +24,7 @@ class Splash_Widget_Components {
       ),
       actions: [
         TextButton(
-          onPressed: onSkip ?? () => Get.offAll(() => const AuthPage()),
+          onPressed: onSkip ?? () => AppNavigator.replaceAll(const AuthPage()),
           child: Text(
             "Skip",
             style: TextStyle(

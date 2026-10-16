@@ -1,5 +1,6 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
 
 class CommunityFilesScreen extends StatelessWidget {
@@ -39,7 +40,7 @@ class CommunityFilesScreen extends StatelessWidget {
                   icon: Icon(Icons.arrow_back, color: textColor),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  onPressed: () => Get.back(),
+                  onPressed: () => AppNavigator.pop(),
                 ),
                 const SizedBox(width: 8),
                 // AI & ML Logo container

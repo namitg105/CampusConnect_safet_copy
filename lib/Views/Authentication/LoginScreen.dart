@@ -1,5 +1,6 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
 import 'package:noteswap/Views/Authentication/SingUpScreen.dart';
 import 'package:noteswap/Widgets/Buttons/BackWidgets.dart';
@@ -27,7 +28,7 @@ class LoginScreen extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: lightModeController.isLightMode.value ? Colors.white : Colors.black,
           leading: BackWidget(
-            onTap:(){}/* Get.to(/*removed login screen for now  */);*/
+            onTap:(){}/* AppNavigator.push(/*removed login screen for now  */);*/
 ,
             imagePath: AppConstants.backBlackIcon,
           ),
@@ -97,7 +98,7 @@ class LoginScreen extends StatelessWidget {
                         padding: const EdgeInsets.all(35.0),
                         child: ButtonWidgets(
                           onTap: () {
-                            Get.to(ProfileScreen());
+                            AppNavigator.push(ProfileScreen());
                           },
                           buttonText: 'Log In',
                         ),
@@ -105,7 +106,7 @@ class LoginScreen extends StatelessWidget {
                       const SizedBox(height: 5),
                       BottomButton(
                         onTap: () {
-                          Get.to(SignUpScreen());
+                          AppNavigator.push(SignUpScreen());
                         },
                       )
                     ],

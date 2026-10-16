@@ -1,5 +1,5 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 
 class CreateChatRoomPage extends StatefulWidget {
@@ -31,7 +31,7 @@ class _CreateChatRoomPageState extends State<CreateChatRoomPage> {
         content: Text('Room "$roomName" created (UI only)'),
       ),
     );
-    Get.back();
+    AppNavigator.pop();
   }
 
   @override

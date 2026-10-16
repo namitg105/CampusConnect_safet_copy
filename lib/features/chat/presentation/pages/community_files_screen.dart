@@ -1,5 +1,6 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
 import 'package:noteswap/features/private_chat/page_controller.dart';
 
@@ -40,7 +41,7 @@ class CommunityFilesScreen extends StatelessWidget {
                   icon: Icon(Icons.arrow_back, color: textColor),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  onPressed: () => Get.back(),
+                  onPressed: () => AppNavigator.pop(),
                 ),
                 const SizedBox(width: 8),
                 // AI & ML Logo container
@@ -368,7 +369,7 @@ class CommunityFilesScreen extends StatelessWidget {
                   child: const Icon(Icons.add, color: Colors.white, size: 28),
                 ),
                 GestureDetector(
-                  onTap: () => Get.to(() => const PrivateChatPageController()),
+                  onTap: () => AppNavigator.push(const PrivateChatPageController()),
                   child: _buildNavItem(Icons.chat_bubble_outline, 'Messages', false, brandColor, subTextColor),
                 ),
                 _buildNavItem(Icons.person_outline, 'Profile', false, brandColor, subTextColor),

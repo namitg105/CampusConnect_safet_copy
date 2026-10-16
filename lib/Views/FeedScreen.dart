@@ -1,5 +1,6 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
 import 'package:noteswap/Views/AddUsers.dart';
 import 'package:noteswap/Views/Notification.dart';
@@ -44,7 +45,7 @@ class FeedScreen extends StatelessWidget {
           leading: Padding(
             padding: const EdgeInsets.all(8.0),
             child: BackWidget(
-              onTap: () => Get.off(() => const MainPage()),
+              onTap: () => AppNavigator.replace(const MainPage()),
               imagePath: isLight
                   ? AppConstants.backBlackIcon
                   : AppConstants.backWhiteIcon,
@@ -320,7 +321,7 @@ class _QuickNavBar extends StatelessWidget {
             activeColor: activeColor,
             bgColor: cardBg,
             textColor: textColor,
-            onTap: () => Get.to(() => SearchScreen()),
+            onTap: () => AppNavigator.push(SearchScreen()),
           ),
           _NavChip(
             icon: Icons.note_add_rounded,
@@ -329,7 +330,7 @@ class _QuickNavBar extends StatelessWidget {
             activeColor: activeColor,
             bgColor: cardBg,
             textColor: textColor,
-            onTap: () => Get.to(() => AddUsers()),
+            onTap: () => AppNavigator.push(AddUsers()),
           ),
           _NavChip(
             icon: Icons.notifications_none_rounded,
@@ -338,7 +339,7 @@ class _QuickNavBar extends StatelessWidget {
             activeColor: activeColor,
             bgColor: cardBg,
             textColor: textColor,
-            onTap: () => Get.to(() => NotificationScreen()),
+            onTap: () => AppNavigator.push(NotificationScreen()),
           ),
         ],
       ),

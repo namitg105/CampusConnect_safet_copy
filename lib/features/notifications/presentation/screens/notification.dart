@@ -1,7 +1,7 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
 import 'package:noteswap/features/community/presentation/pages/community_profile.dart';
@@ -156,7 +156,7 @@ class NotificationPage extends StatelessWidget {
 
                       if (notification.groupId != null &&
                           notification.groupId!.isNotEmpty) {
-                        Get.to(() => GroupProfilePage(
+                        AppNavigator.push(GroupProfilePage(
                               groupId: notification.groupId!,
                             ));
                       } else if (notification.senderId != null &&
@@ -171,7 +171,7 @@ class NotificationPage extends StatelessWidget {
                         final name =
                             notification.senderName ?? notification.title;
 
-                        Get.to(() => ChatScreen(
+                        AppNavigator.push(ChatScreen(
                               roomId: roomId,
                               currentUid: currentUid,
                               friendUid: friendUid,

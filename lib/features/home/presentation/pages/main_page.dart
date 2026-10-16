@@ -1,6 +1,7 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/features/community/presentation/pages/create_group_page.dart';
 import 'package:noteswap/features/dashboard/presentation/pages/dashboard_page_one.dart';
 import 'package:noteswap/features/private_chat/page_controller.dart';
@@ -79,13 +80,13 @@ class MainPage extends StatelessWidget {
             getUserLikedCommentsUseCase:
                 GetUserLikedCommentsUseCase(repository: postRepo),
           );
-          Get.to(() => CreatePostPage(
+          AppNavigator.push(CreatePostPage(
                 controller: postController,
                 currentUser: currentUser,
               ));
         }
       } else if (index == 1) {
-        Get.to(() => const CreateGroupPage(collegeId: ""));
+        AppNavigator.push(const CreateGroupPage(collegeId: ""));
       } else if (index == 4) {
         controller.privateChatSelectedTab.value = 3;
       }

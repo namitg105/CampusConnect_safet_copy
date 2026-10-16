@@ -1,9 +1,9 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noteswap/core/di/injection.dart';
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/auth/presentation/bloc/password_reset_bloc.dart';
-import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/pages/register_page_ui.dart';
 import 'package:noteswap/features/private_chat/presentation/common_widgets.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
@@ -148,7 +148,7 @@ class _LoginscreenState extends State<Loginscreen> {
     return BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
-            Get.offAll(() => const MainPage());
+            AppNavigator.replaceAll(const MainPage());
           } else if (state is AuthError) {
             showErrorSnackbar(state.message);
           }
@@ -408,7 +408,7 @@ class _LoginscreenState extends State<Loginscreen> {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  Get.to(() => RegisterPage());
+                                  AppNavigator.push(RegisterPage());
                                 },
                                 child: const Text(
                                   "Sign Up",

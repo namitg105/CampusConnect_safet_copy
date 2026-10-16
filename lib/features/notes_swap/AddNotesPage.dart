@@ -1,6 +1,7 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/ViewModels/DarkModeViewModels.dart';
 import 'package:noteswap/Views/Notification.dart';
 import 'package:noteswap/features/notes_swap/searchScreen.dart';
@@ -37,10 +38,10 @@ class _AddNotesPageState extends State<AddNotesPage> {
     setState(() {
       uploadedFileName = "CS_Data_Structures_Notes_2026.pdf";
     });
-    Get.snackbar(
+    AppNavigator.showSnackbar(
       "File Selected",
       "CS_Data_Structures_Notes_2026.pdf ready for upload",
-      snackPosition: SnackPosition.BOTTOM,
+      snackPosition: SnackPosition.bottom,
       duration: const Duration(seconds: 2),
     );
   }
@@ -48,10 +49,10 @@ class _AddNotesPageState extends State<AddNotesPage> {
   Future<void> _submitNotes() async {
     if (_formKey.currentState!.validate()) {
       if (uploadedFileName == null) {
-        Get.snackbar(
+        AppNavigator.showSnackbar(
           "File Required",
           "Please upload your notes PDF or document.",
-          snackPosition: SnackPosition.BOTTOM,
+          snackPosition: SnackPosition.bottom,
           backgroundColor: Colors.redAccent.withOpacity(0.8),
           colorText: Colors.white,
         );
@@ -74,10 +75,10 @@ class _AddNotesPageState extends State<AddNotesPage> {
           'createdAt': FieldValue.serverTimestamp(),
         });
 
-        Get.snackbar(
+        AppNavigator.showSnackbar(
           "Success! 🎉",
           "Your notes have been uploaded successfully.",
-          snackPosition: SnackPosition.BOTTOM,
+          snackPosition: SnackPosition.bottom,
           backgroundColor: const Color(0xFF10B981),
           colorText: Colors.white,
         );
@@ -90,10 +91,10 @@ class _AddNotesPageState extends State<AddNotesPage> {
           selectedDepartment = null;
         });
       } catch (e) {
-        Get.snackbar(
+        AppNavigator.showSnackbar(
           "Error",
           "Failed to upload note: $e",
-          snackPosition: SnackPosition.BOTTOM,
+          snackPosition: SnackPosition.bottom,
           backgroundColor: Colors.redAccent,
           colorText: Colors.white,
         );
@@ -127,7 +128,7 @@ class _AddNotesPageState extends State<AddNotesPage> {
           leading: Padding(
             padding: const EdgeInsets.all(8.0),
             child: BackWidget(
-              onTap: () => Get.back(),
+              onTap: () => AppNavigator.pop(),
               imagePath: isLight
                   ? AppConstants.backBlackIcon
                   : AppConstants.backWhiteIcon,
@@ -597,7 +598,7 @@ class _QuickNavBar extends StatelessWidget {
             activeColor: activeColor,
             bgColor: cardBg,
             textColor: textColor,
-            onTap: () => Get.off(() => NoteSwapFeedScreen()),
+            onTap: () => AppNavigator.replace(NoteSwapFeedScreen()),
           ),
           _NavChip(
             icon: Icons.search_rounded,
@@ -606,7 +607,7 @@ class _QuickNavBar extends StatelessWidget {
             activeColor: activeColor,
             bgColor: cardBg,
             textColor: textColor,
-            onTap: () => Get.off(() => NoteSwapSearchScreen()),
+            onTap: () => AppNavigator.replace(NoteSwapSearchScreen()),
           ),
           _NavChip(
             icon: Icons.note_add_rounded,
@@ -624,7 +625,7 @@ class _QuickNavBar extends StatelessWidget {
             activeColor: activeColor,
             bgColor: cardBg,
             textColor: textColor,
-            onTap: () => Get.to(() => NoteSwapNotificationScreen()),
+            onTap: () => AppNavigator.push(NoteSwapNotificationScreen()),
           ),
         ],
       ),

@@ -1,6 +1,7 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/ViewModels/NotificationController.dart';
 import 'package:noteswap/features/events/notifications/notifications_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -253,7 +254,7 @@ class _NotificationButton extends StatelessWidget {
         children: [
           _CircleIconButton(
             icon: Icons.notifications_none,
-            onTap: () => Get.to(() => const NotificationsScreen()),
+            onTap: () => AppNavigator.push(const NotificationsScreen()),
           ),
           if (notifCtrl.unreadCount.value > 0)
             Positioned(

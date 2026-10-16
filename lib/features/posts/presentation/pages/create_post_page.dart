@@ -1,6 +1,7 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -100,10 +101,10 @@ class _CreatePostPageState extends State<CreatePostPage> {
       if (result != null && result.files.isNotEmpty) {
         final file = result.files.first;
         if (file.size > 50 * 1024 * 1024) {
-          Get.snackbar(
+          AppNavigator.showSnackbar(
             'File Too Large',
             'File size exceeds the 50MB limit.',
-            snackPosition: SnackPosition.BOTTOM,
+            snackPosition: SnackPosition.bottom,
             backgroundColor: Colors.red,
             colorText: Colors.white,
           );
@@ -123,10 +124,10 @@ class _CreatePostPageState extends State<CreatePostPage> {
         });
       }
     } catch (e) {
-      Get.snackbar(
+      AppNavigator.showSnackbar(
         'Error',
         'Failed to pick file: $e',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.bottom,
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
@@ -142,8 +143,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
         });
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to pick image: $e',
-          snackPosition: SnackPosition.BOTTOM,
+      AppNavigator.showSnackbar('Error', 'Failed to pick image: $e',
+          snackPosition: SnackPosition.bottom,
           backgroundColor: Colors.red,
           colorText: Colors.white);
     }
@@ -217,10 +218,10 @@ class _CreatePostPageState extends State<CreatePostPage> {
                           : () async {
                               final text = bodyController.text.trim();
                               if (text.isEmpty) {
-                                Get.snackbar(
+                                AppNavigator.showSnackbar(
                                   'Post Warning',
                                   'Post content cannot be empty.',
-                                  snackPosition: SnackPosition.BOTTOM,
+                                  snackPosition: SnackPosition.bottom,
                                   backgroundColor: Colors.orange,
                                   colorText: Colors.white,
                                 );

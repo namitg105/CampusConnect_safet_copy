@@ -1,6 +1,7 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/private_chat/data/private-chat-services/user_friend_add.dart';
@@ -206,7 +207,7 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
             ),
           ),
           ProfileAvatarButton(
-            onTap: () => Get.to(() => const ProfileSettingsPage()),
+            onTap: () => AppNavigator.push(const ProfileSettingsPage()),
           ),
         ],
       ),

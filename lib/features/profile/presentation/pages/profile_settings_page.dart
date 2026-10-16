@@ -1,7 +1,7 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart';
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
@@ -81,7 +81,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
       listener: (context, authState) {
         if (authState is Unauthenticated) {
           // Clears the stack and routes to the first Onboarding Screen
-          Get.offAll(() => const OnboardingFlowScreen(initialPage: 0));
+          AppNavigator.replaceAll(const OnboardingFlowScreen(initialPage: 0));
         }
       },
       builder: (context, authState) {
@@ -1016,10 +1016,10 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
 
                                       _loadProfile();
 
-                                    Get.snackbar(
+                                    AppNavigator.showSnackbar(
                                       'Success',
                                       'Profile updated successfully',
-                                      snackPosition: SnackPosition.BOTTOM,
+                                      snackPosition: SnackPosition.bottom,
                                       backgroundColor: const Color(0xFF6139ED),
                                       colorText: Colors.white,
                                     );
@@ -1027,10 +1027,10 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                     setModalState(() {
                                       isSaving = false;
                                     });
-                                    Get.snackbar(
+                                    AppNavigator.showSnackbar(
                                       'Error',
                                       'Failed to update profile: $e',
-                                      snackPosition: SnackPosition.BOTTOM,
+                                      snackPosition: SnackPosition.bottom,
                                       backgroundColor: Colors.redAccent,
                                       colorText: Colors.white,
                                     );

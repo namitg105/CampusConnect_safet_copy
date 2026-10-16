@@ -1,6 +1,7 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 import 'package:noteswap/features/posts/presentation/pages/campus_feed_screen.dart';
@@ -27,7 +28,7 @@ class _HomePageState extends State<HomePage> {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is Unauthenticated) {
-          Get.offAll(() => const AuthPage());
+          AppNavigator.replaceAll(const AuthPage());
         }
       },
       child: Scaffold(
@@ -49,7 +50,7 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ElevatedButton.icon(
-                    onPressed: () => Get.to(() => const CampusFeedScreen()),
+                    onPressed: () => AppNavigator.push(const CampusFeedScreen()),
                     icon: const Icon(Icons.feed),
                     label: const Text('Open Campus Feed'),
                     style: ElevatedButton.styleFrom(
@@ -63,7 +64,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
-                    onPressed: () => Get.to(() => const DashboardPageOne()),
+                    onPressed: () => AppNavigator.push(const DashboardPageOne()),
                     icon: const Icon(Icons.dashboard_customize),
                     label: const Text('Open Dashboard Screen One'),
                     style: ElevatedButton.styleFrom(
@@ -84,7 +85,7 @@ class _HomePageState extends State<HomePage> {
                       } else {
                         final controller = Get.put(MainPageController());
                         controller.changeIndex(1);
-                        Get.offAll(() => const MainPage());
+                        AppNavigator.replaceAll(const MainPage());
                       }
                     },
                     icon: const Icon(Icons.group_outlined),
@@ -100,7 +101,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
-                    onPressed: () => Get.to(() => const PrivateChatPageController()),
+                    onPressed: () => AppNavigator.push(const PrivateChatPageController()),
                     icon: const Icon(Icons.chat_bubble_outline),
                     label: const Text('Open Private Chat'),
                     style: ElevatedButton.styleFrom(

@@ -1,6 +1,7 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/ViewModels/NotificationController.dart';
 import 'package:noteswap/features/events/notifications/notifications_screen.dart';
 
@@ -197,7 +198,7 @@ class _NotificationButton extends StatelessWidget {
                 color: NotesScreen._textDark,
                 size: 22,
               ),
-              onPressed: () => Get.to(() => const NotificationsScreen()),
+              onPressed: () => AppNavigator.push(const NotificationsScreen()),
             ),
           ),
           if (notifCtrl.unreadCount.value > 0)

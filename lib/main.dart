@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/Views/Onboarding/OnboardingFlowScreen.dart';
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/private_chat/data/private-chat-services/user_service.dart';
@@ -11,6 +11,7 @@ import 'package:noteswap/firebase_options.dart';
 import 'ViewModels/DarkModeViewModels.dart';
 import 'ViewModels/NotificationController.dart';
 import 'core/di/injection.dart'; // DI injection init
+import 'core/navigation/app_navigator.dart';
 
 import 'features/home/presentation/pages/main_page.dart';
 
@@ -59,7 +60,9 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: Obx(
-        () => GetMaterialApp(
+        () => MaterialApp(
+          navigatorKey: rootNavigatorKey,
+          scaffoldMessengerKey: rootMessengerKey,
           debugShowCheckedModeBanner: false,
           theme: ThemeData.light(),
           darkTheme: ThemeData.dark(),

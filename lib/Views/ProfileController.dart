@@ -1,6 +1,7 @@
+import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide SnackPosition;
 
 class ProfileController extends GetxController {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -41,7 +42,7 @@ class ProfileController extends GetxController {
         }
       }
     } catch (e) {
-      Get.snackbar("Error", "Failed to fetch profile: $e");
+      AppNavigator.showSnackbar("Error", "Failed to fetch profile: $e");
     } finally {
       isLoading.value = false;
     }
