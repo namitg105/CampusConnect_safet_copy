@@ -10,7 +10,7 @@ import 'presentation/Design_By_Opencode_3/directory_screen.dart';
 import 'presentation/Design_By_Opencode_5/chat_request_screen.dart';
 import 'presentation/Design_By_Opencode/recent_chats_screen.dart';
 import 'presentation/Design_By_Opencode/recent_chats_components.dart';
-import 'package:noteswap/features/home/presentation/pages/main_page.dart';
+import 'package:noteswap/features/home/presentation/bloc/main_nav_bloc.dart';
 import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
 
 class PrivateChatPageController extends StatefulWidget {
@@ -24,7 +24,6 @@ class PrivateChatPageController extends StatefulWidget {
 class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
   late TextEditingController _searchController;
   UserController? _userController;
-  int _selectedTab = 0;
   String _searchQuery = '';
 
   @override
@@ -38,10 +37,6 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
       Get.put(UserController(), permanent: true);
     }
     _userController = Get.find<UserController>();
-    if (Get.isRegistered<MainPageController>()) {
-      _selectedTab =
-          Get.find<MainPageController>().privateChatSelectedTab.value;
-    }
   }
 
   @override
@@ -60,28 +55,18 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
   }
 
   void _onTabSelected(int index) {
-    if (Get.isRegistered<MainPageController>()) {
-      Get.find<MainPageController>().privateChatSelectedTab.value = index;
-    }
-    setState(() => _selectedTab = index);
+    context.read<MainNavBloc>().add(PrivateChatTabSelected(index));
   }
 
-  void _switchToRequestTab() {
-    if (Get.isRegistered<MainPageController>()) {
-      Get.find<MainPageController>().privateChatSelectedTab.value = 2;
-    }
-    setState(() => _selectedTab = 2);
-  }
+  void _switchToRequestTab() => _onTabSelected(2);
 
   @override
   Widget build(BuildContext context) {
     return DefaultTextStyle(
       style: const TextStyle(fontFamily: 'Quicksand'),
-      child: Obx(() {
-        if (Get.isRegistered<MainPageController>()) {
-          _selectedTab =
-              Get.find<MainPageController>().privateChatSelectedTab.value;
-        }
+      child: BlocBuilder<MainNavBloc, MainNavState>(
+          builder: (context, nav) {
+        final selectedTab = nav.privateChatTab;
         return Scaffold(
           backgroundColor: const Color(0xFFF8F8FC),
           body: SafeArea(
@@ -92,7 +77,7 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
                 Divider(
                     height: 1, thickness: 1, color: const Color(0xFFECECEC)),
                 ChatsTabBar(
-                  selectedIndex: _selectedTab,
+                  selectedIndex: selectedTab,
                   onTabSelected: _onTabSelected,
                 ),
                 Divider(
@@ -114,7 +99,7 @@ class _PrivateChatPageControllerState extends State<PrivateChatPageController> {
                 const SizedBox(height: 8),
                 Expanded(
                   child: IndexedStack(
-                    index: _selectedTab,
+                    index: selectedTab,
                     children: [
                       RecentChatsScreen(
                         searchQuery: _searchQuery,

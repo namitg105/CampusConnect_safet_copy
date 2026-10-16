@@ -1,8 +1,9 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart' hide SnackPosition;
-import 'package:noteswap/ViewModels/NotificationController.dart';
+import 'package:noteswap/features/notification_badge/presentation/bloc/notification_badge_bloc.dart';
 import 'package:noteswap/features/events/notifications/notifications_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -247,16 +248,15 @@ class _NotificationButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final notifCtrl = Get.find<NotificationController>();
-    return Obx(
-      () => Stack(
+    return BlocBuilder<NotificationBadgeBloc, NotificationBadgeState>(
+      builder: (context, badge) => Stack(
         clipBehavior: Clip.none,
         children: [
           _CircleIconButton(
             icon: Icons.notifications_none,
             onTap: () => AppNavigator.push(const NotificationsScreen()),
           ),
-          if (notifCtrl.unreadCount.value > 0)
+          if (badge.hasUnread)
             Positioned(
               top: 2,
               right: 2,

@@ -5,7 +5,7 @@ import 'package:get/get.dart' hide SnackPosition;
 
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:noteswap/features/home/presentation/pages/main_page.dart';
+import 'package:noteswap/features/home/presentation/bloc/main_nav_bloc.dart';
 import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
 import 'package:noteswap/features/posts/presentation/pages/create_post_page.dart';
 import 'package:noteswap/features/posts/presentation/pages/post_detail_page.dart';
@@ -584,11 +584,9 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                             ),
                           ],
                         ),
-                        child: Obx(() {
-                          final mc = Get.isRegistered<MainPageController>()
-                              ? Get.find<MainPageController>()
-                              : null;
-                          final idx = mc?.currentIndex.value ?? 0;
+                        child: BlocBuilder<MainNavBloc, MainNavState>(
+                          builder: (context, nav) {
+                          final idx = nav.currentIndex;
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -597,7 +595,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                                 label: 'Home',
                                 isSelected: idx == 0,
                                 onTap: () {
-                                  mc?.changeIndex(0);
+                                  context.read<MainNavBloc>().add(const MainNavTabSelected(0));
                                   Navigator.of(context).maybePop();
                                 },
                               ),
@@ -606,7 +604,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                                 label: 'Community',
                                 isSelected: idx == 1,
                                 onTap: () {
-                                  mc?.changeIndex(1);
+                                  context.read<MainNavBloc>().add(const MainNavTabSelected(1));
                                   Navigator.of(context).maybePop();
                                 },
                               ),
@@ -617,7 +615,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                                 label: 'Messages',
                                 isSelected: idx == 2,
                                 onTap: () {
-                                  mc?.changeIndex(2);
+                                  context.read<MainNavBloc>().add(const MainNavTabSelected(2));
                                   Navigator.of(context).maybePop();
                                 },
                               ),
@@ -626,7 +624,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                                 label: 'Profile',
                                 isSelected: idx == 3,
                                 onTap: () {
-                                  mc?.changeIndex(3);
+                                  context.read<MainNavBloc>().add(const MainNavTabSelected(3));
                                   Navigator.of(context).maybePop();
                                 },
                               ),
