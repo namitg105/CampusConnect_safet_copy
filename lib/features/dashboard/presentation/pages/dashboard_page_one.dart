@@ -14,7 +14,7 @@ import 'package:noteswap/utils/time_formatter.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/group_chat/presentation/pages/groups_page.dart';
 import 'package:noteswap/features/events/notifications/notifications_screen.dart';
-import 'package:noteswap/ViewModels/NotificationController.dart';
+import 'package:noteswap/features/notification_badge/presentation/bloc/notification_badge_bloc.dart';
 import 'package:noteswap/features/posts/presentation/pages/post_detail_page.dart';
 import 'package:noteswap/features/posts/presentation/pages/all_announcements_screen.dart';
 import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
@@ -248,11 +248,10 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                             ),
                           ],
                         ),
-                        Builder(
-                          builder: (context) {
-                            final notifCtrl = Get.put(NotificationController());
-                            return Obx(
-                              () => Stack(
+                        BlocBuilder<NotificationBadgeBloc,
+                            NotificationBadgeState>(
+                          builder: (context, badge) {
+                            return Stack(
                                 alignment: Alignment.center,
                                 children: [
                                   IconButton(
@@ -260,7 +259,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                     icon: Icon(Icons.notifications_none,
                                         color: textColor),
                                   ),
-                                  if (notifCtrl.unreadCount.value > 0)
+                                  if (badge.hasUnread)
                                     Positioned(
                                       top: 12,
                                       right: 12,
@@ -274,7 +273,6 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                       ),
                                     ),
                                 ],
-                              ),
                             );
                           },
                         ),

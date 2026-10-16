@@ -2,14 +2,13 @@ import 'dart:ui';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/Views/Onboarding/OnboardingFlowScreen.dart';
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:noteswap/features/private_chat/data/private-chat-services/user_service.dart';
 import 'package:noteswap/firebase_options.dart';
 
+import 'features/home/presentation/bloc/main_nav_bloc.dart';
+import 'features/notification_badge/presentation/bloc/notification_badge_bloc.dart';
 import 'features/theme/presentation/bloc/theme_bloc.dart';
-import 'ViewModels/NotificationController.dart';
 import 'core/di/injection.dart'; // DI injection init
 import 'core/navigation/app_navigator.dart';
 
@@ -37,10 +36,6 @@ void main() async {
   // Initialize service locator
   await init();
 
-  // Initialize controllers
-  Get.put(NotificationController());
-  await Get.putAsync<UserService>(() async => UserService());
-
   runApp(const MyApp());
 }
 
@@ -55,21 +50,56 @@ class MyApp extends StatelessWidget {
           create: (_) => sl<AuthBloc>()..add(const AuthCheckRequested()),
         ),
         BlocProvider<ThemeBloc>(create: (_) => sl<ThemeBloc>()),
+        BlocProvider<MainNavBloc>(create: (_) => sl<MainNavBloc>()),
+        BlocProvider<NotificationBadgeBloc>(
+          create: (_) => sl<NotificationBadgeBloc>(),
+        ),
       ],
-      child: BlocBuilder<ThemeBloc, ThemeState>(
-        builder: (context, themeState) => MaterialApp(
-          navigatorKey: rootNavigatorKey,
-          scaffoldMessengerKey: rootMessengerKey,
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData.light(),
-          darkTheme: ThemeData.dark(),
-          themeMode: themeState.isLightMode
-              ? ThemeMode.light
-              : ThemeMode.dark,
-          scrollBehavior: MyCustomScrollBehavior(),
-          home: const AuthWrapper(),
+      child: _SessionListener(
+        child: BlocBuilder<ThemeBloc, ThemeState>(
+          builder: (context, themeState) => MaterialApp(
+            navigatorKey: rootNavigatorKey,
+            scaffoldMessengerKey: rootMessengerKey,
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData.light(),
+            darkTheme: ThemeData.dark(),
+            themeMode:
+                themeState.isLightMode ? ThemeMode.light : ThemeMode.dark,
+            scrollBehavior: MyCustomScrollBehavior(),
+            home: const AuthWrapper(),
+          ),
         ),
       ),
+    );
+  }
+}
+
+/// Reacts once whenever the logged-in user changes (login, logout, switch).
+/// Lives above MaterialApp so it keeps working when screens are replaced.
+class _SessionListener extends StatelessWidget {
+  final Widget child;
+  const _SessionListener({required this.child});
+
+  static String? _uidOf(AuthState state) =>
+      state is Authenticated ? state.user.uid : null;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<AuthBloc, AuthState>(
+      listenWhen: (previous, current) => _uidOf(previous) != _uidOf(current),
+      listener: (context, state) {
+        final badge = context.read<NotificationBadgeBloc>();
+        if (state is Authenticated) {
+          badge.add(NotificationBadgeStarted(
+            uid: state.user.uid,
+            email: state.user.email,
+          ));
+        } else {
+          badge.add(const NotificationBadgeStopped());
+          context.read<MainNavBloc>().add(const MainNavReset());
+        }
+      },
+      child: child,
     );
   }
 }
@@ -100,10 +130,8 @@ class AuthWrapper extends StatelessWidget {
       builder: (context, authState) {
         print("Current UI Auth State: $authState");
         if (authState is Authenticated) {
-          Get.find<UserService>().updateUser(authState.user);
           return const MainPage(); // Land on MainPage (includes bottom navigation)
         } else if (authState is Unauthenticated) {
-          Get.find<UserService>().clearUser();
           return const OnboardingFlowScreen(initialPage: 0);
         }
 

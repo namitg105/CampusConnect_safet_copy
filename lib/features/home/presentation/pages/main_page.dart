@@ -1,7 +1,6 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/features/community/presentation/pages/create_group_page.dart';
 import 'package:noteswap/features/dashboard/presentation/pages/dashboard_page_one.dart';
 import 'package:noteswap/features/private_chat/page_controller.dart';
@@ -23,6 +22,7 @@ import 'package:noteswap/features/posts/domain/usecases/get_user_votes_usecase.d
 import 'package:noteswap/features/posts/domain/usecases/delete_post_usecase.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_user_liked_comments_usecase.dart';
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:noteswap/features/home/presentation/bloc/main_nav_bloc.dart';
 import 'package:noteswap/noteswap_intern/NotesScreen.dart';
 import 'package:noteswap/noteswap_intern/UploadNotesScreen.dart';
 
@@ -30,33 +30,18 @@ import '../../../../core/di/injection.dart';
 import '../../../community/presentation/cubits/group_cubit.dart';
 import '../../../community/presentation/pages/groups_page.dart';
 
-class MainPageController extends GetxController {
-  var currentIndex = 0.obs;
-  var privateChatSelectedTab = 0.obs;
-
-  @override
-  void onInit() {
-    super.onInit();
-    currentIndex.value = 0;
-  }
-
-  void changeIndex(int index) {
-    currentIndex.value = index;
-  }
-}
-
 class MainPage extends StatelessWidget {
   const MainPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(MainPageController());
+    final navBloc = context.read<MainNavBloc>();
     const Color brandPrimary = Color(0xFF6366F1);
     const Color textDark = Color(0xFF0F172A);
     const Color textMuted = Color(0xFF64748B);
 
     void handleCenterButtonTap() {
-      final index = controller.currentIndex.value;
+      final index = navBloc.state.currentIndex;
       if (index == 0) {
         final authState = context.read<AuthBloc>().state;
         if (authState is Authenticated) {
@@ -88,17 +73,17 @@ class MainPage extends StatelessWidget {
       } else if (index == 1) {
         AppNavigator.push(const CreateGroupPage(collegeId: ""));
       } else if (index == 4) {
-        controller.privateChatSelectedTab.value = 3;
+        navBloc.add(const PrivateChatTabSelected(3));
       }
     }
 
     return BlocProvider<GroupCubit>(
       create: (_) => sl<GroupCubit>(),
-      child: Obx(
-        () => Scaffold(
+      child: BlocBuilder<MainNavBloc, MainNavState>(
+        builder: (context, nav) => Scaffold(
           extendBody: true,
           body: IndexedStack(
-            index: controller.currentIndex.value,
+            index: nav.currentIndex,
             children: [
               const DashboardPageOne(),
               const GroupsPage(),
@@ -141,10 +126,10 @@ class MainPage extends StatelessWidget {
                                 assetPath: 'assets/community/home_nav.png',
                                 label: 'Home',
                                 isSelected:
-                                    controller.currentIndex.value == 0,
+                                    nav.currentIndex == 0,
                                 activeColor: brandPrimary,
                                 inactiveColor: textMuted,
-                                onTap: () => controller.changeIndex(0),
+                                onTap: () => navBloc.add(const MainNavTabSelected(0)),
                               ),
                             ),
                             Expanded(
@@ -152,10 +137,10 @@ class MainPage extends StatelessWidget {
                                 assetPath: 'assets/community/comm_nav.png',
                                 label: 'Community',
                                 isSelected:
-                                    controller.currentIndex.value == 1,
+                                    nav.currentIndex == 1,
                                 activeColor: brandPrimary,
                                 inactiveColor: textMuted,
-                                onTap: () => controller.changeIndex(1),
+                                onTap: () => navBloc.add(const MainNavTabSelected(1)),
                               ),
                             ),
                             Expanded(
@@ -163,10 +148,10 @@ class MainPage extends StatelessWidget {
                                 icon: Icons.upload_file,
                                 label: 'Upload',
                                 isSelected:
-                                    controller.currentIndex.value == 2,
+                                    nav.currentIndex == 2,
                                 activeColor: brandPrimary,
                                 inactiveColor: textMuted,
-                                onTap: () => controller.changeIndex(2),
+                                onTap: () => navBloc.add(const MainNavTabSelected(2)),
                               ),
                             ),
                             // Empty space the floating center button sits over.
@@ -176,10 +161,10 @@ class MainPage extends StatelessWidget {
                                 icon: Icons.menu_book,
                                 label: 'Notes',
                                 isSelected:
-                                    controller.currentIndex.value == 3,
+                                    nav.currentIndex == 3,
                                 activeColor: brandPrimary,
                                 inactiveColor: textMuted,
-                                onTap: () => controller.changeIndex(3),
+                                onTap: () => navBloc.add(const MainNavTabSelected(3)),
                               ),
                             ),
                             Expanded(
@@ -187,10 +172,10 @@ class MainPage extends StatelessWidget {
                                 assetPath: 'assets/community/msg_nav.png',
                                 label: 'Messages',
                                 isSelected:
-                                    controller.currentIndex.value == 4,
+                                    nav.currentIndex == 4,
                                 activeColor: brandPrimary,
                                 inactiveColor: textMuted,
-                                onTap: () => controller.changeIndex(4),
+                                onTap: () => navBloc.add(const MainNavTabSelected(4)),
                               ),
                             ),
                             Expanded(
@@ -198,10 +183,10 @@ class MainPage extends StatelessWidget {
                                 assetPath: 'assets/community/prof_nav.png',
                                 label: 'Profile',
                                 isSelected:
-                                    controller.currentIndex.value == 5,
+                                    nav.currentIndex == 5,
                                 activeColor: brandPrimary,
                                 inactiveColor: textMuted,
-                                onTap: () => controller.changeIndex(5),
+                                onTap: () => navBloc.add(const MainNavTabSelected(5)),
                               ),
                             ),
                           ],

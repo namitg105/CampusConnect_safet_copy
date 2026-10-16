@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecase/usecase.dart';
-import '../../../home/presentation/pages/main_page.dart';
 import '../../../private_chat/data/private-chat-services/user_friend_add.dart';
 import '../../../private_chat/domain/repos/chat_controller.dart';
 import '../../../private_chat/domain/repos/online_user_controller.dart';
@@ -120,9 +119,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   /// Removes per-user GetX controllers so the next account starts clean.
   /// Goes away once those features are migrated to Bloc.
   void _disposeSessionControllers() {
-    if (Get.isRegistered<MainPageController>()) {
-      Get.delete<MainPageController>(force: true);
-    }
     if (Get.isRegistered<ChatController>()) {
       Get.delete<ChatController>(force: true);
     }

@@ -1,12 +1,12 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/auth/presentation/pages/auth_page.dart';
 import 'package:noteswap/features/posts/presentation/pages/campus_feed_screen.dart';
 import 'package:noteswap/features/dashboard/presentation/pages/dashboard_page_one.dart';
 import 'package:noteswap/features/home/presentation/pages/main_page.dart';
+import 'package:noteswap/features/home/presentation/bloc/main_nav_bloc.dart';
 import 'package:noteswap/features/private_chat/page_controller.dart';
 
 class HomePage extends StatefulWidget {
@@ -80,13 +80,8 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     onPressed: () {
-                      if (Get.isRegistered<MainPageController>()) {
-                        Get.find<MainPageController>().changeIndex(1);
-                      } else {
-                        final controller = Get.put(MainPageController());
-                        controller.changeIndex(1);
+                      context.read<MainNavBloc>().add(const MainNavTabSelected(1));
                         AppNavigator.replaceAll(const MainPage());
-                      }
                     },
                     icon: const Icon(Icons.group_outlined),
                     label: const Text('Open Community Pages'),
