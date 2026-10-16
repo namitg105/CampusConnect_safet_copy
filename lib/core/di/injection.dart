@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_it/get_it.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../features/auth/data/datasources/auth_remote_data_source.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
@@ -28,7 +29,16 @@ import '../../features/group_chat/data/firebase_group_chat_repo.dart';
 import '../../features/group_chat/domain/repo/group_chat_repo.dart';
 import '../../features/security/aes_service.dart';
 
+import '../../features/theme/data/datasources/theme_local_data_source.dart';
+import '../../features/theme/data/repositories/theme_repository_impl.dart';
+import '../../features/theme/domain/repositories/theme_repository.dart';
+import '../../features/theme/domain/usecases/get_saved_theme.dart';
+import '../../features/theme/domain/usecases/save_theme.dart';
+import '../../features/theme/presentation/bloc/theme_bloc.dart';
+
 final sl = GetIt.instance;
+
+const _settingsBoxName = 'settings';
 
 /// Registration order: external services -> data sources -> repositories
 /// -> use cases -> blocs.
@@ -39,7 +49,12 @@ Future<void> init() async {
   sl.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
   sl.registerLazySingleton<GoogleSignIn>(() => GoogleSignIn());
 
+  // Local key-value storage (replaces GetStorage).
+  await Hive.initFlutter();
+  final settingsBox = await Hive.openBox(_settingsBoxName);
+
   _initAuth();
+  _initTheme(settingsBox);
 
   sl.registerLazySingleton<AESService>(
     () => AESService(),
@@ -105,4 +120,15 @@ void _initAuth() {
     ..registerFactory(
       () => PasswordResetBloc(sendPasswordResetEmail: sl()),
     );
+}
+
+void _initTheme(Box settingsBox) {
+  sl
+    ..registerLazySingleton<ThemeLocalDataSource>(
+      () => ThemeLocalDataSourceImpl(settingsBox),
+    )
+    ..registerLazySingleton<ThemeRepository>(() => ThemeRepositoryImpl(sl()))
+    ..registerLazySingleton(() => GetSavedTheme(sl()))
+    ..registerLazySingleton(() => SaveTheme(sl()))
+    ..registerFactory(() => ThemeBloc(getSavedTheme: sl(), saveTheme: sl()));
 }
