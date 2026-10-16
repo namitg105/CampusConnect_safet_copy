@@ -1,3 +1,4 @@
+/// A comment (or reply, when [parentId] is set) on a post.
 class CommentEntity {
   final String id;
   final String postId;
@@ -8,7 +9,7 @@ class CommentEntity {
   final String? parentId;
   final int likes;
 
-  CommentEntity({
+  const CommentEntity({
     required this.id,
     required this.postId,
     required this.authorId,
@@ -19,28 +20,16 @@ class CommentEntity {
     this.likes = 0,
   });
 
-  Map<String, dynamic> toJson() {
-    return {
-      'postId': postId,
-      'authorId': authorId,
-      'authorName': authorName,
-      'text': text,
-      'createdAt': createdAt.toIso8601String(),
-      if (parentId != null) 'parentId': parentId,
-      'likes': likes,
-    };
-  }
-
-  factory CommentEntity.fromJson(Map<String, dynamic> json, String id) {
+  CommentEntity copyWith({int? likes}) {
     return CommentEntity(
       id: id,
-      postId: json['postId'] ?? '',
-      authorId: json['authorId'] ?? '',
-      authorName: json['authorName'] ?? '',
-      text: json['text'] ?? '',
-      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
-      parentId: json['parentId'],
-      likes: json['likes'] ?? 0,
+      postId: postId,
+      authorId: authorId,
+      authorName: authorName,
+      text: text,
+      createdAt: createdAt,
+      parentId: parentId,
+      likes: likes ?? this.likes,
     );
   }
 }

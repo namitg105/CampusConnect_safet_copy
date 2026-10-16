@@ -43,6 +43,27 @@ import '../../features/notification_badge/domain/repositories/notification_badge
 import '../../features/notification_badge/domain/usecases/watch_unread_count.dart';
 import '../../features/notification_badge/presentation/bloc/notification_badge_bloc.dart';
 
+import '../../features/posts/data/datasources/post_remote_data_source.dart';
+import '../../features/posts/data/repositories/post_repository_impl.dart';
+import '../../features/posts/domain/repos/post_repo.dart';
+import '../../features/posts/domain/usecases/create_post_usecase.dart';
+import '../../features/posts/domain/usecases/get_feed_usecase.dart';
+import '../../features/posts/domain/usecases/get_top_voted_usecase.dart';
+import '../../features/posts/domain/usecases/get_post_by_id_usecase.dart';
+import '../../features/posts/domain/usecases/delete_post_usecase.dart';
+import '../../features/posts/domain/usecases/upvote_post_usecase.dart';
+import '../../features/posts/domain/usecases/downvote_post_usecase.dart';
+import '../../features/posts/domain/usecases/get_user_votes_usecase.dart';
+import '../../features/posts/domain/usecases/update_poll_usecase.dart';
+import '../../features/posts/domain/usecases/add_comment_usecase.dart';
+import '../../features/posts/domain/usecases/get_comments_usecase.dart';
+import '../../features/posts/domain/usecases/delete_comment_usecase.dart';
+import '../../features/posts/domain/usecases/toggle_comment_like_usecase.dart';
+import '../../features/posts/domain/usecases/get_user_liked_comments_usecase.dart';
+import '../../features/posts/presentation/bloc/feed/feed_bloc.dart';
+import '../../features/posts/presentation/bloc/comments/comments_bloc.dart';
+import '../../features/posts/presentation/bloc/create_post/create_post_bloc.dart';
+
 final sl = GetIt.instance;
 
 const _settingsBoxName = 'settings';
@@ -63,6 +84,7 @@ Future<void> init() async {
   _initAuth();
   _initTheme(settingsBox);
   _initShell();
+  _initPosts();
 
   sl.registerLazySingleton<AESService>(
     () => AESService(),
@@ -152,4 +174,44 @@ void _initShell() {
     ..registerLazySingleton(() => WatchUnreadCount(sl()))
     ..registerFactory(() => NotificationBadgeBloc(watchUnreadCount: sl()))
     ..registerFactory(() => MainNavBloc());
+}
+
+void _initPosts() {
+  sl
+    ..registerLazySingleton<PostRemoteDataSource>(
+      () => PostRemoteDataSourceImpl(sl()),
+    )
+    ..registerLazySingleton<PostRepo>(() => PostRepositoryImpl(sl()))
+    ..registerLazySingleton(() => CreatePostUseCase(repository: sl()))
+    ..registerLazySingleton(() => GetFeedUseCase(repository: sl()))
+    ..registerLazySingleton(() => GetTopVotedPostsUseCase(repository: sl()))
+    ..registerLazySingleton(() => GetPostByIdUseCase(repository: sl()))
+    ..registerLazySingleton(() => DeletePostUseCase(repository: sl()))
+    ..registerLazySingleton(() => UpvotePostUseCase(repository: sl()))
+    ..registerLazySingleton(() => DownvotePostUseCase(repository: sl()))
+    ..registerLazySingleton(() => GetUserVotesUseCase(repository: sl()))
+    ..registerLazySingleton(() => UpdatePollUseCase(repository: sl()))
+    ..registerLazySingleton(() => AddCommentUseCase(repository: sl()))
+    ..registerLazySingleton(() => GetCommentsUseCase(repository: sl()))
+    ..registerLazySingleton(() => DeleteCommentUseCase(repository: sl()))
+    ..registerLazySingleton(() => ToggleCommentLikeUseCase(repository: sl()))
+    ..registerLazySingleton(
+        () => GetUserLikedCommentsUseCase(repository: sl()))
+    ..registerFactory(() => FeedBloc(
+          getFeed: sl(),
+          getTopVoted: sl(),
+          getUserVotes: sl(),
+          upvote: sl(),
+          downvote: sl(),
+          deletePost: sl(),
+          updatePoll: sl(),
+        ))
+    ..registerFactory(() => CommentsBloc(
+          getComments: sl(),
+          getUserLikedComments: sl(),
+          addComment: sl(),
+          deleteComment: sl(),
+          toggleCommentLike: sl(),
+        ))
+    ..registerFactory(() => CreatePostBloc(createPost: sl()));
 }

@@ -1,34 +1,17 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart' hide SnackPosition;
 
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/home/presentation/bloc/main_nav_bloc.dart';
-import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
-import 'package:noteswap/features/posts/presentation/pages/create_post_page.dart';
-import 'package:noteswap/features/posts/presentation/pages/post_detail_page.dart';
+import 'package:noteswap/core/di/injection.dart';
+import 'package:noteswap/features/posts/presentation/bloc/feed/feed_bloc.dart';
+import 'package:noteswap/features/posts/presentation/posts_navigation.dart';
 import 'package:noteswap/features/posts/presentation/pages/user_profile_screen.dart';
 import 'package:noteswap/features/posts/presentation/widgets/post_card.dart';
-import 'package:noteswap/features/posts/presentation/pages/all_posts_screen.dart';
-import 'package:noteswap/features/posts/presentation/pages/all_announcements_screen.dart';
 import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:noteswap/features/posts/data/post_repo_impl.dart';
-import 'package:noteswap/features/posts/domain/usecases/add_comment_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/create_post_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/delete_comment_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/downvote_post_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_comments_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_feed_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_feed_by_tag_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_top_voted_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/toggle_comment_like_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/upvote_post_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_user_votes_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/delete_post_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_user_liked_comments_usecase.dart';
 import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
 import 'package:noteswap/utils/time_formatter.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
@@ -41,41 +24,27 @@ class CampusFeedScreen extends StatefulWidget {
 }
 
 class _CampusFeedScreenState extends State<CampusFeedScreen> {
-  late PostController postController;
-  final _searchQuery = ''.obs;
+  // One feed per screen, like the old per-screen PostController.
+  final FeedBloc _feedBloc = sl<FeedBloc>();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    _initializePostController();
-  }
-
-  void _initializePostController() {
-    final postRepo = PostRepoImpl();
-    postController = PostController(
-      createPostUseCase: CreatePostUseCase(repository: postRepo),
-      getFeedUseCase: GetFeedUseCase(repository: postRepo),
-      getFeedByTagUseCase: GetFeedByTagUseCase(repository: postRepo),
-      getTopVotedPostsUseCase: GetTopVotedPostsUseCase(repository: postRepo),
-      upvotePostUseCase: UpvotePostUseCase(repository: postRepo),
-      downvotePostUseCase: DownvotePostUseCase(repository: postRepo),
-      addCommentUseCase: AddCommentUseCase(repository: postRepo),
-      getCommentsUseCase: GetCommentsUseCase(repository: postRepo),
-      deleteCommentUseCase: DeleteCommentUseCase(repository: postRepo),
-      toggleCommentLikeUseCase: ToggleCommentLikeUseCase(repository: postRepo),
-      getUserVotesUseCase: GetUserVotesUseCase(repository: postRepo),
-      deletePostUseCase: DeletePostUseCase(repository: postRepo),
-      getUserLikedCommentsUseCase:
-          GetUserLikedCommentsUseCase(repository: postRepo),
-    );
 
     // Load feed when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authState = context.read<AuthBloc>().state;
       if (authState is Authenticated) {
-        postController.loadFeed(authState.user);
+        _feedBloc.add(FeedLoadRequested(authState.user));
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _feedBloc.close();
+    super.dispose();
   }
 
   String _getTimeBasedGreeting() {
@@ -147,26 +116,29 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
               ),
             ],
           ),
-          body: Obx(() {
-            if (postController.isLoading.value) {
+          body: BlocBuilder<FeedBloc, FeedState>(
+            bloc: _feedBloc,
+            builder: (context, feed) {
+            if (feed.isLoading) {
               return const Center(
                 child: CircularProgressIndicator(color: Color(0xFF6139ED)),
               );
             }
 
-            if (postController.errorMessage.isNotEmpty) {
+            if (feed.errorMessage.isNotEmpty) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      postController.errorMessage.value,
+                      feed.errorMessage,
                       style: TextStyle(color: textColor),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton(
-                      onPressed: () => postController.loadFeed(currentUser),
+                      onPressed: () =>
+                          _feedBloc.add(FeedLoadRequested(currentUser)),
                       child: const Text('Retry'),
                     ),
                   ],
@@ -234,7 +206,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: TextField(
-                            onChanged: (val) => _searchQuery.value = val,
+                            onChanged: (val) => setState(() => _searchQuery = val),
                             decoration: InputDecoration(
                               hintText: 'Search posts, people, topics...',
                               hintStyle: GoogleFonts.poppins(
@@ -264,14 +236,14 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                if (_searchQuery.value.isNotEmpty) ...[
+                if (_searchQuery.isNotEmpty) ...[
                   // Search Results — use a shrink-wrapped ListView.builder for
                   // efficiency when there are many matching posts
                   _buildHeaderSection('Search Results'),
                   const SizedBox(height: 12),
                   (() {
-                    final query = _searchQuery.value.trim().toLowerCase();
-                    final filteredPosts = postController.posts.where((post) {
+                    final query = _searchQuery.trim().toLowerCase();
+                    final filteredPosts = _feedBloc.state.posts.where((post) {
                       final titleMatch =
                           post.title.toLowerCase().contains(query);
                       final bodyMatch = post.body.toLowerCase().contains(query);
@@ -290,7 +262,7 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                           ),
                           child: Center(
                             child: Text(
-                              "No posts found matching '${_searchQuery.value}'",
+                              "No posts found matching '$_searchQuery'",
                               style:
                                   TextStyle(color: subTextColor, fontSize: 13),
                             ),
@@ -307,11 +279,11 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                         final post = filteredPosts[index];
                         return PostCard(
                           post: post,
-                          onTap: () => AppNavigator.push(PostDetailPage(
+                          onTap: () => PostsNavigation.openPostDetail(
+                                feedBloc: _feedBloc,
                                 post: post,
-                                controller: postController,
                                 currentUser: currentUser,
-                              )),
+                              ),
                           onProfileTap: () => AppNavigator.push(UserProfileScreen(
                                   user: AppUser(
                                 uid: post.authorId,
@@ -319,23 +291,24 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                                 name: post.authorName,
                                 collegeId: post.collegeId,
                               ))),
-                          onUpvote: () => postController.toggleUpvote(
-                            post.id,
-                            currentUser.uid,
-                            currentUser,
-                          ),
-                          onDownvote: () => postController.toggleDownvote(
-                            post.id,
-                            currentUser.uid,
-                            currentUser,
-                          ),
+                          onUpvote: () => _feedBloc.add(FeedVoteToggled(
+                              postId: post.id,
+                              userId: currentUser.uid,
+                              isUpvote: true)),
+                          onDownvote: () => _feedBloc.add(FeedVoteToggled(
+                              postId: post.id,
+                              userId: currentUser.uid,
+                              isUpvote: false)),
+                          onPollChanged: (poll) =>
+
+                              _feedBloc.add(FeedPollUpdated(post.id, poll)),
                           onDelete: post.authorId == currentUser.uid
                               ? () => _confirmDeletePost(post.id, currentUser)
                               : null,
                           isLightMode: isLightMode,
-                          isUpvoted: postController.getUserVote(post.id) == 1,
+                          isUpvoted: _feedBloc.state.voteOf(post.id) == 1,
                           isDownvoted:
-                              postController.getUserVote(post.id) == -1,
+                              _feedBloc.state.voteOf(post.id) == -1,
                         );
                       },
                     );
@@ -344,16 +317,16 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                   // 3. Trending Discussions Block
                   _buildHeaderSection(
                     'Trending Discussions',
-                    onTap: () => AppNavigator.push(AllPostsScreen(
+                    onTap: () => PostsNavigation.openAllPosts(
+                          feedBloc: _feedBloc,
                           title: 'Trending Discussions',
-                          postsSelector: () => postController.posts.toList()
+                          postsSelector: (posts) => posts.toList()
                             ..sort((a, b) => b.upvotes.compareTo(a.upvotes)),
-                          controller: postController,
                           currentUser: currentUser,
-                        )),
+                          ),
                   ),
                   const SizedBox(height: 12),
-                  if (postController.trendingPosts.isEmpty)
+                  if (_feedBloc.state.trendingPosts.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 12),
@@ -374,14 +347,14 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                   else
                     Column(
                       children:
-                          postController.trendingPosts.take(3).map((post) {
+                          _feedBloc.state.trendingPosts.take(3).map((post) {
                         return PostCard(
                           post: post,
-                          onTap: () => AppNavigator.push(PostDetailPage(
+                          onTap: () => PostsNavigation.openPostDetail(
+                                feedBloc: _feedBloc,
                                 post: post,
-                                controller: postController,
                                 currentUser: currentUser,
-                              )),
+                              ),
                           onProfileTap: () => AppNavigator.push(UserProfileScreen(
                                   user: AppUser(
                                 uid: post.authorId,
@@ -389,23 +362,24 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                                 name: post.authorName,
                                 collegeId: post.collegeId,
                               ))),
-                          onUpvote: () => postController.toggleUpvote(
-                            post.id,
-                            currentUser.uid,
-                            currentUser,
-                          ),
-                          onDownvote: () => postController.toggleDownvote(
-                            post.id,
-                            currentUser.uid,
-                            currentUser,
-                          ),
+                          onUpvote: () => _feedBloc.add(FeedVoteToggled(
+                              postId: post.id,
+                              userId: currentUser.uid,
+                              isUpvote: true)),
+                          onDownvote: () => _feedBloc.add(FeedVoteToggled(
+                              postId: post.id,
+                              userId: currentUser.uid,
+                              isUpvote: false)),
+                          onPollChanged: (poll) =>
+
+                              _feedBloc.add(FeedPollUpdated(post.id, poll)),
                           onDelete: post.authorId == currentUser.uid
                               ? () => _confirmDeletePost(post.id, currentUser)
                               : null,
                           isLightMode: isLightMode,
-                          isUpvoted: postController.getUserVote(post.id) == 1,
+                          isUpvoted: _feedBloc.state.voteOf(post.id) == 1,
                           isDownvoted:
-                              postController.getUserVote(post.id) == -1,
+                              _feedBloc.state.voteOf(post.id) == -1,
                         );
                       }).toList(),
                     ),
@@ -414,14 +388,14 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                   // 4. Announcements Block
                   _buildHeaderSection(
                     'Announcements',
-                    onTap: () => AppNavigator.push(AllAnnouncementsScreen(
-                          controller: postController,
+                    onTap: () => PostsNavigation.openAllAnnouncements(
+                          feedBloc: _feedBloc,
                           currentUser: currentUser,
-                        )),
+                          ),
                   ),
                   const SizedBox(height: 12),
                   (() {
-                    final announcements = postController.posts
+                    final announcements = _feedBloc.state.posts
                         .where(
                             (post) => post.tag.toLowerCase() == 'announcement')
                         .toList();
@@ -451,11 +425,11 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                       children: announcements.take(3).map((post) {
                         return PostCard(
                           post: post,
-                          onTap: () => AppNavigator.push(PostDetailPage(
+                          onTap: () => PostsNavigation.openPostDetail(
+                                feedBloc: _feedBloc,
                                 post: post,
-                                controller: postController,
                                 currentUser: currentUser,
-                              )),
+                              ),
                           onProfileTap: () => AppNavigator.push(UserProfileScreen(
                                   user: AppUser(
                                 uid: post.authorId,
@@ -463,23 +437,24 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                                 name: post.authorName,
                                 collegeId: post.collegeId,
                               ))),
-                          onUpvote: () => postController.toggleUpvote(
-                            post.id,
-                            currentUser.uid,
-                            currentUser,
-                          ),
-                          onDownvote: () => postController.toggleDownvote(
-                            post.id,
-                            currentUser.uid,
-                            currentUser,
-                          ),
+                          onUpvote: () => _feedBloc.add(FeedVoteToggled(
+                              postId: post.id,
+                              userId: currentUser.uid,
+                              isUpvote: true)),
+                          onDownvote: () => _feedBloc.add(FeedVoteToggled(
+                              postId: post.id,
+                              userId: currentUser.uid,
+                              isUpvote: false)),
+                          onPollChanged: (poll) =>
+
+                              _feedBloc.add(FeedPollUpdated(post.id, poll)),
                           onDelete: post.authorId == currentUser.uid
                               ? () => _confirmDeletePost(post.id, currentUser)
                               : null,
                           isLightMode: isLightMode,
-                          isUpvoted: postController.getUserVote(post.id) == 1,
+                          isUpvoted: _feedBloc.state.voteOf(post.id) == 1,
                           isDownvoted:
-                              postController.getUserVote(post.id) == -1,
+                              _feedBloc.state.voteOf(post.id) == -1,
                         );
                       }).toList(),
                     );
@@ -489,17 +464,17 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                   // 5. Latest Posts Block
                   _buildHeaderSection(
                     'Latest Posts',
-                    onTap: () => AppNavigator.push(AllPostsScreen(
+                    onTap: () => PostsNavigation.openAllPosts(
+                          feedBloc: _feedBloc,
                           title: 'Latest Posts',
-                          postsSelector: () => postController.posts.toList()
+                          postsSelector: (posts) => posts.toList()
                             ..sort(
                                 (a, b) => b.createdAt.compareTo(a.createdAt)),
-                          controller: postController,
                           currentUser: currentUser,
-                        )),
+                          ),
                   ),
                   const SizedBox(height: 12),
-                  if (postController.posts.isEmpty)
+                  if (_feedBloc.state.posts.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 12),
@@ -519,14 +494,14 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                     )
                   else
                     Column(
-                      children: postController.posts.take(3).map((post) {
+                      children: _feedBloc.state.posts.take(3).map((post) {
                         return PostCard(
                           post: post,
-                          onTap: () => AppNavigator.push(PostDetailPage(
+                          onTap: () => PostsNavigation.openPostDetail(
+                                feedBloc: _feedBloc,
                                 post: post,
-                                controller: postController,
                                 currentUser: currentUser,
-                              )),
+                              ),
                           onProfileTap: () => AppNavigator.push(UserProfileScreen(
                                   user: AppUser(
                                 uid: post.authorId,
@@ -534,23 +509,24 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                                 name: post.authorName,
                                 collegeId: post.collegeId,
                               ))),
-                          onUpvote: () => postController.toggleUpvote(
-                            post.id,
-                            currentUser.uid,
-                            currentUser,
-                          ),
-                          onDownvote: () => postController.toggleDownvote(
-                            post.id,
-                            currentUser.uid,
-                            currentUser,
-                          ),
+                          onUpvote: () => _feedBloc.add(FeedVoteToggled(
+                              postId: post.id,
+                              userId: currentUser.uid,
+                              isUpvote: true)),
+                          onDownvote: () => _feedBloc.add(FeedVoteToggled(
+                              postId: post.id,
+                              userId: currentUser.uid,
+                              isUpvote: false)),
+                          onPollChanged: (poll) =>
+
+                              _feedBloc.add(FeedPollUpdated(post.id, poll)),
                           onDelete: post.authorId == currentUser.uid
                               ? () => _confirmDeletePost(post.id, currentUser)
                               : null,
                           isLightMode: isLightMode,
-                          isUpvoted: postController.getUserVote(post.id) == 1,
+                          isUpvoted: _feedBloc.state.voteOf(post.id) == 1,
                           isDownvoted:
-                              postController.getUserVote(post.id) == -1,
+                              _feedBloc.state.voteOf(post.id) == -1,
                         );
                       }).toList(),
                     ),
@@ -637,10 +613,13 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                     Positioned(
                       top: 0,
                       child: GestureDetector(
-                        onTap: () => AppNavigator.push(CreatePostPage(
-                              controller: postController,
-                              currentUser: currentUser,
-                            )),
+                        onTap: () async {
+                          final created = await PostsNavigation.openCreatePost(
+                              currentUser: currentUser);
+                          if (created == true) {
+                            _feedBloc.add(FeedLoadRequested(currentUser));
+                          }
+                        },
                         child: Container(
                           width: 44,
                           height: 44,
@@ -768,19 +747,19 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
       AppUser currentUser) {
     // Resolve post dynamically to keep reactive updates in sync
     final postIndex =
-        postController.trendingPosts.indexWhere((p) => p.id == initialPost.id);
+        _feedBloc.state.trendingPosts.indexWhere((p) => p.id == initialPost.id);
     final post =
-        postIndex != -1 ? postController.trendingPosts[postIndex] : initialPost;
-    final userVote = postController.getUserVote(post.id);
+        postIndex != -1 ? _feedBloc.state.trendingPosts[postIndex] : initialPost;
+    final userVote = _feedBloc.state.voteOf(post.id);
     final timeStr = formatTimeAgo(post.createdAt);
     final groupName = 'r/${post.tag.replaceAll(" ", "")}';
 
     return GestureDetector(
-      onTap: () => AppNavigator.push(PostDetailPage(
+      onTap: () => PostsNavigation.openPostDetail(
+            feedBloc: _feedBloc,
             post: post,
-            controller: postController,
             currentUser: currentUser,
-          )),
+          ),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.all(16),
@@ -809,8 +788,10 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
               children: [
                 const SizedBox(height: 30),
                 GestureDetector(
-                  onTap: () => postController.toggleUpvote(
-                      post.id, currentUser.uid, currentUser),
+                  onTap: () => _feedBloc.add(FeedVoteToggled(
+                              postId: post.id,
+                              userId: currentUser.uid,
+                              isUpvote: true)),
                   child: Icon(
                     Icons.arrow_upward,
                     size: 16,
@@ -828,8 +809,10 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                 ),
                 const SizedBox(height: 4),
                 GestureDetector(
-                  onTap: () => postController.toggleDownvote(
-                      post.id, currentUser.uid, currentUser),
+                  onTap: () => _feedBloc.add(FeedVoteToggled(
+                              postId: post.id,
+                              userId: currentUser.uid,
+                              isUpvote: false)),
                   child: Icon(
                     Icons.arrow_downward,
                     size: 16,
@@ -1054,9 +1037,9 @@ class _CampusFeedScreenState extends State<CampusFeedScreen> {
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
               ),
-              onPressed: () async {
+              onPressed: () {
                 Navigator.pop(context);
-                await postController.removePost(postId, currentUser);
+                _feedBloc.add(FeedPostDeleted(postId, currentUser));
               },
               child: const Text('Delete'),
             ),

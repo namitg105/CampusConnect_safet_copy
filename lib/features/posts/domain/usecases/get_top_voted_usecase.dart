@@ -1,13 +1,16 @@
+import 'package:fpdart/fpdart.dart';
+
+import '../../../../core/error/failures.dart';
+import '../../../../core/usecase/usecase.dart';
 import '../entities/post_entity.dart';
 import '../repos/post_repo.dart';
 
-/// Day 3: Fetch top voted posts in the user's college (sorted by upvotes)
-class GetTopVotedPostsUseCase {
+/// Params: the college id. Most upvoted first.
+class GetTopVotedPostsUseCase implements UseCase<List<PostEntity>, String> {
   final PostRepo repository;
+  const GetTopVotedPostsUseCase({required this.repository});
 
-  GetTopVotedPostsUseCase({required this.repository});
-
-  Future<List<PostEntity>> call(String collegeId) async {
-    return repository.getTopVotedPosts(collegeId);
-  }
+  @override
+  Future<Either<Failure, List<PostEntity>>> call(String params) =>
+      repository.getTopVotedPosts(params);
 }

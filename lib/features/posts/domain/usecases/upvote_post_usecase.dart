@@ -1,12 +1,15 @@
+import 'package:fpdart/fpdart.dart';
+
+import '../../../../core/error/failures.dart';
+import '../../../../core/usecase/usecase.dart';
 import '../repos/post_repo.dart';
+import 'post_params.dart';
 
-/// Day 6: Handle user upvote action on a post
-class UpvotePostUseCase {
+class UpvotePostUseCase implements UseCase<void, PostUserParams> {
   final PostRepo repository;
+  const UpvotePostUseCase({required this.repository});
 
-  UpvotePostUseCase({required this.repository});
-
-  Future<void> call(String postId, String userId) async {
-    return repository.upvotePost(postId, userId);
-  }
+  @override
+  Future<Either<Failure, void>> call(PostUserParams params) =>
+      repository.upvotePost(params.postId, params.userId);
 }

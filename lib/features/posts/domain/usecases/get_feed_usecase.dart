@@ -1,12 +1,16 @@
+import 'package:fpdart/fpdart.dart';
+
+import '../../../../core/error/failures.dart';
+import '../../../../core/usecase/usecase.dart';
 import '../entities/post_entity.dart';
 import '../repos/post_repo.dart';
 
-class GetFeedUseCase {
+/// Params: the college id. Newest first.
+class GetFeedUseCase implements UseCase<List<PostEntity>, String> {
   final PostRepo repository;
+  const GetFeedUseCase({required this.repository});
 
-  GetFeedUseCase({required this.repository});
-
-  Future<List<PostEntity>> call(String collegeId) async {
-    return repository.getCollegeFeed(collegeId);
-  }
+  @override
+  Future<Either<Failure, List<PostEntity>>> call(String params) =>
+      repository.getCollegeFeed(params);
 }

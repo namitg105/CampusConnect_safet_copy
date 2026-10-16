@@ -1,21 +1,19 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart' hide SnackPosition;
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
-import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
+import 'package:noteswap/features/posts/presentation/bloc/create_post/create_post_bloc.dart';
 
 class CreatePostPage extends StatefulWidget {
-  final PostController controller;
   final AppUser currentUser;
 
   const CreatePostPage({
     super.key,
-    required this.controller,
     required this.currentUser,
   });
 
@@ -210,12 +208,26 @@ class _CreatePostPageState extends State<CreatePostPage> {
                       color: textColor,
                     ),
                   ),
-                  Obx(() {
-                    final isLoading = widget.controller.isLoading.value;
+                  BlocConsumer<CreatePostBloc, CreatePostState>(
+                    listener: (context, createState) {
+                      if (createState.status == CreatePostStatus.success) {
+                        Navigator.maybePop(context, true);
+                      } else if (createState.status == CreatePostStatus.failure) {
+                        AppNavigator.showSnackbar(
+                          'Post Failed',
+                          createState.errorMessage,
+                          snackPosition: SnackPosition.bottom,
+                          backgroundColor: Colors.red,
+                          colorText: Colors.white,
+                        );
+                      }
+                    },
+                    builder: (context, createState) {
+                    final isLoading = createState.isSubmitting;
                     return GestureDetector(
                       onTap: isLoading
                           ? null
-                          : () async {
+                          : () {
                               final text = bodyController.text.trim();
                               if (text.isEmpty) {
                                 AppNavigator.showSnackbar(
@@ -254,7 +266,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                                 );
                               }
 
-                              await widget.controller.addPost(
+                              context.read<CreatePostBloc>().add(CreatePostSubmitted(
                                 title: extractedTitle,
                                 body: text,
                                 author: widget.currentUser,
@@ -264,12 +276,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                                 mediaType: _mediaType ?? (_selectedImage != null ? 'image' : null),
                                 mediaName: _selectedFile?.name ?? _selectedImage?.name,
                                 poll: pollData,
-                              );
-
-                              if (widget
-                                  .controller.errorMessage.value.isEmpty) {
-                                Navigator.maybePop(context);
-                              }
+                              ));
                             },
                       child: Container(
                         padding: const EdgeInsets.symmetric(

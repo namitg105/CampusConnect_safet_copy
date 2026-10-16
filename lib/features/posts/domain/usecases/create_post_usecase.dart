@@ -1,12 +1,15 @@
+import 'package:fpdart/fpdart.dart';
+
+import '../../../../core/error/failures.dart';
+import '../../../../core/usecase/usecase.dart';
 import '../entities/post_entity.dart';
 import '../repos/post_repo.dart';
 
-class CreatePostUseCase {
+class CreatePostUseCase implements UseCase<void, PostEntity> {
   final PostRepo repository;
+  const CreatePostUseCase({required this.repository});
 
-  CreatePostUseCase({required this.repository});
-
-  Future<void> call(PostEntity post) async {
-    await repository.createPost(post);
-  }
+  @override
+  Future<Either<Failure, void>> call(PostEntity params) =>
+      repository.createPost(params);
 }

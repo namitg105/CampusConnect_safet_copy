@@ -1,35 +1,20 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/features/admin_events/presentation/screens/AdminEvent.dart';
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
 import 'package:noteswap/features/posts/presentation/pages/campus_feed_screen.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_feed_usecase.dart';
-import 'package:noteswap/features/posts/data/post_repo_impl.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
 import 'package:noteswap/utils/time_formatter.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/group_chat/presentation/pages/groups_page.dart';
 import 'package:noteswap/features/events/notifications/notifications_screen.dart';
 import 'package:noteswap/features/notification_badge/presentation/bloc/notification_badge_bloc.dart';
-import 'package:noteswap/features/posts/presentation/pages/post_detail_page.dart';
-import 'package:noteswap/features/posts/presentation/pages/all_announcements_screen.dart';
-import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
-import 'package:noteswap/features/posts/domain/usecases/create_post_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_feed_by_tag_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_top_voted_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/upvote_post_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/downvote_post_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/add_comment_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_comments_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/delete_comment_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/toggle_comment_like_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_user_votes_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/delete_post_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_user_liked_comments_usecase.dart';
+import 'package:noteswap/core/di/injection.dart';
+import 'package:noteswap/features/posts/presentation/posts_navigation.dart';
 
 import '../../../../Views/FeedScreen.dart';
 
@@ -49,26 +34,6 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
   bool isLoading = true;
   String? _loadedUid;
   bool _isRefreshing = false;
-
-  PostController _createPostController() {
-    final postRepo = PostRepoImpl();
-    return PostController(
-      createPostUseCase: CreatePostUseCase(repository: postRepo),
-      getFeedUseCase: GetFeedUseCase(repository: postRepo),
-      getFeedByTagUseCase: GetFeedByTagUseCase(repository: postRepo),
-      getTopVotedPostsUseCase: GetTopVotedPostsUseCase(repository: postRepo),
-      upvotePostUseCase: UpvotePostUseCase(repository: postRepo),
-      downvotePostUseCase: DownvotePostUseCase(repository: postRepo),
-      addCommentUseCase: AddCommentUseCase(repository: postRepo),
-      getCommentsUseCase: GetCommentsUseCase(repository: postRepo),
-      deleteCommentUseCase: DeleteCommentUseCase(repository: postRepo),
-      toggleCommentLikeUseCase: ToggleCommentLikeUseCase(repository: postRepo),
-      getUserVotesUseCase: GetUserVotesUseCase(repository: postRepo),
-      deletePostUseCase: DeletePostUseCase(repository: postRepo),
-      getUserLikedCommentsUseCase:
-          GetUserLikedCommentsUseCase(repository: postRepo),
-    );
-  }
 
   Future<void> _handleRefresh() async {
     final authState = context.read<AuthBloc>().state;
@@ -112,7 +77,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
   void initState() {
     super.initState();
     profileUseCase = GetProfileUseCase(repository: ProfileRepoImpl());
-    feedUseCase = GetFeedUseCase(repository: PostRepoImpl());
+    feedUseCase = sl<GetFeedUseCase>();
 
     // Check if user is already authenticated at initialization
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -143,16 +108,19 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
     List<PostEntity> feed = [];
     List<PostEntity> announcements = [];
     if (collegeId.isNotEmpty) {
-      try {
-        feed = await feedUseCase.call(collegeId);
-        announcements =
-            feed.where((p) => p.tag.toLowerCase() == 'announcement').toList();
+      final result = await feedUseCase.call(collegeId);
+      result.fold(
+        (failure) =>
+            debugPrint("[DashboardOne] Error fetching feed: ${failure.message}"),
+        (posts) {
+          feed = posts;
+          announcements =
+              feed.where((p) => p.tag.toLowerCase() == 'announcement').toList();
         print("[DashboardOne] Resolved collegeId: '$collegeId'");
         print(
             "[DashboardOne] Fetched feed posts count: ${feed.length}, announcements count: ${announcements.length}");
-      } catch (e) {
-        print("[DashboardOne] Error fetching feed: $e");
-      }
+        },
+      );
     } else {
       print("[DashboardOne] Warning: collegeId is empty.");
     }
@@ -394,12 +362,9 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                 'Announcements',
                                 onViewAll: () {
                                   if (authState is Authenticated) {
-                                    final postController =
-                                        _createPostController();
-                                    AppNavigator.push(AllAnnouncementsScreen(
-                                          controller: postController,
-                                          currentUser: authState.user,
-                                        ));
+                                    PostsNavigation.openAllAnnouncements(
+                                    currentUser: authState.user,
+                                    );
                                   }
                                 },
                               ),
@@ -448,15 +413,10 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                                             palette['bgColor']!,
                                             onTap: () {
                                               if (authState is Authenticated) {
-                                                final postController =
-                                                    _createPostController();
-                                                AppNavigator.push(PostDetailPage(
-                                                      post: post,
-                                                      controller:
-                                                          postController,
-                                                      currentUser:
-                                                          authState.user,
-                                                    ));
+                                                PostsNavigation.openPostDetail(
+                                                post: post,
+                                                currentUser: authState.user,
+                                                );
                                               }
                                             },
                                           );
@@ -841,13 +801,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
 
     return GestureDetector(
       onTap: () {
-        final PostController controller = Get.isRegistered<PostController>()
-            ? Get.find<PostController>()
-            : Get.put(_createPostController());
-        AppNavigator.push(PostDetailPage(
-              post: post,
-              controller: controller,
-            ));
+        PostsNavigation.openPostDetail(post: post);
       },
       child: Container(
         color: Colors.transparent,

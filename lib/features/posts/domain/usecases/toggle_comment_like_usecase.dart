@@ -1,11 +1,15 @@
+import 'package:fpdart/fpdart.dart';
+
+import '../../../../core/error/failures.dart';
+import '../../../../core/usecase/usecase.dart';
 import '../repos/post_repo.dart';
+import 'post_params.dart';
 
-class ToggleCommentLikeUseCase {
+class ToggleCommentLikeUseCase implements UseCase<void, CommentUserParams> {
   final PostRepo repository;
+  const ToggleCommentLikeUseCase({required this.repository});
 
-  ToggleCommentLikeUseCase({required this.repository});
-
-  Future<void> call(String postId, String commentId, String userId) async {
-    await repository.toggleCommentLike(postId, commentId, userId);
-  }
+  @override
+  Future<Either<Failure, void>> call(CommentUserParams params) =>
+      repository.toggleCommentLike(params.postId, params.commentId, params.userId);
 }

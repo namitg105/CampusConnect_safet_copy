@@ -47,6 +47,8 @@ class PostCard extends StatelessWidget {
   final VoidCallback onUpvote;
   final VoidCallback onDownvote;
   final VoidCallback? onDelete;
+  /// Called with the new poll after the user taps an option.
+  final ValueChanged<PollData>? onPollChanged;
   final bool isUpvoted;
   final bool isDownvoted;
   final bool isLightMode;
@@ -59,6 +61,7 @@ class PostCard extends StatelessWidget {
     required this.onUpvote,
     required this.onDownvote,
     this.onDelete,
+    this.onPollChanged,
     this.isUpvoted = false,
     this.isDownvoted = false,
     required this.isLightMode,
@@ -320,7 +323,11 @@ class PostCard extends StatelessWidget {
             ),
 
             if (post.poll != null) ...[
-              PollWidget(post: post, isLightMode: isLightMode),
+              PollWidget(
+                post: post,
+                isLightMode: isLightMode,
+                onChanged: onPollChanged,
+              ),
             ],
 
             if (post.imageUrl != null && post.imageUrl!.isNotEmpty) ...[
@@ -471,11 +478,13 @@ class PostCard extends StatelessWidget {
 class PollWidget extends StatefulWidget {
   final PostEntity post;
   final bool isLightMode;
+  final ValueChanged<PollData>? onChanged;
 
   const PollWidget({
     super.key,
     required this.post,
     required this.isLightMode,
+    this.onChanged,
   });
 
   @override
@@ -502,35 +511,16 @@ class _PollWidgetState extends State<PollWidget> {
   void _vote(PollOption option, String currentUid) {
     if (currentUid.isEmpty) return;
 
-    final isVoted = option.votes.contains(currentUid);
-    final newOptions = _poll.options.map((opt) {
-      final newVotes = List<String>.from(opt.votes);
-      if (opt.text == option.text) {
-        if (isVoted) {
-          newVotes.remove(currentUid);
-        } else {
-          newVotes.add(currentUid);
-        }
-      } else {
-        newVotes.remove(currentUid);
-      }
-      return PollOption(text: opt.text, votes: newVotes);
-    }).toList();
-
-    final updatedPoll = PollData(question: _poll.question, options: newOptions);
+    final updatedPoll =
+        _poll.toggleVote(optionText: option.text, uid: currentUid);
 
     // 1. INSTANT UI UPDATE (0ms delay)
     setState(() {
       _poll = updatedPoll;
     });
 
-    // 2. BACKGROUND FIREBASE FIRESTORE SYNC
-    FirebaseFirestore.instance
-        .collection('posts')
-        .doc(widget.post.id)
-        .update({'poll': updatedPoll.toJson()}).catchError((e) {
-      // Background sync error handling
-    });
+    // 2. BACKGROUND SYNC (owner bloc saves it via a use case)
+    widget.onChanged?.call(updatedPoll);
   }
 
   @override

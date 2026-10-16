@@ -9,23 +9,8 @@ import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/private_chat/presentation/Design_By_Opencode_2/chat_screen.dart';
 import 'package:noteswap/features/chat/presentation/pages/chatPage.dart';
 import 'package:noteswap/features/chat/presentation/cubits/chat_cubit.dart';
-import 'package:noteswap/features/posts/presentation/pages/post_detail_page.dart';
-import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
-import 'package:noteswap/features/posts/data/post_repo_impl.dart';
-import 'package:noteswap/features/posts/domain/usecases/add_comment_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/create_post_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/delete_comment_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/downvote_post_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_comments_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_feed_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_feed_by_tag_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_top_voted_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/toggle_comment_like_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/upvote_post_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_user_votes_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/delete_post_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_user_liked_comments_usecase.dart';
-import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
+import 'package:noteswap/features/posts/domain/usecases/get_post_by_id_usecase.dart';
+import 'package:noteswap/features/posts/presentation/posts_navigation.dart';
 import 'package:noteswap/features/admin_events/presentation/screens/AdminEvent.dart';
 
 import 'models/notification_model.dart';
@@ -319,13 +304,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       final postId = notification.subtitle ?? '';
       if (postId.isEmpty) return;
 
-      final postDoc = await FirebaseFirestore.instance
-          .collection('posts')
-          .doc(postId)
-          .get();
-      if (!postDoc.exists) return;
-
-      final post = PostEntity.fromJson(postDoc.data()!, postDoc.id);
+      final postResult = await sl<GetPostByIdUseCase>()(postId);
+      final post = postResult.getOrElse((_) => null);
+      if (post == null) return;
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(currentUid)
@@ -338,30 +319,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         collegeId: userData['collegeId'] ?? '',
       );
 
-      final postRepo = PostRepoImpl();
-      final postController = PostController(
-        createPostUseCase: CreatePostUseCase(repository: postRepo),
-        getFeedUseCase: GetFeedUseCase(repository: postRepo),
-        getFeedByTagUseCase: GetFeedByTagUseCase(repository: postRepo),
-        getTopVotedPostsUseCase: GetTopVotedPostsUseCase(repository: postRepo),
-        upvotePostUseCase: UpvotePostUseCase(repository: postRepo),
-        downvotePostUseCase: DownvotePostUseCase(repository: postRepo),
-        addCommentUseCase: AddCommentUseCase(repository: postRepo),
-        getCommentsUseCase: GetCommentsUseCase(repository: postRepo),
-        deleteCommentUseCase: DeleteCommentUseCase(repository: postRepo),
-        toggleCommentLikeUseCase:
-            ToggleCommentLikeUseCase(repository: postRepo),
-        getUserVotesUseCase: GetUserVotesUseCase(repository: postRepo),
-        deletePostUseCase: DeletePostUseCase(repository: postRepo),
-        getUserLikedCommentsUseCase:
-            GetUserLikedCommentsUseCase(repository: postRepo),
-      );
-
-      AppNavigator.push(PostDetailPage(
-            post: post,
-            controller: postController,
-            currentUser: currentUser,
-          ));
+      PostsNavigation.openPostDetail(post: post, currentUser: currentUser);
     } else if (notification.type == NotificationType.event) {
       AppNavigator.push(AllCommunityEventsPage());
     }

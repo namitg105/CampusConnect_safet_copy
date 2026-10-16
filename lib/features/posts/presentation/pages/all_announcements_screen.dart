@@ -1,20 +1,17 @@
-import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart' hide SnackPosition;
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
-import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
-import 'package:noteswap/features/posts/presentation/pages/post_detail_page.dart';
+import 'package:noteswap/features/posts/presentation/bloc/feed/feed_bloc.dart';
+import 'package:noteswap/features/posts/presentation/posts_navigation.dart';
 import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:noteswap/utils/time_formatter.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AllAnnouncementsScreen extends StatefulWidget {
-  final PostController controller;
   final AppUser currentUser;
 
   const AllAnnouncementsScreen({
     super.key,
-    required this.controller,
     required this.currentUser,
   });
 
@@ -49,8 +46,9 @@ class _AllAnnouncementsScreenState extends State<AllAnnouncementsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.controller.posts.isEmpty) {
-        widget.controller.loadFeed(widget.currentUser);
+      final feedBloc = context.feedBloc;
+      if (feedBloc.state.posts.isEmpty) {
+        feedBloc.add(FeedLoadRequested(widget.currentUser));
       }
     });
   }
@@ -58,7 +56,7 @@ class _AllAnnouncementsScreenState extends State<AllAnnouncementsScreen> {
   @override
   Widget build(BuildContext context) {
 
-    return Obx(() {
+    return BlocBuilder<FeedBloc, FeedState>(builder: (context, feed) {
       final isLightMode = context.isLightMode;
 
       final backgroundColor =
@@ -69,7 +67,7 @@ class _AllAnnouncementsScreenState extends State<AllAnnouncementsScreen> {
       final cardColor = isLightMode ? Colors.white : const Color(0xFF1E1E22);
 
       // Filter posts that have the tag "Announcement"
-      final announcementPosts = widget.controller.posts
+      final announcementPosts = feed.posts
           .where((p) => p.tag.toLowerCase() == 'announcement')
           .toList();
 
@@ -92,7 +90,7 @@ class _AllAnnouncementsScreenState extends State<AllAnnouncementsScreen> {
           ),
           centerTitle: true,
         ),
-        body: widget.controller.isLoading.value
+        body: feed.isLoading
             ? const Center(
                 child: CircularProgressIndicator(
                   color: Color(0xFF6139ED),
@@ -117,11 +115,11 @@ class _AllAnnouncementsScreenState extends State<AllAnnouncementsScreen> {
                       final date = formatTimeAgo(post.createdAt);
 
                       return GestureDetector(
-                        onTap: () => AppNavigator.push(PostDetailPage(
+                        onTap: () => PostsNavigation.openPostDetail(
+                              feedBloc: context.feedBloc,
                               post: post,
-                              controller: widget.controller,
                               currentUser: widget.currentUser,
-                            )),
+                            ),
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 16),
                           padding: const EdgeInsets.all(16),

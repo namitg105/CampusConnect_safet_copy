@@ -1,29 +1,30 @@
-import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart' hide SnackPosition;
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:noteswap/core/navigation/app_navigator.dart';
+import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
-import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
-import 'package:noteswap/features/posts/presentation/widgets/post_card.dart';
-import 'package:noteswap/features/posts/presentation/pages/post_detail_page.dart';
+import 'package:noteswap/features/posts/presentation/bloc/feed/feed_bloc.dart';
 import 'package:noteswap/features/posts/presentation/pages/user_profile_screen.dart';
-import 'package:noteswap/core/theme/theme_context.dart';
+import 'package:noteswap/features/posts/presentation/posts_navigation.dart';
+import 'package:noteswap/features/posts/presentation/widgets/post_card.dart';
 
 class AllPostsScreen extends StatelessWidget {
   final String title;
-  final List<PostEntity> Function() postsSelector;
-  final PostController controller;
+
+  /// Picks and orders the posts to show from the feed's current posts.
+  final List<PostEntity> Function(List<PostEntity> posts) postsSelector;
   final AppUser currentUser;
 
   const AllPostsScreen({
     super.key,
     required this.title,
     required this.postsSelector,
-    required this.controller,
     required this.currentUser,
   });
 
   void _confirmDeletePost(BuildContext context, String postId) {
+    final feedBloc = context.feedBloc;
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -37,9 +38,9 @@ class AllPostsScreen extends StatelessWidget {
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () async {
+              onPressed: () {
                 Navigator.pop(context);
-                await controller.removePost(postId, currentUser);
+                feedBloc.add(FeedPostDeleted(postId, currentUser));
               },
               child: const Text('Delete', style: TextStyle(color: Colors.red)),
             ),
@@ -51,8 +52,7 @@ class AllPostsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
-    return Obx(() {
+    return BlocBuilder<FeedBloc, FeedState>(builder: (context, feed) {
       final isLightMode = context.isLightMode;
 
       final backgroundColor =
@@ -62,7 +62,7 @@ class AllPostsScreen extends StatelessWidget {
           isLightMode ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF);
 
       // Dynamically select and sort the posts to display
-      final displayedPosts = postsSelector();
+      final displayedPosts = postsSelector(feed.posts);
 
       return Scaffold(
         backgroundColor: backgroundColor,
@@ -98,33 +98,35 @@ class AllPostsScreen extends StatelessWidget {
                   final post = displayedPosts[index];
                   return PostCard(
                     post: post,
-                    onTap: () => AppNavigator.push(PostDetailPage(
-                          post: post,
-                          controller: controller,
-                          currentUser: currentUser,
-                        )),
+                    onTap: () => PostsNavigation.openPostDetail(
+                      feedBloc: context.feedBloc,
+                      post: post,
+                      currentUser: currentUser,
+                    ),
                     onProfileTap: () => AppNavigator.push(UserProfileScreen(
-                            user: AppUser(
-                          uid: post.authorId,
-                          email: '',
-                          name: post.authorName,
-                          collegeId: post.collegeId,
-                        ))),
-                    onUpvote: () => controller.toggleUpvote(
-                      post.id,
-                      currentUser.uid,
-                      currentUser,
-                    ),
-                    onDownvote: () => controller.toggleDownvote(
-                      post.id,
-                      currentUser.uid,
-                      currentUser,
-                    ),
+                        user: AppUser(
+                      uid: post.authorId,
+                      email: '',
+                      name: post.authorName,
+                      collegeId: post.collegeId,
+                    ))),
+                    onUpvote: () => context.feedBloc.add(FeedVoteToggled(
+                      postId: post.id,
+                      userId: currentUser.uid,
+                      isUpvote: true,
+                    )),
+                    onDownvote: () => context.feedBloc.add(FeedVoteToggled(
+                      postId: post.id,
+                      userId: currentUser.uid,
+                      isUpvote: false,
+                    )),
+                    onPollChanged: (poll) =>
+                        context.feedBloc.add(FeedPollUpdated(post.id, poll)),
                     onDelete: post.authorId == currentUser.uid
                         ? () => _confirmDeletePost(context, post.id)
                         : null,
-                    isUpvoted: controller.getUserVote(post.id) == 1,
-                    isDownvoted: controller.getUserVote(post.id) == -1,
+                    isUpvoted: feed.isUpvoted(post.id),
+                    isDownvoted: feed.isDownvoted(post.id),
                     isLightMode: isLightMode,
                   );
                 },

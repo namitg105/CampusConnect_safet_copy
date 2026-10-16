@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/posts/domain/entities/comment_entity.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
-import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
+import 'package:noteswap/features/posts/presentation/bloc/comments/comments_bloc.dart';
+import 'package:noteswap/features/posts/presentation/bloc/feed/feed_bloc.dart';
 import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:noteswap/utils/time_formatter.dart';
 import 'package:share_plus/share_plus.dart';
@@ -83,13 +84,11 @@ class FlattenedComment {
 
 class PostDetailPage extends StatefulWidget {
   final PostEntity post;
-  final PostController controller;
   final AppUser? currentUser;
 
   const PostDetailPage({
     super.key,
     required this.post,
-    required this.controller,
     this.currentUser,
   });
 
@@ -118,16 +117,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
     );
   }
 
-  PostEntity get _latestPost {
-    final idx =
-        widget.controller.posts.indexWhere((p) => p.id == widget.post.id);
-    if (idx != -1) {
-      return widget.controller.posts[idx];
-    }
-    final tIdx = widget.controller.trendingPosts
-        .indexWhere((p) => p.id == widget.post.id);
-    if (tIdx != -1) {
-      return widget.controller.trendingPosts[tIdx];
+  /// The freshest copy of this post (vote counts change while it is open).
+  PostEntity _latestPost(FeedState feed) {
+    for (final p in [...feed.posts, ...feed.trendingPosts]) {
+      if (p.id == widget.post.id) return p;
     }
     return widget.post;
   }
@@ -143,7 +136,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.controller.loadComments(widget.post.id, currentUser.uid);
+      context
+          .read<CommentsBloc>()
+          .add(CommentsLoadRequested(postId: widget.post.id, userId: currentUser.uid));
     });
   }
 
@@ -208,13 +203,22 @@ class _PostDetailPageState extends State<PostDetailPage> {
   Widget build(BuildContext context) {
     final brandColor = const Color(0xFF6139ED);
 
-    return Obx(() {
+    return BlocListener<CommentsBloc, CommentsState>(
+      // A new comment changes the post's comment counter in the feed.
+      listenWhen: (previous, current) =>
+          previous.submittedCount != current.submittedCount,
+      listener: (context, _) =>
+          context.read<FeedBloc>().add(FeedLoadRequested(currentUser)),
+      child: BlocBuilder<FeedBloc, FeedState>(
+          builder: (context, feed) =>
+              BlocBuilder<CommentsBloc, CommentsState>(
+                  builder: (context, commentsState) {
       final isLightMode = context.isLightMode;
       final cardColor = isLightMode ? Colors.white : const Color(0xFF1E1E1E);
       final textColor = isLightMode ? Colors.black87 : Colors.white;
       final subTextColor = isLightMode ? Colors.grey[600]! : Colors.grey[400]!;
 
-      final currentPost = _latestPost;
+      final currentPost = _latestPost(feed);
       final authorName = currentPost.authorName.contains('@')
           ? currentPost.authorName.split('@').first
           : currentPost.authorName;
@@ -426,18 +430,17 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                   children: [
                                     GestureDetector(
                                       onTap: () =>
-                                          widget.controller.toggleUpvote(
-                                        currentPost.id,
-                                        currentUser.uid,
-                                        currentUser,
-                                      ),
+                                          context.read<FeedBloc>().add(FeedVoteToggled(
+                                        postId: currentPost.id,
+                                        userId: currentUser.uid,
+                                        isUpvote: true,
+                                      )),
                                       child: SvgPicture.string(
                                         upvoteSvg,
                                         width: 15,
                                         height: 15,
                                         colorFilter: ColorFilter.mode(
-                                          widget.controller
-                                                  .isPostUpvoted(currentPost.id)
+                                          feed.isUpvoted(currentPost.id)
                                               ? brandColor
                                               : (isLightMode
                                                   ? Colors.grey[600]!
@@ -466,17 +469,17 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                     const SizedBox(width: 8),
                                     GestureDetector(
                                       onTap: () =>
-                                          widget.controller.toggleDownvote(
-                                        currentPost.id,
-                                        currentUser.uid,
-                                        currentUser,
-                                      ),
+                                          context.read<FeedBloc>().add(FeedVoteToggled(
+                                        postId: currentPost.id,
+                                        userId: currentUser.uid,
+                                        isUpvote: false,
+                                      )),
                                       child: SvgPicture.string(
                                         downvoteSvg,
                                         width: 15,
                                         height: 15,
                                         colorFilter: ColorFilter.mode(
-                                          widget.controller.isPostDownvoted(
+                                          feed.isDownvoted(
                                                   currentPost.id)
                                               ? brandColor
                                               : (isLightMode
@@ -506,7 +509,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    '${widget.controller.comments.length} Comments',
+                                    '${commentsState.comments.length} Comments',
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
@@ -558,7 +561,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4.0),
                       child: Text(
-                        'Discussion (${widget.controller.comments.length})',
+                        'Discussion (${commentsState.comments.length})',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
@@ -569,7 +572,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                     const SizedBox(height: 12),
 
                     // Nested Comments Thread View
-                    if (widget.controller.comments.isEmpty)
+                    if (commentsState.comments.isEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 32.0),
                         child: Center(
@@ -591,7 +594,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                     else
                       Builder(builder: (context) {
                         final flattened =
-                            _buildFlattenedComments(widget.controller.comments);
+                            _buildFlattenedComments(commentsState.comments);
 
                         return ListView.separated(
                           shrinkWrap: true,
@@ -613,7 +616,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                     : comment.authorName;
 
                             final isLiked =
-                                widget.controller.isCommentLiked(comment.id);
+                                commentsState.isLiked(comment.id);
 
                             if (isCollapsed) return const SizedBox.shrink();
 
@@ -676,8 +679,11 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                                 size: 14,
                                                 color: Colors.red[400]),
                                             onPressed: () {
-                                              widget.controller.deleteComment(
-                                                  widget.post.id, comment.id);
+                                              context.read<CommentsBloc>().add(CommentDeleted(
+                                                postId: widget.post.id,
+                                                commentId: comment.id,
+                                                userId: currentUser.uid,
+                                              ));
                                             },
                                             padding: EdgeInsets.zero,
                                             constraints: const BoxConstraints(),
@@ -702,10 +708,11 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                       children: [
                                         GestureDetector(
                                           onTap: () {
-                                            widget.controller.toggleLikeComment(
-                                                widget.post.id,
-                                                comment.id,
-                                                currentUser.uid);
+                                            context.read<CommentsBloc>().add(CommentLikeToggled(
+                                                postId: widget.post.id,
+                                                commentId: comment.id,
+                                                userId: currentUser.uid,
+                                              ));
                                           },
                                           child: Row(
                                             children: [
@@ -879,13 +886,13 @@ class _PostDetailPageState extends State<PostDetailPage> {
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
-                    onTap: () async {
+                    onTap: () {
                       final text = commentController.text.trim();
                       if (text.isEmpty) return;
 
                       final parentId = replyingToComment?.id;
 
-                      await widget.controller.submitComment(
+                      context.read<CommentsBloc>().add(CommentSubmitted(
                         postId: widget.post.id,
                         authorId: currentUser.uid,
                         authorName: currentUser.name.isNotEmpty
@@ -895,8 +902,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                 : currentUser.email),
                         text: text,
                         parentId: parentId,
-                        author: currentUser,
-                      );
+                      ));
 
                       commentController.clear();
                       setState(() {
@@ -921,6 +927,6 @@ class _PostDetailPageState extends State<PostDetailPage> {
           ],
         ),
       );
-    });
+    })));
   }
 }

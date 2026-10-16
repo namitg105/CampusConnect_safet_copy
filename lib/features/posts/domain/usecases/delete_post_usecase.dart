@@ -1,11 +1,15 @@
+import 'package:fpdart/fpdart.dart';
+
+import '../../../../core/error/failures.dart';
+import '../../../../core/usecase/usecase.dart';
 import '../repos/post_repo.dart';
 
-class DeletePostUseCase {
+/// Params: the post id.
+class DeletePostUseCase implements UseCase<void, String> {
   final PostRepo repository;
+  const DeletePostUseCase({required this.repository});
 
-  DeletePostUseCase({required this.repository});
-
-  Future<void> call(String postId) async {
-    await repository.deletePost(postId);
-  }
+  @override
+  Future<Either<Failure, void>> call(String params) =>
+      repository.deletePost(params);
 }

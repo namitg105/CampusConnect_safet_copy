@@ -5,22 +5,7 @@ import 'package:noteswap/features/community/presentation/pages/create_group_page
 import 'package:noteswap/features/dashboard/presentation/pages/dashboard_page_one.dart';
 import 'package:noteswap/features/private_chat/page_controller.dart';
 import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
-import 'package:noteswap/features/posts/presentation/pages/create_post_page.dart';
-import 'package:noteswap/features/posts/presentation/controllers/post_controller.dart';
-import 'package:noteswap/features/posts/data/post_repo_impl.dart';
-import 'package:noteswap/features/posts/domain/usecases/add_comment_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/create_post_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/delete_comment_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/downvote_post_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_comments_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_feed_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_feed_by_tag_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_top_voted_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/toggle_comment_like_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/upvote_post_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_user_votes_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/delete_post_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_user_liked_comments_usecase.dart';
+import 'package:noteswap/features/posts/presentation/posts_navigation.dart';
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/home/presentation/bloc/main_nav_bloc.dart';
 import 'package:noteswap/noteswap_intern/NotesScreen.dart';
@@ -45,30 +30,7 @@ class MainPage extends StatelessWidget {
       if (index == 0) {
         final authState = context.read<AuthBloc>().state;
         if (authState is Authenticated) {
-          final currentUser = authState.user;
-          final postRepo = PostRepoImpl();
-          final postController = PostController(
-            createPostUseCase: CreatePostUseCase(repository: postRepo),
-            getFeedUseCase: GetFeedUseCase(repository: postRepo),
-            getFeedByTagUseCase: GetFeedByTagUseCase(repository: postRepo),
-            getTopVotedPostsUseCase:
-                GetTopVotedPostsUseCase(repository: postRepo),
-            upvotePostUseCase: UpvotePostUseCase(repository: postRepo),
-            downvotePostUseCase: DownvotePostUseCase(repository: postRepo),
-            addCommentUseCase: AddCommentUseCase(repository: postRepo),
-            getCommentsUseCase: GetCommentsUseCase(repository: postRepo),
-            deleteCommentUseCase: DeleteCommentUseCase(repository: postRepo),
-            toggleCommentLikeUseCase:
-                ToggleCommentLikeUseCase(repository: postRepo),
-            getUserVotesUseCase: GetUserVotesUseCase(repository: postRepo),
-            deletePostUseCase: DeletePostUseCase(repository: postRepo),
-            getUserLikedCommentsUseCase:
-                GetUserLikedCommentsUseCase(repository: postRepo),
-          );
-          AppNavigator.push(CreatePostPage(
-                controller: postController,
-                currentUser: currentUser,
-              ));
+          PostsNavigation.openCreatePost(currentUser: authState.user);
         }
       } else if (index == 1) {
         AppNavigator.push(const CreateGroupPage(collegeId: ""));
