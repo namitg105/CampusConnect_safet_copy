@@ -66,6 +66,8 @@ dependencies:
   intl: ^0.20.2
   google_fonts: ^6.2.1
   add_2_calendar: ^3.0.1
+  fpdart: ^1.2.0
+  equatable: ^3.0.0
 
 dev_dependencies:
   flutter_test:
