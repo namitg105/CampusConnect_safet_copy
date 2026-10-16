@@ -1,60 +1,50 @@
-class AppUser {
+import 'package:equatable/equatable.dart';
+
+/// The logged-in campus user as the rest of the app sees it.
+/// Pure Dart: JSON / Firestore mapping lives in `AppUserModel` (data layer).
+class AppUser extends Equatable {
   final String uid;
   final String email;
   final String name;
-  final String collegeId; // Added for the Reddit-style segregation
+  final String collegeId; // e.g. "nith.ac.in" — used for Reddit-style segregation
   final bool isOnline;
   final bool isImageExists;
   final String imageURL;
   final String? phoneNumber;
 
-  AppUser({
-    required this.uid, 
-    required this.email, 
+  const AppUser({
+    required this.uid,
+    required this.email,
     required this.name,
-    this.collegeId = '', // Optional with default to prevent constructor break
-    this.isOnline = false, // Optional with default to prevent constructor break
+    this.collegeId = '',
+    this.isOnline = false,
     this.isImageExists = false,
     this.imageURL = '',
     this.phoneNumber,
   });
 
-  Map<String, dynamic> toJson() {
-    return {
-      'uid': uid,
-      'email': email,
-      'name': name,
-      'collegeId': collegeId, // Save it to the database
-      'isOnline': isOnline,
-      'isImageExists': isImageExists,
-      'ImageURL': imageURL,
-      'phoneNumber': phoneNumber,
-    };
-  }
-
-  factory AppUser.fromJson(Map<String, dynamic> jsonUser) {
+  AppUser copyWith({String? name}) {
     return AppUser(
-      uid: jsonUser['uid'] ?? '',
-      email: jsonUser['email'] ?? '',
-      name: jsonUser['name'] ?? '',
-      collegeId: jsonUser['collegeId'] ?? '', // Read it from the database
-      isOnline: jsonUser['isOnline'] ?? false,
-      isImageExists: jsonUser['isImageExists'] ?? false,
-      imageURL: jsonUser['ImageURL'] ?? '',
-      phoneNumber: jsonUser['phoneNumber'],
+      uid: uid,
+      email: email,
+      name: name ?? this.name,
+      collegeId: collegeId,
+      isOnline: isOnline,
+      isImageExists: isImageExists,
+      imageURL: imageURL,
+      phoneNumber: phoneNumber,
     );
   }
 
-  factory AppUser.fromFriendJson(Map<String, dynamic> json) {
-    return AppUser(
-      uid: json['uid'] ?? '',
-      email: json['email'] ?? '',
-      name: json['name'] ?? '',
-      collegeId: json['collegeId'] ?? '',
-      isOnline: json['isOnline'] ?? false,
-      isImageExists: json['isImageExists'] ?? false,
-      imageURL: json['ImageURL'] ?? '',
-      phoneNumber: json['phoneNumber'],
-    );
-  }
+  @override
+  List<Object?> get props => [
+        uid,
+        email,
+        name,
+        collegeId,
+        isOnline,
+        isImageExists,
+        imageURL,
+        phoneNumber,
+      ];
 }

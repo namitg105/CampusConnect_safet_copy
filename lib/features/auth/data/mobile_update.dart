@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:noteswap/features/auth/data/models/app_user_model.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 
 class MobileUpdate {
@@ -15,7 +16,7 @@ class MobileUpdate {
     });
 
     final userDoc = await _firestore.collection('users').doc(uid).get();
-    return AppUser.fromJson(userDoc.data() as Map<String, dynamic>);
+    return AppUserModel.fromJson(userDoc.data() as Map<String, dynamic>);
   }
 
   Future<String?> getMobileNumber(String targetUID) async {
