@@ -1,32 +1,41 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
-import '../../../chat/presentation/cubits/chat_cubit.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../chat/presentation/pages/chatPage.dart';
-import '../../data/firebase_group_repo.dart';
+import '../bloc/membership/membership_bloc.dart';
 import '../../domain/entities/group.dart';
 
-class SearchCommunitiesPage extends StatefulWidget {
+/// Search & join communities. Owns a MembershipBloc for the current user.
+class SearchCommunitiesPage extends StatelessWidget {
   final List<Group> groups;
-  final List<String>? joinedGroupIds;
 
-  const SearchCommunitiesPage({
-    super.key,
-    required this.groups,
-    this.joinedGroupIds,
-  });
+  const SearchCommunitiesPage({super.key, required this.groups});
 
   @override
-  State<SearchCommunitiesPage> createState() => _SearchCommunitiesPageState();
+  Widget build(BuildContext context) {
+    final authState = context.read<AuthBloc>().state;
+    final userId = authState is Authenticated ? authState.user.uid : '';
+    return BlocProvider(
+      create: (_) => sl<MembershipBloc>()..add(MembershipWatchStarted(userId)),
+      child: _SearchCommunitiesView(groups: groups, userId: userId),
+    );
+  }
 }
 
-class _SearchCommunitiesPageState extends State<SearchCommunitiesPage> {
+class _SearchCommunitiesView extends StatefulWidget {
+  final List<Group> groups;
+  final String userId;
+
+  const _SearchCommunitiesView({required this.groups, required this.userId});
+
+  @override
+  State<_SearchCommunitiesView> createState() => _SearchCommunitiesPageState();
+}
+
+class _SearchCommunitiesPageState extends State<_SearchCommunitiesView> {
   final TextEditingController _searchController = TextEditingController();
-  final FirebaseGroupRepo _groupRepo =
-      FirebaseGroupRepo(FirebaseFirestore.instance);
 
   String _searchQuery = "";
   String _selectedFilter = "All";
@@ -34,56 +43,11 @@ class _SearchCommunitiesPageState extends State<SearchCommunitiesPage> {
   final List<String> _recentSearches = [];
   List<String> _trendingSearches = [];
   List<String> _filters = ["All"];
-  List<String> _currentJoinedIds = [];
-
-  // Track group IDs with a pending join request
-  final Set<String> _pendingRequestGroupIds = {};
 
   @override
   void initState() {
     super.initState();
-    _currentJoinedIds = widget.joinedGroupIds ?? [];
     _extractTrendingAndFilters();
-    _listenToJoinedGroups();
-    _listenToPendingRequests();
-  }
-
-  void _listenToJoinedGroups() {
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-    if (currentUserId == null) return;
-
-    _groupRepo.getJoinedGroups(currentUserId).listen((joinedGroups) {
-      if (mounted) {
-        setState(() {
-          _currentJoinedIds = joinedGroups.map((g) => g.id).toList();
-        });
-      }
-    });
-  }
-
-  // Listen to user's pending join requests from Firestore
-  void _listenToPendingRequests() {
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-    if (currentUserId == null) return;
-
-    FirebaseFirestore.instance
-        .collectionGroup('join_requests')
-        .where('userId', isEqualTo: currentUserId)
-        .where('status', isEqualTo: 'pending')
-        .snapshots()
-        .listen((snapshot) {
-      if (mounted) {
-        setState(() {
-          _pendingRequestGroupIds.clear();
-          for (var doc in snapshot.docs) {
-            final groupId = doc.reference.parent.parent?.id;
-            if (groupId != null) {
-              _pendingRequestGroupIds.add(groupId);
-            }
-          }
-        });
-      }
-    });
   }
 
   void _saveSearchTerm(String term) {
@@ -140,133 +104,26 @@ class _SearchCommunitiesPageState extends State<SearchCommunitiesPage> {
   void _navigateToChat(BuildContext context, Group group) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => BlocProvider(
-          create: (_) => sl<ChatCubit>(),
-          child: ChatPage(
-            groupId: group.id,
-            groupName: group.name,
-          ),
-        ),
-      ),
+      ChatPage.route(groupId: group.id, groupName: group.name),
     );
   }
 
-  Future<void> _handleGroupAction(
-      Group group, bool isJoined, bool isPending) async {
-    final userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId == null) return;
-
-    try {
-      if (isJoined) {
-        // Check if user is creator/admin before leaving
-        final groupDoc = await FirebaseFirestore.instance
-            .collection('groups')
-            .doc(group.id)
-            .get();
-
-        if (groupDoc.exists) {
-          final data = groupDoc.data();
-          final creatorUid =
-              (data?["createdBy"] ?? data?["adminId"] ?? "").toString().trim();
-
-          if (creatorUid == userId) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                      'As community admin, please leave via the Community Profile page to transfer ownership.'),
-                ),
-              );
-            }
-            return;
-          }
-        }
-
-        // Standard Leave logic via Firestore batch
-        final groupRef =
-            FirebaseFirestore.instance.collection('groups').doc(group.id);
-        final memberRef = groupRef.collection('members').doc(userId);
-
-        final batch = FirebaseFirestore.instance.batch();
-        batch.delete(memberRef);
-        batch.update(groupRef, {
-          'memberCount': FieldValue.increment(-1),
-          'remainingSeats': FieldValue.increment(1),
-        });
-
-        await batch.commit();
-
-        setState(() {
-          _currentJoinedIds.remove(group.id);
-        });
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Left ${group.name}')),
-          );
-        }
-      } else if (isPending) {
-        // Cancel pending request
-        await FirebaseFirestore.instance
-            .collection('groups')
-            .doc(group.id)
-            .collection('join_requests')
-            .doc(userId)
-            .delete();
-
-        setState(() {
-          _pendingRequestGroupIds.remove(group.id);
-        });
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Cancelled request for ${group.name}')),
-          );
-        }
-      } else {
-        if (group.isPublic) {
-          // Public community: Direct join without request
-          await _groupRepo.joinGroup(group.id, userId);
-          setState(() {
-            _currentJoinedIds.add(group.id);
-          });
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Joined ${group.name}!')),
-            );
-          }
-        } else {
-          // Private community: Send Join Request to Admin
-          await FirebaseFirestore.instance
-              .collection('groups')
-              .doc(group.id)
-              .collection('join_requests')
-              .doc(userId)
-              .set({
-            'userId': userId,
-            'status': 'pending',
-            'requestedAt': FieldValue.serverTimestamp(),
-          });
-
-          setState(() {
-            _pendingRequestGroupIds.add(group.id);
-          });
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Request sent to join ${group.name}!')),
-            );
-          }
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-        );
-      }
+  /// Joined -> leave (admins are redirected to the profile page),
+  /// pending -> cancel request, otherwise join / request to join.
+  /// Results are shown by the MembershipBloc listener in [build].
+  void _handleGroupAction(Group group, bool isJoined, bool isPending) {
+    final membership = context.read<MembershipBloc>();
+    if (isJoined) {
+      membership.add(MembershipLeavePressed(
+        groupId: group.id,
+        groupName: group.name,
+        userId: widget.userId,
+        blockIfAdmin: true,
+      ));
+    } else if (isPending) {
+      membership.add(MembershipCancelRequestPressed(group, widget.userId));
+    } else {
+      membership.add(MembershipJoinPressed(group, widget.userId));
     }
   }
 
@@ -287,7 +144,17 @@ class _SearchCommunitiesPageState extends State<SearchCommunitiesPage> {
       return matchesQuery && matchesFilter;
     }).toList();
 
-    return Scaffold(
+    final membership = context.watch<MembershipBloc>().state;
+
+    return BlocListener<MembershipBloc, MembershipState>(
+      listenWhen: (p, c) => p.outcomeId != c.outcomeId,
+      listener: (context, state) {
+        final message = state.outcome!.message;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(message.replaceAll('Exception: ', '')),
+        ));
+      },
+      child: Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -498,8 +365,8 @@ class _SearchCommunitiesPageState extends State<SearchCommunitiesPage> {
             else
               ...filteredGroups.map(
                 (group) {
-                  final isJoined = _currentJoinedIds.contains(group.id);
-                  final isPending = _pendingRequestGroupIds.contains(group.id);
+                  final isJoined = membership.isJoined(group.id);
+                  final isPending = membership.isPending(group.id);
 
                   return _CommunityCardTile(
                     group: group,
@@ -525,6 +392,7 @@ class _SearchCommunitiesPageState extends State<SearchCommunitiesPage> {
           ],
         ),
       ),
+    ),
     );
   }
 }

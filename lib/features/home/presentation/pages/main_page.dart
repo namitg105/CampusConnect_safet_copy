@@ -12,7 +12,8 @@ import 'package:noteswap/noteswap_intern/NotesScreen.dart';
 import 'package:noteswap/noteswap_intern/UploadNotesScreen.dart';
 
 import '../../../../core/di/injection.dart';
-import '../../../community/presentation/cubits/group_cubit.dart';
+import '../../../community/presentation/bloc/groups/groups_bloc.dart';
+import '../../../community/presentation/bloc/membership/membership_bloc.dart';
 import '../../../community/presentation/pages/groups_page.dart';
 
 class MainPage extends StatelessWidget {
@@ -39,8 +40,17 @@ class MainPage extends StatelessWidget {
       }
     }
 
-    return BlocProvider<GroupCubit>(
-      create: (_) => sl<GroupCubit>(),
+    final authState = context.read<AuthBloc>().state;
+    final userId = authState is Authenticated ? authState.user.uid : '';
+
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<GroupsBloc>(create: (_) => sl<GroupsBloc>()),
+        BlocProvider<MembershipBloc>(
+          create: (_) =>
+              sl<MembershipBloc>()..add(MembershipWatchStarted(userId)),
+        ),
+      ],
       child: BlocBuilder<MainNavBloc, MainNavState>(
         builder: (context, nav) => Scaffold(
           extendBody: true,

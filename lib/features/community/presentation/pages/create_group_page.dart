@@ -1,12 +1,11 @@
 import 'dart:ui';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
-import '../../domain/entities/group.dart';
-import '../../domain/repos/group_repo.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../bloc/create_group/create_group_bloc.dart';
 
 // --- Constants & Styling ---
 const List<String> categories = [
@@ -32,15 +31,28 @@ const Color _secondaryText = Color(0xFF8F9BB3);
 const Color _borderColor = Color(0xFFE4E9F2);
 
 // --- Main Screen ---
-class CreateGroupPage extends StatefulWidget {
+class CreateGroupPage extends StatelessWidget {
   final String collegeId;
   const CreateGroupPage({super.key, required this.collegeId});
 
   @override
-  State<CreateGroupPage> createState() => _CreateGroupPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => sl<CreateGroupBloc>(),
+      child: _CreateGroupForm(collegeId: collegeId),
+    );
+  }
 }
 
-class _CreateGroupPageState extends State<CreateGroupPage> {
+class _CreateGroupForm extends StatefulWidget {
+  final String collegeId;
+  const _CreateGroupForm({required this.collegeId});
+
+  @override
+  State<_CreateGroupForm> createState() => _CreateGroupPageState();
+}
+
+class _CreateGroupPageState extends State<_CreateGroupForm> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
@@ -50,7 +62,6 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   final List<String> _rules = List.from(defaultRules);
   bool _bannerUploaded = false;
   bool _logoUploaded = false;
-  bool isLoading = false;
 
   @override
   void dispose() {
@@ -59,45 +70,24 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     super.dispose();
   }
 
-  Future<void> createGroup() async {
+  /// Result arrives in the BlocConsumer listener in [build].
+  void createGroup() {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCategory == null || _selectedCategory!.isEmpty) {
       _showSnackBar("Please select a category for your community");
       return;
     }
 
-    setState(() => isLoading = true);
-    try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) throw Exception("User not logged in");
-
-      await sl<GroupRepo>().createGroup(
-        Group(
-          id: '',
-          name: _nameController.text.trim(),
+    final authState = context.read<AuthBloc>().state;
+    context.read<CreateGroupBloc>().add(CreateGroupSubmitted(
+          name: _nameController.text,
+          description: _descController.text,
           collegeId: widget.collegeId,
-          description: _descController.text.trim(),
-          category: _selectedCategory!, // <--- PASS CATEGORY
-          isPublic: _isPublic, // <--- PASS PRIVACY SETTING
-          rules: _rules, // <--- PASS RULES LIST
-          memberCount: 0,
-          maxMembers: 50,
-          remainingSeats: 50,
-          createdBy: currentUser.uid,
-          imageUrl: '',
-          createdAt: Timestamp.now(),
-        ),
-      );
-
-      if (!mounted) return;
-      _showSnackBar("Community created successfully! 🎉");
-      Navigator.pop(context);
-    } catch (e) {
-      if (!mounted) return;
-      _showSnackBar(e.toString(), isError: true);
-    } finally {
-      if (mounted) setState(() => isLoading = false);
-    }
+          category: _selectedCategory!,
+          isPublic: _isPublic,
+          rules: _rules,
+          creatorId: authState is Authenticated ? authState.user.uid : '',
+        ));
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
@@ -369,7 +359,16 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
 
                         // Submit Button
                         Center(
-                          child: isLoading
+                          child: BlocConsumer<CreateGroupBloc, CreateGroupState>(
+                            listener: (context, state) {
+                              if (state.status == CreateGroupStatus.success) {
+                                _showSnackBar("Community created successfully! 🎉");
+                                Navigator.pop(context);
+                              } else if (state.status == CreateGroupStatus.failure) {
+                                _showSnackBar(state.errorMessage, isError: true);
+                              }
+                            },
+                            builder: (context, state) => state.isSubmitting
                               ? const CircularProgressIndicator()
                               : SizedBox(
                                   width: 140,
@@ -395,6 +394,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                                     ),
                                   ),
                                 ),
+                          ),
                         ),
                       ],
                     ),

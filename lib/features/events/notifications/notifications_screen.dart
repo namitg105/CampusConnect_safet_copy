@@ -3,12 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noteswap/core/di/injection.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/private_chat/presentation/Design_By_Opencode_2/chat_screen.dart';
 import 'package:noteswap/features/chat/presentation/pages/chatPage.dart';
-import 'package:noteswap/features/chat/presentation/cubits/chat_cubit.dart';
 import 'package:noteswap/features/posts/domain/usecases/get_post_by_id_usecase.dart';
 import 'package:noteswap/features/posts/presentation/posts_navigation.dart';
 import 'package:noteswap/features/admin_events/presentation/screens/AdminEvent.dart';
@@ -289,14 +287,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => BlocProvider<ChatCubit>(
-            create: (_) => sl<ChatCubit>(),
-            child: ChatPage(
-              groupId: groupId,
-              groupName: groupData['name'] ?? 'Community Group',
-            ),
-          ),
+        ChatPage.route(
+          groupId: groupId,
+          groupName: groupData['name'] ?? 'Community Group',
         ),
       );
     } else if (notification.type == NotificationType.postCommented ||

@@ -1,5 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
+/// A campus community. Pure Dart: Firestore mapping lives in `GroupModel`.
 class Group {
   final String id;
   final String name;
@@ -13,9 +12,9 @@ class Group {
   final int remainingSeats;
   final String createdBy;
   final String imageUrl;
-  final Timestamp? createdAt;
+  final DateTime? createdAt;
 
-  Group({
+  const Group({
     required this.id,
     required this.name,
     required this.collegeId,
@@ -31,44 +30,6 @@ class Group {
     this.createdAt,
   });
 
-  factory Group.fromMap(
-    String id,
-    Map<String, dynamic> map,
-  ) {
-    return Group(
-      id: id,
-      name: map['name'] ?? '',
-      collegeId: map['collegeId'] ?? '',
-      description: map['description'] ?? '',
-      category: map['category'] ?? 'Education',
-      isPublic: map['isPublic'] ?? true,
-      rules: List<String>.from(map['rules'] ?? []),
-      memberCount: map['memberCount'] ?? 0,
-      maxMembers: map['maxMembers'] ?? 50,
-      remainingSeats: map['remainingSeats'] ?? 50,
-      createdBy: map['createdBy'] ?? '',
-      imageUrl: map['imageUrl'] ?? '',
-      createdAt: map['createdAt'] as Timestamp?,
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'name': name,
-      'collegeId': collegeId,
-      'description': description,
-      'category': category,
-      'isPublic': isPublic,
-      'rules': rules,
-      'memberCount': memberCount,
-      'maxMembers': maxMembers,
-      'remainingSeats': remainingSeats,
-      'createdBy': createdBy,
-      'imageUrl': imageUrl,
-      'createdAt': createdAt,
-    };
-  }
-
   Group copyWith({
     String? id,
     String? name,
@@ -82,7 +43,7 @@ class Group {
     int? remainingSeats,
     String? createdBy,
     String? imageUrl,
-    Timestamp? createdAt,
+    DateTime? createdAt,
   }) {
     return Group(
       id: id ?? this.id,

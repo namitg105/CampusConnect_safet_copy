@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../community/presentation/pages/community_profile.dart';
-import '../presentation/cubits/chat_cubit.dart';
-import '../presentation/cubits/chat_states.dart';
+import '../presentation/bloc/chat_bloc.dart';
 
 class ChatTheme {
   static const Color primary = Color(0xFF6139ED);
@@ -137,12 +136,12 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        BlocBuilder<ChatCubit, ChatState>(
+                        BlocBuilder<ChatBloc, ChatState>(
                           builder: (context, state) {
                             String subTitleText = "Connecting...";
                             bool isOnline = false;
 
-                            if (state is ChatLoaded) {
+                            if (state.status == ChatStatus.loaded) {
                               final int onlineCount = 1;
                               isOnline = onlineCount > 0;
 
@@ -151,7 +150,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                               } else {
                                 subTitleText = "Online · $onlineCount active";
                               }
-                            } else if (state is ChatError) {
+                            } else if (state.status == ChatStatus.error) {
                               subTitleText = "Disconnected";
                             }
 
@@ -400,14 +399,10 @@ class ChatMessageList extends StatelessWidget {
                     onTap: () async {
                       Navigator.pop(bottomSheetContext);
                       if (isCurrentlyPinned) {
-                        await context
-                            .read<ChatCubit>()
-                            .unpinMessage(groupId: groupId);
+                        context.read<ChatBloc>().add(ChatMessageUnpinned(groupId));
                       } else {
-                        await context.read<ChatCubit>().pinMessage(
-                              groupId: groupId,
-                              messageId: msg.id,
-                            );
+                        context.read<ChatBloc>().add(
+                            ChatMessagePinned(groupId: groupId, messageId: msg.id));
                       }
                     },
                   ),
@@ -434,10 +429,8 @@ class ChatMessageList extends StatelessWidget {
                       );
                       return;
                     }
-                    await context.read<ChatCubit>().deleteMessage(
-                          groupId: groupId,
-                          messageId: msg.id,
-                        );
+                    context.read<ChatBloc>().add(
+                        ChatMessageDeleted(groupId: groupId, messageId: msg.id));
                   },
                 ),
               ],
@@ -476,18 +469,19 @@ class ChatMessageList extends StatelessWidget {
             pinnedMessageId.isNotEmpty &&
             pinnedMessageId != 'null';
 
-        return BlocBuilder<ChatCubit, ChatState>(
+        return BlocBuilder<ChatBloc, ChatState>(
           builder: (context, state) {
-            if (state is ChatLoading) {
+            if (state.status == ChatStatus.loading ||
+                state.status == ChatStatus.initial) {
               return const Center(
                 child: CircularProgressIndicator(color: ChatTheme.primary),
               );
             }
 
-            if (state is ChatError) {
+            if (state.status == ChatStatus.error) {
               return Center(
                 child: Text(
-                  state.message,
+                  state.errorMessage,
                   style: const TextStyle(
                     color: Colors.redAccent,
                     fontWeight: FontWeight.w500,
@@ -496,7 +490,7 @@ class ChatMessageList extends StatelessWidget {
               );
             }
 
-            if (state is ChatLoaded) {
+            {
               if (state.messages.isEmpty) {
                 return const Center(
                   child: Text(
@@ -711,8 +705,6 @@ class ChatMessageList extends StatelessWidget {
                 },
               );
             }
-
-            return const SizedBox();
           },
         );
       },

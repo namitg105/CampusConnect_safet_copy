@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../events/domain/entities/event.dart';
 import '../../events/domain/repo/eventrepo.dart';
+import '../data/models/group_model.dart';
 import '../domain/entities/group.dart';
 import '../presentation/pages/community_profile.dart';
 import '../presentation/pages/search_communities_page.dart';
@@ -458,7 +459,7 @@ class _JoinedCommunitiesSection extends StatelessWidget {
               .doc(id)
               .get();
           if (groupDoc.exists && groupDoc.data() != null) {
-            joined.add(Group.fromMap(
+            joined.add(GroupModel.fromMap(
               groupDoc.id,
               groupDoc.data() as Map<String, dynamic>,
             ));

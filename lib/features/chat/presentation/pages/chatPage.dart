@@ -1,12 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
+
 import '../../../../core/di/injection.dart';
-import '../../../community/data/firebase_group_repo.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../community/presentation/bloc/membership/membership_bloc.dart';
 import '../../Widgets/chatPage.dart';
-import '../cubits/chat_cubit.dart';
+import '../../domain/repos/chat_repo.dart';
+import '../bloc/chat_bloc.dart';
 
 class ChatPage extends StatefulWidget {
   final String groupId;
@@ -17,6 +21,19 @@ class ChatPage extends StatefulWidget {
     required this.groupId,
     required this.groupName,
   });
+
+  /// Route with the blocs this page needs (each chat gets fresh ones).
+  static Route<void> route({required String groupId, required String groupName}) {
+    return MaterialPageRoute(
+      builder: (_) => MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => sl<ChatBloc>()),
+          BlocProvider(create: (_) => sl<MembershipBloc>()),
+        ],
+        child: ChatPage(groupId: groupId, groupName: groupName),
+      ),
+    );
+  }
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -32,7 +49,7 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
-    context.read<ChatCubit>().loadMessages(widget.groupId);
+    context.read<ChatBloc>().add(ChatWatchStarted(widget.groupId));
     loadGroupImage();
   }
 
@@ -57,28 +74,18 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  Future<void> leaveGroup() async {
-    try {
-      final uid = FirebaseAuth.instance.currentUser!.uid;
-      await sl<FirebaseGroupRepo>().leaveGroup(widget.groupId, uid);
+  String get _currentUserId {
+    final authState = context.read<AuthBloc>().state;
+    return authState is Authenticated ? authState.user.uid : '';
+  }
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Left group successfully"),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      Navigator.pop(context);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Failed to leave group: $e"),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
+  /// Result arrives in the MembershipBloc listener in [build].
+  void leaveGroup() {
+    context.read<MembershipBloc>().add(MembershipLeavePressed(
+          groupId: widget.groupId,
+          groupName: widget.groupName,
+          userId: _currentUserId,
+        ));
   }
 
   Future<void> showLeaveDialog() async {
@@ -129,18 +136,17 @@ class _ChatPageState extends State<ChatPage> {
     );
 
     if (confirm == true) {
-      await leaveGroup();
+      leaveGroup();
     }
   }
 
-  Future<void> _sendMessage() async {
+  void _sendMessage() {
     final text = controller.text.trim();
     if (text.isEmpty) return;
 
-    await context.read<ChatCubit>().sendMessage(
-          groupId: widget.groupId,
-          text: text,
-        );
+    context
+        .read<ChatBloc>()
+        .add(ChatTextSent(groupId: widget.groupId, text: text));
 
     controller.clear();
 
@@ -164,9 +170,28 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = context.read<ChatCubit>().currentUserId;
+    final currentUserId = _currentUserId;
 
-    return Scaffold(
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<ChatBloc, ChatState>(
+          listenWhen: (p, c) => p.actionErrorId != c.actionErrorId,
+          listener: (context, state) => _showSnack(state.actionError),
+        ),
+        BlocListener<MembershipBloc, MembershipState>(
+          listenWhen: (p, c) => p.outcomeId != c.outcomeId,
+          listener: (context, state) {
+            final outcome = state.outcome!;
+            if (outcome.isError) {
+              _showSnack('Failed to leave group: ${outcome.message}');
+            } else {
+              _showSnack('Left group successfully');
+              Navigator.pop(context);
+            }
+          },
+        ),
+      ],
+      child: Scaffold(
       backgroundColor: Colors.white,
       appBar: ChatAppBar(
         groupId: widget.groupId,
@@ -189,16 +214,59 @@ class _ChatPageState extends State<ChatPage> {
             ChatInputBar(
               controller: controller,
               onSend: _sendMessage,
-              onPickImage: () =>
-                  context.read<ChatCubit>().sendImage(widget.groupId),
-              onPickVideo: () =>
-                  context.read<ChatCubit>().sendVideo(widget.groupId),
-              onPickDocument: () =>
-                  context.read<ChatCubit>().sendDocument(widget.groupId),
+              onPickImage: () => _pickAndSend(MediaKind.image),
+              onPickVideo: () => _pickAndSend(MediaKind.video),
+              onPickDocument: () => _pickAndSend(MediaKind.document),
             ),
           ],
         ),
       ),
+      ),
     );
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
+  }
+
+  static const _documentExtensions = [
+    'pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'zip', 'rar',
+  ];
+
+  /// Picking a file is UI work (system dialog); compressing/uploading it is
+  /// done by the data layer through ChatBloc.
+  Future<void> _pickAndSend(MediaKind kind) async {
+    ChatAttachment? file;
+    switch (kind) {
+      case MediaKind.image:
+      case MediaKind.video:
+        final picker = ImagePicker();
+        final picked = kind == MediaKind.image
+            ? await picker.pickImage(source: ImageSource.gallery)
+            : await picker.pickVideo(source: ImageSource.gallery);
+        if (picked != null) {
+          file = ChatAttachment(path: picked.path, name: picked.name);
+        }
+      case MediaKind.document:
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowMultiple: false,
+          allowedExtensions: _documentExtensions,
+        );
+        final picked = result?.files.single;
+        if (picked?.path != null) {
+          file = ChatAttachment(
+            path: picked!.path!,
+            name: picked.name,
+            extension: picked.extension,
+          );
+        }
+    }
+    if (file == null || !mounted) return; // user cancelled
+    context
+        .read<ChatBloc>()
+        .add(ChatMediaSent(groupId: widget.groupId, kind: kind, file: file));
   }
 }

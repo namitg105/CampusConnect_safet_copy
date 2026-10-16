@@ -1,13 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/di/injection.dart';
-import '../../chat/presentation/cubits/chat_cubit.dart';
+import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../../chat/presentation/pages/chatPage.dart';
 import '../domain/entities/group.dart';
-import '../presentation/cubits/group_cubit.dart';
+import '../presentation/bloc/membership/membership_bloc.dart';
 
 class EmptyGroupsWidget extends StatelessWidget {
   const EmptyGroupsWidget({super.key});
@@ -97,15 +94,7 @@ class GroupCard extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => BlocProvider(
-                create: (_) => sl<ChatCubit>(),
-                child: ChatPage(
-                  groupId: group.id,
-                  groupName: group.name,
-                ),
-              ),
-            ),
+            ChatPage.route(groupId: group.id, groupName: group.name),
           );
         },
         child: Padding(
@@ -185,38 +174,14 @@ class GroupCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () async {
-                  if (group.isPublic) {
-                    await context.read<GroupCubit>().joinGroup(group.id);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Joined ${group.name}")),
-                      );
-                    }
-                  } else {
-                    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-                    if (userId.isNotEmpty) {
-                      await FirebaseFirestore.instance
-                          .collection('groups')
-                          .doc(group.id)
-                          .collection('join_requests')
-                          .doc(userId)
-                          .set({
-                        'userId': userId,
-                        'status': 'pending',
-                        'requestedAt': FieldValue.serverTimestamp(),
-                      });
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              "Join request sent to ${group.name} admin!",
-                            ),
-                          ),
-                        );
-                      }
-                    }
-                  }
+                onPressed: () {
+                  // Public: join now. Private: request. The page's
+                  // MembershipBloc listener shows the result.
+                  final authState = context.read<AuthBloc>().state;
+                  if (authState is! Authenticated) return;
+                  context
+                      .read<MembershipBloc>()
+                      .add(MembershipJoinPressed(group, authState.user.uid));
                 },
                 child: const Text("Join"),
               )

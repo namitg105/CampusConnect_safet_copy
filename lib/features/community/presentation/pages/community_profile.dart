@@ -3,10 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/di/injection.dart';
-import '../../../chat/presentation/cubits/chat_cubit.dart';
 import '../../../chat/presentation/pages/chatPage.dart';
 import '../../../events/presentation/screens/event_community.dart';
 import 'assign_role.dart';
@@ -1060,15 +1057,7 @@ class _GroupProfilePageState extends State<GroupProfilePage>
 
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => BlocProvider(
-          create: (_) => sl<ChatCubit>(),
-          child: ChatPage(
-            groupId: widget.groupId,
-            groupName: groupName,
-          ),
-        ),
-      ),
+      ChatPage.route(groupId: widget.groupId, groupName: groupName),
     );
   }
 

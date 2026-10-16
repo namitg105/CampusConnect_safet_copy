@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -16,14 +17,19 @@ import '../../features/auth/domain/usecases/user_sign_up.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/password_reset_bloc.dart';
 
-import '../../features/chat/data/firebase_chat_repo.dart';
+import '../../features/chat/data/datasources/chat_remote_data_source.dart';
+import '../../features/chat/data/repositories/chat_repository_impl.dart';
 import '../../features/chat/domain/repos/chat_repo.dart';
-import '../../features/chat/presentation/cubits/chat_cubit.dart';
+import '../../features/chat/domain/usecases/chat_usecases.dart';
+import '../../features/chat/presentation/bloc/chat_bloc.dart';
 
-import '../../features/community/data/firebase_group_repo.dart';
+import '../../features/community/data/datasources/group_remote_data_source.dart';
+import '../../features/community/data/repositories/group_repository_impl.dart';
 import '../../features/community/domain/repos/group_repo.dart';
-import '../../features/community/presentation/cubits/group_cubit.dart'
-    show GroupCubit;
+import '../../features/community/domain/usecases/group_usecases.dart';
+import '../../features/community/presentation/bloc/create_group/create_group_bloc.dart';
+import '../../features/community/presentation/bloc/groups/groups_bloc.dart';
+import '../../features/community/presentation/bloc/membership/membership_bloc.dart';
 
 import '../../features/group_chat/data/firebase_group_chat_repo.dart';
 import '../../features/group_chat/domain/repo/group_chat_repo.dart';
@@ -86,35 +92,13 @@ Future<void> init() async {
   _initShell();
   _initPosts();
 
-  sl.registerLazySingleton<AESService>(
-    () => AESService(),
-  );
+  sl.registerLazySingleton<AESService>(() => AESService());
+  _initCommunity();
+  _initChat();
 
-  // Repositories
-  sl.registerLazySingleton<GroupRepo>(
-    () => FirebaseGroupRepo(sl()),
-  );
-
+  // Not used by any screen yet (group_chat feature).
   sl.registerLazySingleton<GroupChatRepo>(
     () => FirebaseGroupChatRepo(),
-  );
-
-  sl.registerLazySingleton<ChatRepo>(
-    () => FirebaseChatRepo(sl()),
-  );
-
-  sl.registerLazySingleton<FirebaseGroupRepo>(
-    () => FirebaseGroupRepo(
-      FirebaseFirestore.instance,
-    ),
-  );
-
-  sl.registerFactory<GroupCubit>(
-    () => GroupCubit(sl()),
-  );
-
-  sl.registerFactory<ChatCubit>(
-    () => ChatCubit(sl()),
   );
 }
 
@@ -214,4 +198,59 @@ void _initPosts() {
           toggleCommentLike: sl(),
         ))
     ..registerFactory(() => CreatePostBloc(createPost: sl()));
+}
+
+void _initCommunity() {
+  sl
+    ..registerLazySingleton<GroupRemoteDataSource>(
+      () => GroupRemoteDataSourceImpl(sl()),
+    )
+    ..registerLazySingleton<GroupRepo>(() => GroupRepositoryImpl(sl()))
+    ..registerLazySingleton(() => WatchGroups(sl()))
+    ..registerLazySingleton(() => WatchJoinedGroupIds(sl()))
+    ..registerLazySingleton(() => WatchPendingJoinRequests(sl()))
+    ..registerLazySingleton(() => CreateGroup(sl()))
+    ..registerLazySingleton(() => JoinGroup(sl()))
+    ..registerLazySingleton(() => LeaveGroup(sl()))
+    ..registerLazySingleton(() => RequestToJoinGroup(sl()))
+    ..registerLazySingleton(() => CancelJoinRequest(sl()))
+    ..registerLazySingleton(() => GetGroupAdminId(sl()))
+    ..registerFactory(() => GroupsBloc(watchGroups: sl()))
+    ..registerFactory(() => MembershipBloc(
+          watchJoinedGroupIds: sl(),
+          watchPendingJoinRequests: sl(),
+          joinGroup: sl(),
+          leaveGroup: sl(),
+          requestToJoinGroup: sl(),
+          cancelJoinRequest: sl(),
+          getGroupAdminId: sl(),
+        ))
+    ..registerFactory(() => CreateGroupBloc(createGroup: sl()));
+}
+
+void _initChat() {
+  sl
+    ..registerLazySingleton<ChatRemoteDataSource>(
+      () => ChatRemoteDataSourceImpl(
+        firestore: sl(),
+        auth: sl(),
+        storage: FirebaseStorage.instance,
+        aes: sl(),
+      ),
+    )
+    ..registerLazySingleton<ChatRepo>(() => ChatRepositoryImpl(sl()))
+    ..registerLazySingleton(() => WatchMessages(sl()))
+    ..registerLazySingleton(() => SendTextMessage(sl()))
+    ..registerLazySingleton(() => SendMediaMessage(sl()))
+    ..registerLazySingleton(() => DeleteMessage(sl()))
+    ..registerLazySingleton(() => PinMessage(sl()))
+    ..registerLazySingleton(() => UnpinMessage(sl()))
+    ..registerFactory(() => ChatBloc(
+          watchMessages: sl(),
+          sendTextMessage: sl(),
+          sendMediaMessage: sl(),
+          deleteMessage: sl(),
+          pinMessage: sl(),
+          unpinMessage: sl(),
+        ));
 }

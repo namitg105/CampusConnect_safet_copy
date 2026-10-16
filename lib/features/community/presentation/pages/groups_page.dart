@@ -4,8 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../Widgets/botnav.dart';
 import '../../Widgets/community_page.dart';
 import '../../Widgets/group_widgets.dart';
-import '../cubits/group_cubit.dart';
-import '../cubits/group_states.dart';
+import '../bloc/groups/groups_bloc.dart';
+import '../bloc/membership/membership_bloc.dart';
 import 'create_group_page.dart';
 
 class GroupsPage extends StatefulWidget {
@@ -21,7 +21,7 @@ class _GroupsPageState extends State<GroupsPage> {
     super.initState();
     Future.microtask(() {
       if (mounted) {
-        context.read<GroupCubit>().loadGroups();
+        context.read<GroupsBloc>().add(const GroupsWatchStarted());
       }
     });
   }
@@ -42,13 +42,17 @@ class _GroupsPageState extends State<GroupsPage> {
     const Color brandPrimary = Color(0xFF6366F1);
     const Color bgSurface = Color(0xFFF8FAFC);
 
-    return Scaffold(
+    return BlocListener<MembershipBloc, MembershipState>(
+      listenWhen: (p, c) => p.outcomeId != c.outcomeId,
+      listener: (context, state) => ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(state.outcome!.message))),
+      child: Scaffold(
       backgroundColor: bgSurface,
       extendBody: true, // lets content scroll behind the floating nav bar
 
       body: SafeArea(
         bottom: false,
-        child: BlocBuilder<GroupCubit, GroupState>(
+        child: BlocBuilder<GroupsBloc, GroupState>(
           builder: (context, state) {
             if (state is GroupLoading) {
               return const Center(
@@ -74,7 +78,7 @@ class _GroupsPageState extends State<GroupsPage> {
                 color: brandPrimary,
                 backgroundColor: Colors.white,
                 onRefresh: () async {
-                  context.read<GroupCubit>().loadGroups();
+                  context.read<GroupsBloc>().add(const GroupsWatchStarted());
                 },
                 child: CommunitiesPage(
                   groups: state.groups,
@@ -87,6 +91,7 @@ class _GroupsPageState extends State<GroupsPage> {
           },
         ),
       ),
+    ),
     );
   }
 }
