@@ -3,12 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
-import 'package:noteswap/features/posts/domain/usecases/update_profile_usecase.dart';
+import 'package:noteswap/core/di/injection.dart';
+import 'package:noteswap/features/profile/domain/entities/user_profile.dart';
+import 'package:noteswap/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
 // Added import for the Onboarding Screen
 import 'package:noteswap/Views/Onboarding/OnboardingFlowScreen.dart'; 
@@ -21,36 +19,26 @@ class ProfileSettingsPage extends StatefulWidget {
 }
 
 class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
-  late final GetProfileUseCase profileUseCase;
-  late final UpdateProfileUseCase updateProfileUseCase;
-  Map<String, dynamic>? profileData;
-  bool isLoading = true;
+  /// Owned by this screen: the logged-in user's profile.
+  final ProfileBloc _profileBloc = sl<ProfileBloc>();
+  UserProfile? get _profile => _profileBloc.state.profile;
 
   @override
   void initState() {
     super.initState();
-    final repo = ProfileRepoImpl();
-    profileUseCase = GetProfileUseCase(repository: repo);
-    updateProfileUseCase = UpdateProfileUseCase(repository: repo);
     _loadProfile();
   }
 
-  Future<void> _loadProfile() async {
+  @override
+  void dispose() {
+    _profileBloc.close();
+    super.dispose();
+  }
+
+  void _loadProfile() {
     final authState = context.read<AuthBloc>().state;
     if (authState is Authenticated) {
-      final data = await profileUseCase.call(authState.user.uid);
-      if (mounted) {
-        setState(() {
-          profileData = data;
-          isLoading = false;
-        });
-      }
-    } else {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
+      _profileBloc.add(ProfileRequested(authState.user.uid));
     }
   }
 
@@ -76,8 +64,10 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     final subTextColor = isLightMode ? Colors.grey[600] : Colors.grey[400];
     final brandColor = const Color(0xFF6139ED);
 
-    // CHANGED: Using BlocConsumer to listen to state changes and trigger navigation
-    return BlocConsumer<AuthBloc, AuthState>(
+    // Redraws when the profile loads/saves; navigates away on logout.
+    return BlocBuilder<ProfileBloc, ProfileState>(
+      bloc: _profileBloc,
+      builder: (context, profileState) => BlocConsumer<AuthBloc, AuthState>(
       listener: (context, authState) {
         if (authState is Unauthenticated) {
           // Clears the stack and routes to the first Onboarding Screen
@@ -97,13 +87,13 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
         }
 
         final user = authState.user;
-        final name = profileData?['name'] ??
+        final name = _profile?.name ??
             (user.name.isNotEmpty
                 ? user.name
                 : (user.email.contains('@')
                     ? user.email.split('@').first
                     : user.email));
-        final email = profileData?['email'] ?? user.email;
+        final email = _profile?.email ?? user.email;
         final initials = getInitials(name, email);
 
         return Scaffold(
@@ -158,7 +148,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 ),
 
                 Expanded(
-                  child: isLoading
+                  child: !profileState.loaded
                       ? const Center(
                           child: CircularProgressIndicator(
                             color: Color(0xFF6139ED),
@@ -191,20 +181,10 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                         radius: 36,
                                         backgroundColor:
                                             brandColor.withOpacity(0.15),
-                                        backgroundImage: (profileData?[
-                                                        'profileImage'] !=
-                                                    null &&
-                                                (profileData?['profileImage']
-                                                        as String)
-                                                    .isNotEmpty)
-                                            ? NetworkImage(
-                                                profileData?['profileImage'])
+                                        backgroundImage: (_profile?.hasImage ?? false)
+                                            ? NetworkImage(_profile!.profileImage!)
                                             : null,
-                                        child: (profileData?['profileImage'] !=
-                                                    null &&
-                                                (profileData?['profileImage']
-                                                        as String)
-                                                    .isNotEmpty)
+                                        child: (_profile?.hasImage ?? false)
                                             ? null
                                             : Text(
                                                 initials,
@@ -258,13 +238,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          (profileData != null &&
-                                                  profileData!['bio'] != null &&
-                                                  profileData!['bio']
-                                                      .toString()
-                                                      .trim()
-                                                      .isNotEmpty)
-                                              ? profileData!['bio'].toString()
+                                          ((_profile?.bio ?? '').trim().isNotEmpty)
+                                              ? _profile!.bio!
                                               : 'No bio added yet',
                                           style: TextStyle(
                                             fontSize: 12,
@@ -450,6 +425,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
           ),
         );
       },
+    ),
     );
   }
 
@@ -739,9 +715,9 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     bool resetToDefault = false;
     bool isSaving = false;
     final bioController =
-        TextEditingController(text: profileData?['bio'] ?? '');
+        TextEditingController(text: _profile?.bio ?? '');
     final nameController =
-        TextEditingController(text: profileData?['name'] ?? authState.user.name);
+        TextEditingController(text: _profile?.name ?? authState.user.name);
 
     showModalBottomSheet(
       context: context,
@@ -752,17 +728,16 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
           builder: (context, setModalState) {
             final String name = nameController.text.trim().isNotEmpty
                 ? nameController.text.trim()
-                : (profileData?['name'] ?? authState.user.name);
-            final String email = profileData?['email'] ?? authState.user.email;
+                : (_profile?.name ?? authState.user.name);
+            final String email = _profile?.email ?? authState.user.email;
             final String initials = getInitials(name, email);
 
             ImageProvider? avatarImage;
             if (!resetToDefault) {
               if (pickedImage != null) {
                 avatarImage = FileImage(pickedImage!);
-              } else if (profileData?['profileImage'] != null &&
-                  (profileData?['profileImage'] as String).isNotEmpty) {
-                avatarImage = NetworkImage(profileData?['profileImage']);
+              } else if (_profile?.hasImage ?? false) {
+                avatarImage = NetworkImage(_profile!.profileImage!);
               }
             }
 
@@ -961,75 +936,56 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                       isSaving = true;
                                     });
 
-                                    try {
-                                      String? profileImageUrl =
-                                          profileData?['profileImage'];
+                                    final String updatedName =
+                                        nameController.text.trim();
+                                    final String finalName =
+                                        updatedName.isNotEmpty
+                                            ? updatedName
+                                            : name;
 
-                                      if (resetToDefault) {
-                                        profileImageUrl = "";
-                                        try {
-                                          final storageRef = FirebaseStorage
-                                              .instance
-                                              .ref()
-                                              .child(
-                                                  'profile_pictures/$userId.jpg');
-                                          await storageRef.delete();
-                                        } catch (_) {}
-                                      } else if (pickedImage != null) {
-                                        final storageRef =
-                                            FirebaseStorage.instance.ref().child(
-                                                'profile_pictures/$userId.jpg');
-                                        await storageRef.putFile(pickedImage!);
-                                        profileImageUrl =
-                                            await storageRef.getDownloadURL();
-                                      }
+                                    // Upload/remove picture + save happen in the
+                                    // data layer; wait for this save's result.
+                                    final startId = _profileBloc.state.saveId;
+                                    _profileBloc.add(ProfileUpdateRequested(
+                                      uid: userId,
+                                      name: finalName,
+                                      bio: bioController.text.trim(),
+                                      image: resetToDefault
+                                          ? const ResetImage()
+                                          : pickedImage != null
+                                              ? ReplaceImage(pickedImage!.path)
+                                              : const KeepImage(),
+                                    ));
+                                    final result = await _profileBloc.stream
+                                        .firstWhere((s) => s.saveId > startId);
 
-                                      final String updatedName =
-                                          nameController.text.trim();
-                                      final String finalName =
-                                          updatedName.isNotEmpty
-                                              ? updatedName
-                                              : name;
-
-                                      await updateProfileUseCase.call(userId, {
-                                        'name': finalName,
-                                        'bio': bioController.text.trim(),
-                                        'profileImage': profileImageUrl ?? "",
-                                      });
-
-                                      try {
-                                        await FirebaseAuth.instance.currentUser
-                                            ?.updateDisplayName(finalName);
-                                      } catch (_) {}
-
+                                    if (result.saveError == null) {
                                       if (context.mounted &&
                                           finalName.isNotEmpty) {
                                         context
                                             .read<AuthBloc>()
                                             .add(AuthUserNameUpdated(finalName));
                                       }
-
                                       // Close the sheet safely
                                       if (context.mounted) {
                                         Navigator.pop(context);
                                       }
-
-                                      _loadProfile();
-
-                                    AppNavigator.showSnackbar(
-                                      'Success',
-                                      'Profile updated successfully',
-                                      snackPosition: SnackPosition.bottom,
-                                      backgroundColor: const Color(0xFF6139ED),
-                                      colorText: Colors.white,
-                                    );
-                                  } catch (e) {
-                                    setModalState(() {
-                                      isSaving = false;
-                                    });
+                                      AppNavigator.showSnackbar(
+                                        'Success',
+                                        'Profile updated successfully',
+                                        snackPosition: SnackPosition.bottom,
+                                        backgroundColor: const Color(0xFF6139ED),
+                                        colorText: Colors.white,
+                                      );
+                                  } else {
+                                    if (context.mounted) {
+                                      setModalState(() {
+                                        isSaving = false;
+                                      });
+                                    }
                                     AppNavigator.showSnackbar(
                                       'Error',
-                                      'Failed to update profile: $e',
+                                      result.saveError!,
                                       snackPosition: SnackPosition.bottom,
                                       backgroundColor: Colors.redAccent,
                                       colorText: Colors.white,

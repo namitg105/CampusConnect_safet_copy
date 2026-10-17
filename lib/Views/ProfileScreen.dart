@@ -1,27 +1,50 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart' hide SnackPosition;
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:noteswap/core/di/injection.dart';
+import 'package:noteswap/features/auth/presentation/current_user.dart';
+import 'package:noteswap/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:noteswap/Constents/AppConstents.dart';
-import 'package:noteswap/Widgets/TextWidgets.dart';
 import '../Constents/AppStyles.dart';
-import '../Services/ImagePicker.dart';
 import 'package:noteswap/core/theme/theme_context.dart';
 import '../Widgets/BottonBar/BottomBar.dart';
 import '../Widgets/Buttons/BackWidgets.dart';
 import '../Widgets/NotesCard.dart';
 import '../Widgets/ProfileAvatar.dart';
 import '../features/home/presentation/pages/main_page.dart';
-import 'ProfileController.dart';
 
-class ProfileScreen extends StatelessWidget {
-  ProfileScreen({super.key});
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
 
-  final ImagePickerService imagePickerService = Get.put(ImagePickerService());
-  final ProfileController profileController = Get.put(ProfileController());
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  /// Owned by this screen: the logged-in user's profile.
+  final ProfileBloc _profileBloc = sl<ProfileBloc>();
+
+  @override
+  void initState() {
+    super.initState();
+    final uid = context.currentUid;
+    if (uid.isNotEmpty) _profileBloc.add(ProfileRequested(uid));
+  }
+
+  @override
+  void dispose() {
+    _profileBloc.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
+    return BlocBuilder<ProfileBloc, ProfileState>(
+        bloc: _profileBloc,
+        builder: (context, profileState) {
+      final userName =
+          profileState.profile?.name ?? context.currentUser?.name ?? '';
+      final userBio = profileState.profile?.bio ?? '';
       final isLight = context.isLightMode;
 
       return Scaffold(
@@ -48,7 +71,7 @@ class ProfileScreen extends StatelessWidget {
             ),
           ],
         ),
-        body: profileController.isLoading.value
+        body: (profileState.loading && !profileState.loaded)
             ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -73,16 +96,14 @@ class ProfileScreen extends StatelessWidget {
                         children: [
                           ProfileAvatar(
                             onCameraTap: () {},
-                            imagePath:
-                                imagePickerService.imageFile.value?.path ??
-                                    AppConstants.defaultProfileImage,
+                            imagePath: AppConstants.defaultProfileImage,
                           ),
                           const SizedBox(height: 12),
 
                           // Dynamic User Name
                           Text(
-                            profileController.userName.value.isNotEmpty
-                                ? profileController.userName.value
+                            userName.isNotEmpty
+                                ? userName
                                 : AppConstants.userName,
                             style: AppStyles.textStyleLargeBold(context),
                           ),
@@ -90,8 +111,8 @@ class ProfileScreen extends StatelessWidget {
 
                           // Dynamic Bio
                           Text(
-                            profileController.userBio.value.isNotEmpty
-                                ? profileController.userBio.value
+                            userBio.isNotEmpty
+                                ? userBio
                                 : AppConstants.userBio,
                             style: AppStyles.textStyleMedium(context),
                           ),

@@ -1,45 +1,42 @@
+/// A user's public profile (`users/{uid}`).
+///
+/// Fields are nullable on purpose: screens fall back to the logged-in
+/// user's auth data when a profile field was never set.
 class UserProfile {
   final String uid;
-  final String name;
-  final String email;
-  final String collegeId;
-  final String department;
-  final int year;
-  final String imageUrl;
+  final String? name;
+  final String? email;
+  final String? bio;
+  final String? profileImage;
+  final String? collegeId;
 
-  UserProfile({
+  const UserProfile({
     required this.uid,
-    required this.name,
-    required this.email,
-    required this.collegeId,
-    required this.department,
-    required this.year,
-    required this.imageUrl,
+    this.name,
+    this.email,
+    this.bio,
+    this.profileImage,
+    this.collegeId,
   });
 
-  factory UserProfile.fromMap(
-    Map<String, dynamic> map,
-  ) {
-    return UserProfile(
-      uid: map['uid'] ?? '',
-      name: map['name'] ?? '',
-      email: map['email'] ?? '',
-      collegeId: map['collegeId'] ?? '',
-      department: map['department'] ?? '',
-      year: map['year'] ?? 0,
-      imageUrl: map['imageUrl'] ?? '',
-    );
-  }
+  bool get hasImage => profileImage != null && profileImage!.isNotEmpty;
+}
 
-  Map<String, dynamic> toMap() {
-    return {
-      'uid': uid,
-      'name': name,
-      'email': email,
-      'collegeId': collegeId,
-      'department': department,
-      'year': year,
-      'imageUrl': imageUrl,
-    };
-  }
+/// What to do with the profile picture when saving.
+sealed class ProfileImageChange {
+  const ProfileImageChange();
+}
+
+final class KeepImage extends ProfileImageChange {
+  const KeepImage();
+}
+
+/// Back to the default avatar (the stored picture is deleted).
+final class ResetImage extends ProfileImageChange {
+  const ResetImage();
+}
+
+final class ReplaceImage extends ProfileImageChange {
+  final String localPath;
+  const ReplaceImage(this.localPath);
 }

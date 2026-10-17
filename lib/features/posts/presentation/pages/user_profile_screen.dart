@@ -1,8 +1,9 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:noteswap/features/auth/domain/entities/app_user.dart';
-import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:noteswap/core/di/injection.dart';
+import 'package:noteswap/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:noteswap/core/theme/theme_context.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -15,37 +16,21 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  late final GetProfileUseCase profileUseCase;
-  Map<String, dynamic>? profileData;
-  bool isLoading = true;
+  /// Owned by this screen: the profile of [UserProfileScreen.user].
+  final ProfileBloc _profileBloc = sl<ProfileBloc>();
 
   @override
   void initState() {
     super.initState();
-    profileUseCase = GetProfileUseCase(repository: ProfileRepoImpl());
-    _loadProfile();
+    if (widget.user.uid.isNotEmpty) {
+      _profileBloc.add(ProfileRequested(widget.user.uid));
+    }
   }
 
-  Future<void> _loadProfile() async {
-    try {
-      if (widget.user.uid.isNotEmpty) {
-        final data = await profileUseCase.call(widget.user.uid);
-        if (mounted) {
-          setState(() {
-            profileData = data;
-            isLoading = false;
-          });
-          return;
-        }
-      }
-    } catch (e) {
-      print("Error loading profile: $e");
-    }
-    if (mounted) {
-      setState(() {
-        isLoading = false;
-      });
-    }
+  @override
+  void dispose() {
+    _profileBloc.close();
+    super.dispose();
   }
 
   String _getInitials(String name) {
@@ -60,24 +45,24 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Builder(builder: (context) {
+    return BlocBuilder<ProfileBloc, ProfileState>(
+        bloc: _profileBloc,
+        builder: (context, profileState) {
+      final profile = profileState.profile;
+      final isLoading = widget.user.uid.isNotEmpty && !profileState.loaded;
       final isLightMode = context.isLightMode;
       final textColor = isLightMode ? Colors.black87 : Colors.white;
       final labelColor = isLightMode ? Colors.grey[600] : Colors.grey[400];
       final cardColor = isLightMode ? Colors.white : const Color(0xFF1E1E1E);
 
-      final rawName = profileData?['name'] ??
-          profileData?['displayName'] ??
+      final rawName = profile?.name ??
           (widget.user.name.isNotEmpty ? widget.user.name : "User");
       final name = rawName.contains('@') ? rawName.split('@').first : rawName;
 
-      final email = profileData?['email'] ??
+      final email = profile?.email ??
           (widget.user.email.isNotEmpty ? widget.user.email : "Not provided");
 
-      final profileImage = profileData?['profileImage'] ??
-          profileData?['imageUrl'] ??
-          profileData?['photoUrl'] ??
-          '';
+      final profileImage = profile?.profileImage ?? '';
 
       final initials = _getInitials(name);
 

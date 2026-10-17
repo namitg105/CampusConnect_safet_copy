@@ -3,13 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noteswap/features/admin_events/presentation/screens/AdminEvent.dart';
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:noteswap/features/posts/data/profile_repo_impl.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_profile_usecase.dart';
+import 'package:noteswap/features/dashboard/presentation/bloc/dashboard_bloc.dart';
 import 'package:noteswap/features/posts/presentation/pages/campus_feed_screen.dart';
-import 'package:noteswap/features/posts/domain/usecases/get_feed_usecase.dart';
 import 'package:noteswap/features/posts/domain/entities/post_entity.dart';
 import 'package:noteswap/utils/time_formatter.dart';
-import 'package:noteswap/features/auth/domain/entities/app_user.dart';
 import 'package:noteswap/features/group_chat/presentation/pages/groups_page.dart';
 import 'package:noteswap/features/events/notifications/notifications_screen.dart';
 import 'package:noteswap/features/notification_badge/presentation/bloc/notification_badge_bloc.dart';
@@ -26,25 +23,13 @@ class DashboardPageOne extends StatefulWidget {
 }
 
 class _DashboardPageOneState extends State<DashboardPageOne> {
-  late final GetProfileUseCase profileUseCase;
-  late final GetFeedUseCase feedUseCase;
-  Map<String, dynamic>? profileData;
-  List<PostEntity> newestDiscussions = [];
-  List<PostEntity> announcementPosts = [];
-  bool isLoading = true;
-  String? _loadedUid;
-  bool _isRefreshing = false;
+  /// Owned by this screen: greeting, discussions and announcements.
+  final DashboardBloc _dashboard = sl<DashboardBloc>();
 
-  Future<void> _handleRefresh() async {
+  void _handleRefresh() {
     final authState = context.read<AuthBloc>().state;
     if (authState is Authenticated) {
-      setState(() {
-        _isRefreshing = true;
-      });
-      await _loadProfileForUser(authState.user, forceRefresh: true);
-      setState(() {
-        _isRefreshing = false;
-      });
+      _dashboard.add(DashboardLoadRequested(authState.user, refresh: true));
     }
   }
 
@@ -76,64 +61,16 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
   @override
   void initState() {
     super.initState();
-    profileUseCase = GetProfileUseCase(repository: ProfileRepoImpl());
-    feedUseCase = sl<GetFeedUseCase>();
-
-    // Check if user is already authenticated at initialization
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authState = context.read<AuthBloc>().state;
-      if (authState is Authenticated) {
-        _loadProfileForUser(authState.user);
-      } else {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    });
+    final authState = context.read<AuthBloc>().state;
+    if (authState is Authenticated) {
+      _dashboard.add(DashboardLoadRequested(authState.user));
+    }
   }
 
-  Future<void> _loadProfileForUser(AppUser user,
-      {bool forceRefresh = false}) async {
-    if (_loadedUid == user.uid && !isLoading && !forceRefresh) return;
-
-    if (mounted) {
-      setState(() {
-        isLoading = true;
-      });
-    }
-
-    final data = await profileUseCase.call(user.uid);
-    final collegeId = data?['collegeId'] as String? ?? user.collegeId;
-
-    List<PostEntity> feed = [];
-    List<PostEntity> announcements = [];
-    if (collegeId.isNotEmpty) {
-      final result = await feedUseCase.call(collegeId);
-      result.fold(
-        (failure) =>
-            debugPrint("[DashboardOne] Error fetching feed: ${failure.message}"),
-        (posts) {
-          feed = posts;
-          announcements =
-              feed.where((p) => p.tag.toLowerCase() == 'announcement').toList();
-        print("[DashboardOne] Resolved collegeId: '$collegeId'");
-        print(
-            "[DashboardOne] Fetched feed posts count: ${feed.length}, announcements count: ${announcements.length}");
-        },
-      );
-    } else {
-      print("[DashboardOne] Warning: collegeId is empty.");
-    }
-
-    if (mounted) {
-      setState(() {
-        _loadedUid = user.uid;
-        profileData = data;
-        newestDiscussions = feed.take(3).toList();
-        announcementPosts = announcements;
-        isLoading = false;
-      });
-    }
+  @override
+  void dispose() {
+    _dashboard.close();
+    super.dispose();
   }
 
   @override
@@ -149,15 +86,19 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is Authenticated) {
-          _loadProfileForUser(state.user);
+          _dashboard.add(DashboardLoadRequested(state.user));
         }
       },
-      child: BlocBuilder<AuthBloc, AuthState>(
+      child: BlocBuilder<DashboardBloc, DashboardState>(
+        bloc: _dashboard,
+        builder: (context, dash) => BlocBuilder<AuthBloc, AuthState>(
         builder: (context, authState) {
+          final newestDiscussions = dash.newestDiscussions;
+          final announcementPosts = dash.announcements;
           String displayName = 'Naresh';
           if (authState is Authenticated) {
             final user = authState.user;
-            displayName = profileData?['name'] ??
+            displayName = dash.profile?.name ??
                 (user.name.isNotEmpty
                     ? user.name
                     : (user.email.contains('@')
@@ -177,7 +118,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _isRefreshing
+                        dash.refreshing
                             ? const Padding(
                                 padding: EdgeInsets.all(12.0),
                                 child: SizedBox(
@@ -249,7 +190,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
                   ),
 
                   Expanded(
-                    child: isLoading
+                    child: (dash.loading || dash.loadedUid == null)
                         ? const Center(
                             child: CircularProgressIndicator(
                               color: Color(0xFF6139ED),
@@ -521,6 +462,7 @@ class _DashboardPageOneState extends State<DashboardPageOne> {
             ),
           );
         },
+      ),
       ),
     );
   }

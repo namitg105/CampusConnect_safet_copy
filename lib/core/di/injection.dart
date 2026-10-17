@@ -34,6 +34,12 @@ import '../../features/community/presentation/bloc/membership/membership_bloc.da
 import '../../features/group_chat/data/firebase_group_chat_repo.dart';
 import '../../features/group_chat/domain/repo/group_chat_repo.dart';
 import '../../features/security/aes_service.dart';
+import '../../features/dashboard/presentation/bloc/dashboard_bloc.dart';
+import '../../features/profile/data/datasources/profile_remote_data_source.dart';
+import '../../features/profile/data/repositories/profile_repository_impl.dart';
+import '../../features/profile/domain/repos/profile_repo.dart';
+import '../../features/profile/domain/usecases/profile_usecases.dart';
+import '../../features/profile/presentation/bloc/profile_bloc.dart';
 import '../../features/notes/data/datasources/note_storage_service.dart';
 import '../../features/notes/data/datasources/notes_backend_switch.dart';
 import '../../features/notes/data/datasources/notes_data_source.dart';
@@ -120,6 +126,8 @@ Future<void> init() async {
   _initChat();
   _initPrivateChat();
   _initNotes();
+  _initProfile();
+  _initDashboard();
 
   // Not used by any screen yet (group_chat feature).
   sl.registerLazySingleton<GroupChatRepo>(
@@ -397,4 +405,24 @@ void _initNotes() {
           recordDownload: sl(),
         ))
     ..registerFactory(() => NoteSearchBloc(searchNotes: sl()));
+}
+
+void _initProfile() {
+  sl
+    ..registerLazySingleton<ProfileRemoteDataSource>(
+      () => ProfileRemoteDataSourceImpl(
+        firestore: sl(),
+        storage: FirebaseStorage.instance,
+        auth: sl(),
+      ),
+    )
+    ..registerLazySingleton<ProfileRepo>(() => ProfileRepositoryImpl(sl()))
+    ..registerLazySingleton(() => GetProfile(sl()))
+    ..registerLazySingleton(() => UpdateProfile(sl()))
+    ..registerFactory(
+        () => ProfileBloc(getProfile: sl(), updateProfile: sl()));
+}
+
+void _initDashboard() {
+  sl.registerFactory(() => DashboardBloc(getProfile: sl(), getFeed: sl()));
 }
