@@ -1,26 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:noteswap/Constents/AppConstents.dart';
 import 'package:noteswap/core/theme/theme_context.dart';
 
 class ImageContainer extends StatelessWidget {
   final String imagePath;
-  final int index;
-  final RxInt currentPage;
+  final VoidCallback onTap;
 
-  ImageContainer({
+  const ImageContainer({
+    super.key,
     required this.imagePath,
-    required this.index,
-    required this.currentPage,
+    required this.onTap,
   });
 
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        currentPage.value = index;
-      },
+      onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(

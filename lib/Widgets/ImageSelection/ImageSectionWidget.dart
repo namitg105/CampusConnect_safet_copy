@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:noteswap/Constents/AppConstents.dart';
-import '../../ViewModels/ImageSectionViewModels.dart';
 import 'ImageContainer.dart';
 
+/// A horizontal row of image cards with a dot indicator. The selected dot
+/// is purely local UI state, so it lives in this widget.
+///
+/// Replaces ImageSectionWidget / WidgetTwo / WidgetThree, which differed
+/// only in their image paths.
+class ImageSectionWidget extends StatefulWidget {
+  /// Empty paths show a coloured placeholder card.
+  final List<String> imagePaths;
 
-class ImageSectionWidget extends StatelessWidget {
-  final ImageSectionController controller;
+  const ImageSectionWidget({super.key, required this.imagePaths});
 
-  ImageSectionWidget({required this.controller});
+  @override
+  State<ImageSectionWidget> createState() => _ImageSectionWidgetState();
+}
+
+class _ImageSectionWidgetState extends State<ImageSectionWidget> {
+  int _currentPage = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -19,35 +29,40 @@ class ImageSectionWidget extends StatelessWidget {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              ImageContainer(imagePath: 'assets/Designer27.png', index: 0, currentPage: controller.currentPage),
-              ImageContainer(imagePath: 'assets/Designer28.png', index: 1, currentPage: controller.currentPage),
-              ImageContainer(imagePath: '', index: 2, currentPage: controller.currentPage),
+              for (var i = 0; i < widget.imagePaths.length; i++)
+                ImageContainer(
+                  imagePath: widget.imagePaths[i],
+                  onTap: () => setState(() => _currentPage = i),
+                ),
             ],
           ),
         ),
-        SizedBox(height: 10),
-        Obx(() {
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              3,
-                  (index) => AnimatedContainer(
-                duration: Duration(milliseconds: 300),
-                margin: EdgeInsets.symmetric(horizontal: 4),
-                height: 8,
-                width: 8,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: controller.currentPage.value == index ? AppConstants.darkContainerColor : Colors.transparent,
-                  border: Border.all(
-                    color: controller.currentPage.value == index ? AppConstants.darkContainerColor : AppConstants.iconNoteColors,
-                    width: 2,
-                  ),
+        const SizedBox(height: 10),
+        // Hollow dots indicator
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+            widget.imagePaths.length,
+            (index) => AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              height: 8,
+              width: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _currentPage == index
+                    ? AppConstants.darkContainerColor
+                    : Colors.transparent,
+                border: Border.all(
+                  color: _currentPage == index
+                      ? AppConstants.darkContainerColor
+                      : AppConstants.iconNoteColors,
+                  width: 2,
                 ),
               ),
             ),
-          );
-        }),
+          ),
+        ),
       ],
     );
   }

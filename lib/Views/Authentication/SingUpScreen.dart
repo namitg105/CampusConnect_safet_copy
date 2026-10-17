@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:noteswap/Widgets/Buttons/BackWidgets.dart';
 import '../../Constents/AppConstents.dart';
 import '../../Constents/AppStyles.dart';
-import '../../ViewModels/CheckboxViewModels.dart';
 import '../../Widgets/Buttons/BottomButton.dart';
 import '../../Widgets/Buttons/ButtonWidgets.dart';
 import '../../Widgets/CheckBox.dart';
@@ -13,16 +11,26 @@ import '../../Widgets/InputWidgets.dart';
 import '../../Widgets/LogingHeadlines.dart';
 import '../../Widgets/Buttons/SocialButton.dart';
 
-class SignUpScreen extends StatelessWidget {
-  SignUpScreen({super.key});
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
 
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController passwordController = TextEditingController();
-  final CheckBoxController controller = Get.put(CheckBoxController());
+  bool _termsAccepted = false;
+
+  @override
+  void dispose() {
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      ()=> Scaffold(
+    return Scaffold(
         appBar: AppBar(
           backgroundColor: context.isLightMode ? Colors.white : Colors.black,
           leading: BackWidget(onTap: () {}, imagePath: AppConstants.backBlackIcon,),
@@ -100,10 +108,11 @@ class SignUpScreen extends StatelessWidget {
                         padding: const EdgeInsets.all(8.0),
                         child: Row(
                           children: [
-                            Obx(() => CheckBox(
-                              onPressed: controller.toggleCheckbox,
-                              isChecked: controller.isChecked.value,
-                            )),
+                            CheckBox(
+                              onPressed: () =>
+                                  setState(() => _termsAccepted = !_termsAccepted),
+                              isChecked: _termsAccepted,
+                            ),
                             const SizedBox(width: 15),
                             Expanded(
                               child: Text(
@@ -135,7 +144,6 @@ class SignUpScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }

@@ -48,7 +48,7 @@ class RentCard extends StatelessWidget {
             ),
           ],
         ),
-        bottomNavigationBar: BottomNavBar(),
+        bottomNavigationBar: const BottomNavBar(currentIndex: 3),
       ),
     );
   }

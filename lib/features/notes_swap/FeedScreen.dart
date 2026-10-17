@@ -1,7 +1,6 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:noteswap/Views/AddUsers.dart';
 import 'package:noteswap/Views/Notification.dart';
@@ -10,13 +9,10 @@ import 'package:noteswap/features/notes_swap/noti.dart';
 import 'package:noteswap/features/notes_swap/searchScreen.dart';
 
 import '../../Constents/AppConstents.dart';
-import '../../ViewModels/ImageSectionViewModels.dart';
 import '../../Widgets/Buttons/BackWidgets.dart';
 import '../home/presentation/pages/main_page.dart';
 
 class NoteSwapFeedScreen extends StatelessWidget {
-  final ImageSectionController imageController =
-      Get.put(ImageSectionController());
 
   NoteSwapFeedScreen({super.key});
 

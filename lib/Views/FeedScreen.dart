@@ -1,21 +1,15 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart' hide SnackPosition;
 import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:noteswap/Views/AddUsers.dart';
 import 'package:noteswap/Views/Notification.dart';
 import 'package:noteswap/Views/SearchScreen.dart';
 import '../Constents/AppConstents.dart';
-import '../ViewModels/ImageSectionViewModels.dart';
 import '../Widgets/Buttons/BackWidgets.dart';
 import '../Widgets/ImageSelection/ImageSectionWidget.dart';
-import '../Widgets/ImageSelection/ImageSectionWidgetThree.dart';
-import '../Widgets/ImageSelection/ImageSectionWidgetTwo.dart';
 import '../features/home/presentation/pages/main_page.dart';
 
 class FeedScreen extends StatelessWidget {
-  final ImageSectionController imageController =
-      Get.put(ImageSectionController());
 
   FeedScreen({super.key});
 
@@ -236,7 +230,8 @@ class FeedScreen extends StatelessWidget {
                       textSecondary: textSecondary,
                     ),
                     const SizedBox(height: 10),
-                    ImageSectionWidget(controller: imageController),
+                    const ImageSectionWidget(
+                        imagePaths: ['assets/Designer27.png', 'assets/Designer28.png', '']),
 
                     const SizedBox(height: 24),
 
@@ -248,7 +243,7 @@ class FeedScreen extends StatelessWidget {
                       textSecondary: textSecondary,
                     ),
                     const SizedBox(height: 10),
-                    ImageSectionWidgetTwo(controller: imageController),
+                    const ImageSectionWidget(imagePaths: ['', '', '']),
 
                     const SizedBox(height: 24),
 
@@ -260,7 +255,7 @@ class FeedScreen extends StatelessWidget {
                       textSecondary: textSecondary,
                     ),
                     const SizedBox(height: 10),
-                    ImageSectionWidgetThree(controller: imageController),
+                    const ImageSectionWidget(imagePaths: ['', '', '']),
 
                     const SizedBox(height: 24),
 

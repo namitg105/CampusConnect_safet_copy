@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:noteswap/Widgets/BottonBar/BottomBar.dart';
 import '../Constents/AppConstents.dart';
 import '../Constents/AppStyles.dart';
-import '../Services/ImagePicker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noteswap/core/theme/theme_context.dart';
 import 'package:noteswap/features/theme/presentation/bloc/theme_bloc.dart';
@@ -13,14 +11,11 @@ import '../Widgets/Profile/CustomTextFild.dart';
 import '../Widgets/ProfileAvatar.dart';
 
 class AddUsers extends StatelessWidget {
-  AddUsers({Key? key}) : super(key: key);
-
-  final ImagePickerService imagePickerService = Get.put(ImagePickerService());
+  const AddUsers({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => Scaffold(
+    return Scaffold(
         backgroundColor: context.isLightMode ? Colors.black : Colors.white,
         appBar: AppBar(
           backgroundColor: context.isLightMode ? Colors.black : Colors.white,
@@ -62,8 +57,7 @@ class AddUsers extends StatelessWidget {
                 ),
                 ProfileAvatar(
                   onCameraTap: () {},
-                  imagePath: imagePickerService.imageFile.value?.path ??
-                      AppConstants.defaultProfileImage,
+                  imagePath: AppConstants.defaultProfileImage,
                 ),
                 const SizedBox(height: 20),
                 Padding(
@@ -97,8 +91,7 @@ class AddUsers extends StatelessWidget {
             ),
           ),
         ),
-        bottomNavigationBar: BottomNavBar(),
-      ),
-    );
+        bottomNavigationBar: const BottomNavBar(currentIndex: 2),
+      );
   }
 }
