@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:noteswap/features/notes/domain/entities/note_entities.dart';
 
-import 'note_details_data.dart';
 
 class AllReviewsScreen extends StatelessWidget {
   final NoteDetail detail;

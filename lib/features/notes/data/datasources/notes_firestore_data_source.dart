@@ -2,14 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../../features/events/notifications/models/notification_model.dart';
-import '../../features/events/notifications/services/notification_service.dart';
-import '../my_notes_data.dart';
-import '../note_data.dart';
-import '../note_details_data.dart';
-import 'note_models.dart';
+import '../../../events/notifications/models/notification_model.dart';
+import '../../../events/notifications/services/notification_service.dart';
+import '../../domain/entities/note_entities.dart';
+import '../../domain/entities/note_inputs.dart';
+import '../models/note_mappers.dart';
 import 'note_storage_service.dart';
-import 'notes_repository.dart';
+import 'notes_data_source.dart';
 
 /// Real backend implementation backed by Firestore + Firebase Storage.
 ///
@@ -18,9 +17,18 @@ import 'notes_repository.dart';
 ///   * `noteswap_notes/{noteId}/reviews/{userId}`        one review per user
 ///   * `noteswap_bought_notes/{docId}`                   purchase receipts
 ///   * `users/{uid}`                                     additive stat fields
-class FirestoreNotesRepository implements NotesRepository {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final NoteStorageService _storage = NoteStorageService();
+class NotesFirestoreDataSource implements NotesDataSource {
+  final FirebaseFirestore _db;
+  final FirebaseAuth _auth;
+  final NoteStorageService _storage;
+
+  NotesFirestoreDataSource({
+    required FirebaseFirestore firestore,
+    required FirebaseAuth auth,
+    required NoteStorageService storage,
+  })  : _db = firestore,
+        _auth = auth,
+        _storage = storage;
 
   CollectionReference<Map<String, dynamic>> get _notes =>
       _db.collection('noteswap_notes');
@@ -104,7 +112,7 @@ class FirestoreNotesRepository implements NotesRepository {
         (data['buyers'] as List?)?.whereType<String>().toList() ??
             const <String>[];
     final authorId = data['authorId'] ?? '';
-    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final uid = _auth.currentUser?.uid ?? '';
 
     int sellerNotes = 0;
     if (authorId is String && authorId.isNotEmpty) {
@@ -202,7 +210,7 @@ class FirestoreNotesRepository implements NotesRepository {
       throw Exception('Note needs a title and a file.');
     }
 
-    final user = FirebaseAuth.instance.currentUser;
+    final user = _auth.currentUser;
     final email = user?.email ?? '';
     final collegeId =
         email.contains('@') ? email.split('@').last.toLowerCase() : 'unknown';

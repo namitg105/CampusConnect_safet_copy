@@ -1,11 +1,11 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart' hide SnackPosition;
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:noteswap/features/auth/presentation/current_user.dart';
+import 'package:noteswap/features/notes/domain/entities/note_entities.dart' show DashboardNote;
+import 'package:noteswap/features/notes/presentation/bloc/notes_bloc.dart';
 
-import 'my_notes_data.dart';
-import 'backend/note_models.dart';
-import 'noteswap_controller.dart';
+
 
 class MyNotesScreen extends StatefulWidget {
   const MyNotesScreen({super.key});
@@ -26,47 +26,43 @@ class _MyNotesScreenState extends State<MyNotesScreen> {
   @override
   void initState() {
     super.initState();
-    final String uid = FirebaseAuth.instance.currentUser?.uid ?? '';
-    Get.find<NoteswapController>().loadMyNotes(uid);
+    context.read<NotesBloc>().add(MyNotesRequested(context.currentUid));
   }
 
-  Future<void> _deleteNote(DashboardNote note) async {
-    final ctrl = Get.find<NoteswapController>();
-    final String id = note.id.isEmpty ? note.title : note.id;
-    try {
-      await ctrl.deleteNote(id);
-      ctrl.myNotes.removeWhere(
-        (n) => (n.id.isEmpty ? n.title : n.id) == id,
-      );
-      ctrl.boughtNotes.removeWhere(
-        (n) => (n.id.isEmpty ? n.title : n.id) == id,
-      );
-    } on NoteHasBuyersException {
+  /// The result is shown by the listener in [build].
+  void _deleteNote(DashboardNote note) {
+    context
+        .read<NotesBloc>()
+        .add(NoteDeleteRequested(note, context.currentUid));
+  }
+
+  void _showDeleteOutcome(NotesOutcome outcome) {
+    if (outcome.kind == NotesOutcomeKind.deleteBlockedByBuyers) {
       AppNavigator.showSnackbar('buys exists at this notes', 'not allowed to delete');
-    } catch (e) {
-      if (!mounted) return;
+    } else if (outcome.kind == NotesOutcomeKind.deleteFailed) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not delete note: $e')),
+        SnackBar(content: Text('Could not delete note: ${outcome.message}')),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = Get.find<NoteswapController>();
-
-    return Scaffold(
+    return BlocListener<NotesBloc, NotesState>(
+      listenWhen: (p, c) => p.outcomeId != c.outcomeId,
+      listener: (context, state) => _showDeleteOutcome(state.outcome!),
+      child: Scaffold(
       backgroundColor: _background,
       resizeToAvoidBottomInset: true,
       extendBody: false,
       extendBodyBehindAppBar: false,
       body: SafeArea(
-        child: Obx(
-          () {
-            final myNotes = ctrl.myNotes;
-            final boughtNotes = ctrl.boughtNotes;
+        child: BlocBuilder<NotesBloc, NotesState>(
+          builder: (context, notes) {
+            final myNotes = notes.myNotes;
+            final boughtNotes = notes.boughtNotes;
             final visibleNotes = _tab == 0 ? myNotes : boughtNotes;
-            final loading = ctrl.notesLoading.value && visibleNotes.isEmpty;
+            final loading = notes.myNotesLoading && visibleNotes.isEmpty;
 
             return SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -106,6 +102,7 @@ class _MyNotesScreenState extends State<MyNotesScreen> {
             );
           },
         ),
+      ),
       ),
     );
   }
@@ -202,10 +199,10 @@ class _Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final User? user = FirebaseAuth.instance.currentUser;
-    final String photoUrl = user?.photoURL ?? '';
-    final String name = user?.displayName?.trim() ?? '';
-    final String email = user?.email?.trim() ?? '';
+    final user = context.currentUser;
+    final String photoUrl = user?.imageURL ?? '';
+    final String name = user?.name.trim() ?? '';
+    final String email = user?.email.trim() ?? '';
 
     String initials = '';
     if (name.isNotEmpty) {

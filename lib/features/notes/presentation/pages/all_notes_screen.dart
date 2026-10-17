@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:noteswap/features/notes/domain/entities/note_entities.dart';
+import 'package:noteswap/features/notes/presentation/pages/note_details_screen.dart';
 
-import 'note_data.dart';
-import 'NoteDetailsScreen.dart';
+
 
 class AllNotesScreen extends StatelessWidget {
   final String title;

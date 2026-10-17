@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noteswap/features/community/presentation/pages/create_group_page.dart';
 import 'package:noteswap/features/dashboard/presentation/pages/dashboard_page_one.dart';
+import 'package:noteswap/features/notes/presentation/pages/notes_screen.dart';
+import 'package:noteswap/features/notes/presentation/pages/upload_notes_screen.dart';
 import 'package:noteswap/features/private_chat/page_controller.dart';
 import 'package:noteswap/features/profile/presentation/pages/profile_settings_page.dart';
 import 'package:noteswap/features/posts/presentation/posts_navigation.dart';
 import 'package:noteswap/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:noteswap/features/home/presentation/bloc/main_nav_bloc.dart';
-import 'package:noteswap/noteswap_intern/NotesScreen.dart';
-import 'package:noteswap/noteswap_intern/UploadNotesScreen.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../community/presentation/bloc/groups/groups_bloc.dart';

@@ -1,49 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/painting.dart';
 
-class DashboardNote {
-  final String id;
-  final String title;
-  final String subject;
-  final String semester;
-  final String uploadTime;
-  final int price;
-  final Color accent;
-  final String authorId;
-  final List<String> buyerIds;
-  final List<double> ratings;
-
-  const DashboardNote({
-    this.id = '',
-    required this.title,
-    required this.subject,
-    required this.semester,
-    required this.uploadTime,
-    required this.price,
-    required this.accent,
-    required this.authorId,
-    required this.buyerIds,
-    required this.ratings,
-  });
-
-  DashboardNote copyWith({
-    String? id,
-    String? authorId,
-    List<String>? buyerIds,
-  }) {
-    return DashboardNote(
-      id: id ?? this.id,
-      title: title,
-      subject: subject,
-      semester: semester,
-      uploadTime: uploadTime,
-      price: price,
-      accent: accent,
-      authorId: authorId ?? this.authorId,
-      buyerIds: buyerIds ?? this.buyerIds,
-      ratings: ratings,
-    );
-  }
-}
+import '../../../domain/entities/note_entities.dart';
 
 const List<DashboardNote> myNotesSeed = [
   DashboardNote(

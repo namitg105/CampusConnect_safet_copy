@@ -8,6 +8,7 @@ import 'package:noteswap/firebase_options.dart';
 
 import 'features/home/presentation/bloc/main_nav_bloc.dart';
 import 'features/notification_badge/presentation/bloc/notification_badge_bloc.dart';
+import 'features/notes/presentation/bloc/notes_bloc.dart';
 import 'features/private_chat/presentation/bloc/friends/friends_bloc.dart';
 import 'features/private_chat/presentation/common_widgets.dart';
 import 'features/theme/presentation/bloc/theme_bloc.dart';
@@ -57,6 +58,7 @@ class MyApp extends StatelessWidget {
           create: (_) => sl<NotificationBadgeBloc>(),
         ),
         BlocProvider<FriendsBloc>(create: (_) => sl<FriendsBloc>()),
+        BlocProvider<NotesBloc>(create: (_) => sl<NotesBloc>()),
       ],
       child: _SessionListener(
         child: BlocBuilder<ThemeBloc, ThemeState>(
@@ -102,6 +104,7 @@ class _SessionListener extends StatelessWidget {
         } else {
           badge.add(const NotificationBadgeStopped());
           friends.add(const FriendsWatchStopped());
+          context.read<NotesBloc>().add(const NotesCleared());
           context.read<MainNavBloc>().add(const MainNavReset());
         }
       },

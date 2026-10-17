@@ -3,11 +3,12 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:noteswap/features/auth/presentation/current_user.dart';
+import 'package:noteswap/features/notes/domain/entities/note_inputs.dart';
+import 'package:noteswap/features/notes/presentation/bloc/notes_bloc.dart';
 
-import 'backend/note_models.dart';
-import 'noteswap_controller.dart';
 
 class UploadNotesScreen extends StatefulWidget {
   const UploadNotesScreen({super.key});
@@ -40,7 +41,6 @@ class _UploadNotesScreenState extends State<UploadNotesScreen> {
   String? _fileName;
   String? _filePath;
   int _fileSize = 0;
-  bool _uploading = false;
 
   @override
   void dispose() {
@@ -91,32 +91,34 @@ class _UploadNotesScreenState extends State<UploadNotesScreen> {
           .toList(),
     );
 
-    setState(() => _uploading = true);
-    try {
-      await Get.find<NoteswapController>().upload(data);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Note uploaded successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      _resetForm();
-    } on StorageCreditException {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Fire storage credits ended'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Upload failed: $e')),
-      );
-    } finally {
-      if (mounted) setState(() => _uploading = false);
+    // The result arrives in the listener in [build].
+    context.read<NotesBloc>().add(NoteUploadRequested(data, context.currentUid));
+  }
+
+  void _showUploadOutcome(NotesOutcome outcome) {
+    switch (outcome.kind) {
+      case NotesOutcomeKind.uploaded:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Note uploaded successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _resetForm();
+      case NotesOutcomeKind.storageCreditsEnded:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Fire storage credits ended'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      case NotesOutcomeKind.uploadFailed:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Upload failed: ${outcome.message}')),
+        );
+      case NotesOutcomeKind.deleteFailed:
+      case NotesOutcomeKind.deleteBlockedByBuyers:
+        break; // shown by My Notes
     }
   }
 
@@ -173,7 +175,10 @@ class _UploadNotesScreenState extends State<UploadNotesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BlocListener<NotesBloc, NotesState>(
+      listenWhen: (p, c) => p.outcomeId != c.outcomeId,
+      listener: (context, state) => _showUploadOutcome(state.outcome!),
+      child: Scaffold(
       backgroundColor: _background,
       resizeToAvoidBottomInset: true,
       body: SafeArea(
@@ -275,7 +280,7 @@ class _UploadNotesScreenState extends State<UploadNotesScreen> {
                       ),
                       const SizedBox(height: 18),
                       _ActionButtons(
-                        uploading: _uploading,
+                        uploading: context.select((NotesBloc b) => b.state.uploading),
                         onUpload: _upload,
                       ),
                     ],
@@ -286,6 +291,7 @@ class _UploadNotesScreenState extends State<UploadNotesScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

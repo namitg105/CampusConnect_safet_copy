@@ -1,20 +1,21 @@
-import '../my_notes_data.dart';
-import '../note_data.dart' as note_data;
-import '../note_details_data.dart';
-import 'note_models.dart';
-import 'notes_repository.dart';
+import '../../domain/entities/note_entities.dart';
+import '../../domain/entities/note_inputs.dart';
+import 'notes_data_source.dart';
+import 'seed/my_notes_seed.dart';
+import 'seed/note_details_seed.dart';
+import 'seed/note_seed.dart' as note_data;
 
 /// Demo implementation that reads the hardcoded seed files. Used when
 /// `useHarcoded == true` so the app works fully offline.
-class HardcodedNotesRepository implements NotesRepository {
+class NotesHardcodedDataSource implements NotesDataSource {
   @override
-  Future<List<note_data.Note>> getFeaturedNotes() async => note_data.featuredNotes;
+  Future<List<Note>> getFeaturedNotes() async => note_data.featuredNotes;
 
   @override
-  Future<List<note_data.Note>> getRecentNotes() async => note_data.recentNotes;
+  Future<List<Note>> getRecentNotes() async => note_data.recentNotes;
 
   @override
-  Future<List<note_data.Note>> searchNotes(String query) async {
+  Future<List<Note>> searchNotes(String query) async {
     final q = query.trim().toLowerCase();
     if (q.isEmpty) return note_data.searchNotes;
     return note_data.searchNotes.where((note) {

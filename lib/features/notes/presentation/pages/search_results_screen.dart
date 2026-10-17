@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:noteswap/core/di/injection.dart';
+import 'package:noteswap/features/notes/domain/entities/note_entities.dart';
+import 'package:noteswap/features/notes/presentation/pages/note_details_screen.dart';
+import 'package:noteswap/features/notes/presentation/bloc/note_search_bloc.dart';
 
-import 'note_data.dart';
-import 'NoteDetailsScreen.dart';
-import 'noteswap_controller.dart';
+
 
 class SearchResultsScreen extends StatefulWidget {
   const SearchResultsScreen({super.key});
@@ -24,8 +26,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
   final TextEditingController _controller = TextEditingController();
   String _query = '';
-  List<Note> _results = [];
-  bool _searching = false;
+  /// Owned by this screen.
+  final NoteSearchBloc _searchBloc = sl<NoteSearchBloc>();
   Timer? _debounce;
 
   @override
@@ -41,27 +43,23 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         Timer(const Duration(milliseconds: 350), () => _search(value));
   }
 
-  Future<void> _search(String query) async {
-    setState(() => _searching = true);
-    final results = await Get.find<NoteswapController>().search(query);
-    if (!mounted) return;
-    setState(() {
-      _results = results;
-      _searching = false;
-    });
-  }
+  void _search(String query) => _searchBloc.add(NoteSearchRequested(query));
 
   @override
   void dispose() {
     _debounce?.cancel();
     _controller.dispose();
+    _searchBloc.close();
     FocusManager.instance.primaryFocus?.unfocus();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final results = _results;
+    return BlocBuilder<NoteSearchBloc, NoteSearchState>(
+      bloc: _searchBloc,
+      builder: (context, search) {
+    final results = search.results;
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) FocusManager.instance.primaryFocus?.unfocus();
@@ -102,7 +100,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                     },
                   ),
                   const SizedBox(height: 24),
-                  if (_searching && results.isEmpty)
+                  if (search.searching && results.isEmpty)
                     const Padding(
                       padding: EdgeInsets.only(top: 60),
                       child: Center(child: CircularProgressIndicator()),
@@ -121,6 +119,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           ),
         ),
       ),
+    );
+      },
     );
   }
 }

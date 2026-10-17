@@ -1,16 +1,16 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart' hide SnackPosition;
+import 'package:noteswap/core/di/injection.dart';
+import 'package:noteswap/features/auth/presentation/current_user.dart';
+import 'package:noteswap/features/notes/domain/entities/note_entities.dart';
+import 'package:noteswap/features/notes/presentation/pages/all_reviews_screen.dart';
 import 'package:noteswap/features/notification_badge/presentation/bloc/notification_badge_bloc.dart';
 import 'package:noteswap/features/events/notifications/notifications_screen.dart';
+import 'package:noteswap/features/notes/presentation/bloc/note_detail_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'note_data.dart';
-import 'note_details_data.dart';
-import 'AllReviewsScreen.dart';
-import 'noteswap_controller.dart';
+
 
 class NoteDetailsScreen extends StatefulWidget {
   final Note note;
@@ -29,83 +29,29 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
   static const Color _textMuted = Color(0xFF8B879E);
   static const Color _shadowColor = Color(0x0A000000);
 
-  NoteDetail? _detail;
-  bool _purchasing = false;
+  /// Owned by this screen: loads the note, buys it, counts downloads.
+  final NoteDetailBloc _bloc = sl<NoteDetailBloc>();
   bool _downloading = false;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _bloc.add(NoteDetailRequested(widget.note));
   }
 
-  Future<void> _load() async {
-    try {
-      final detail =
-          await Get.find<NoteswapController>().getDetail(widget.note);
-      if (!mounted) return;
-      setState(() => _detail = detail);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _detail = const NoteDetail(
-          title: 'Note unavailable',
-          subject: '',
-          author: '',
-          price: 'Free',
-          rating: 0,
-          ratingCount: 0,
-          images: [],
-          semester: '—',
-          pages: '—',
-          language: 'English',
-          fileSize: '',
-          downloads: 0,
-          sellerName: '',
-          sellerJoined: '',
-          sellerNotes: 0,
-          sellerAccent: Color(0xFF6366F1),
-          reviews: [],
-        );
-      });
-    }
+  @override
+  void dispose() {
+    _bloc.close();
+    super.dispose();
   }
 
-  Future<void> _buy() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
-    if (uid.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please sign in to buy notes')),
-      );
-      return;
-    }
-    setState(() => _purchasing = true);
-    try {
-      await Get.find<NoteswapController>().purchase(widget.note);
-      if (!mounted) return;
-      // Reload so the detail reflects isPurchased (buyers list changed).
-      await _load();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Note purchased successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not purchase note: $e')),
-      );
-    } finally {
-      if (mounted) setState(() => _purchasing = false);
-    }
-  }
+  void _buy() =>
+      _bloc.add(NotePurchaseRequested(widget.note, context.currentUid));
 
   /// Opens the purchased/owned file. Download counting is best-effort and
   /// never blocks opening the file.
   Future<void> _openFile() async {
-    final detail = _detail;
+    final detail = _bloc.state.detail;
     if (detail == null || detail.fileUrl.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No download link for this note')),
@@ -114,7 +60,7 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
     }
     setState(() => _downloading = true);
     try {
-      await Get.find<NoteswapController>().recordDownload(detail);
+      _bloc.add(NoteDownloadRecorded(context.currentUid));
       final ok = await launchUrl(
         Uri.parse(detail.fileUrl),
         mode: LaunchMode.externalApplication,
@@ -137,43 +83,55 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final detail = _detail;
-    return Scaffold(
-      backgroundColor: _background,
-      resizeToAvoidBottomInset: true,
-      extendBody: false,
-      extendBodyBehindAppBar: false,
-      body: SafeArea(
-        child: detail == null
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const _NavigationBar(),
-                      const SizedBox(height: 24),
-                      _ProductSection(
-                        detail: detail,
-                        purchasing: _purchasing,
-                        downloading: _downloading,
-                        onBuy: _buy,
-                        onDownload: _openFile,
+    return BlocConsumer<NoteDetailBloc, NoteDetailState>(
+      bloc: _bloc,
+      listenWhen: (p, c) => p.messageId != c.messageId,
+      listener: (context, state) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(state.message),
+          backgroundColor: state.messageIsError ? null : Colors.green,
+        ));
+      },
+      builder: (context, state) {
+        final detail = state.detail;
+        return Scaffold(
+          backgroundColor: _background,
+          resizeToAvoidBottomInset: true,
+          extendBody: false,
+          extendBodyBehindAppBar: false,
+          body: SafeArea(
+            child: detail == null
+                ? const Center(child: CircularProgressIndicator())
+                : SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const _NavigationBar(),
+                          const SizedBox(height: 24),
+                          _ProductSection(
+                            detail: detail,
+                            purchasing: state.purchasing,
+                            downloading: _downloading,
+                            onBuy: _buy,
+                            onDownload: _openFile,
+                          ),
+                          const SizedBox(height: 28),
+                          _SellerSection(detail: detail),
+                          const SizedBox(height: 28),
+                          _RatingsHeader(detail: detail),
+                          const SizedBox(height: 16),
+                          _RatingsSection(detail: detail),
+                          const SizedBox(height: 30),
+                        ],
                       ),
-                      const SizedBox(height: 28),
-                      _SellerSection(detail: detail),
-                      const SizedBox(height: 28),
-                      _RatingsHeader(detail: detail),
-                      const SizedBox(height: 16),
-                      _RatingsSection(detail: detail),
-                      const SizedBox(height: 30),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

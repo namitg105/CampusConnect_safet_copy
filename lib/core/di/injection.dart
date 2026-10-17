@@ -34,6 +34,17 @@ import '../../features/community/presentation/bloc/membership/membership_bloc.da
 import '../../features/group_chat/data/firebase_group_chat_repo.dart';
 import '../../features/group_chat/domain/repo/group_chat_repo.dart';
 import '../../features/security/aes_service.dart';
+import '../../features/notes/data/datasources/note_storage_service.dart';
+import '../../features/notes/data/datasources/notes_backend_switch.dart';
+import '../../features/notes/data/datasources/notes_data_source.dart';
+import '../../features/notes/data/datasources/notes_firestore_data_source.dart';
+import '../../features/notes/data/datasources/notes_hardcoded_data_source.dart';
+import '../../features/notes/data/repositories/notes_repository_impl.dart';
+import '../../features/notes/domain/repositories/notes_repository.dart';
+import '../../features/notes/domain/usecases/notes_usecases.dart';
+import '../../features/notes/presentation/bloc/notes_bloc.dart';
+import '../../features/notes/presentation/bloc/note_detail_bloc.dart';
+import '../../features/notes/presentation/bloc/note_search_bloc.dart';
 import '../../features/private_chat/data/datasources/friends_remote_data_source.dart';
 import '../../features/private_chat/data/datasources/private_chat_remote_data_source.dart';
 import '../../features/private_chat/data/repositories/friends_repository_impl.dart';
@@ -108,6 +119,7 @@ Future<void> init() async {
   _initCommunity();
   _initChat();
   _initPrivateChat();
+  _initNotes();
 
   // Not used by any screen yet (group_chat feature).
   sl.registerLazySingleton<GroupChatRepo>(
@@ -350,4 +362,39 @@ void _initPrivateChat() {
           getSharedImages: sl(),
           getSharedDocuments: sl(),
         ));
+}
+
+void _initNotes() {
+  sl
+    ..registerLazySingleton<NotesDataSource>(
+      // `useHarcoded` switches the whole Notes module to offline demo data.
+      () => useHarcoded
+          ? NotesHardcodedDataSource()
+          : NotesFirestoreDataSource(
+              firestore: sl(),
+              auth: sl(),
+              storage: NoteStorageService(FirebaseStorage.instance),
+            ),
+    )
+    ..registerLazySingleton<NotesRepository>(() => NotesRepositoryImpl(sl()))
+    ..registerLazySingleton(() => GetHomeNotes(sl()))
+    ..registerLazySingleton(() => SearchNotes(sl()))
+    ..registerLazySingleton(() => GetNoteDetail(sl()))
+    ..registerLazySingleton(() => GetMyNotes(sl()))
+    ..registerLazySingleton(() => UploadNote(sl()))
+    ..registerLazySingleton(() => DeleteNote(sl()))
+    ..registerLazySingleton(() => PurchaseNote(sl()))
+    ..registerLazySingleton(() => RecordDownload(sl()))
+    ..registerFactory(() => NotesBloc(
+          getHomeNotes: sl(),
+          getMyNotes: sl(),
+          uploadNote: sl(),
+          deleteNote: sl(),
+        ))
+    ..registerFactory(() => NoteDetailBloc(
+          getNoteDetail: sl(),
+          purchaseNote: sl(),
+          recordDownload: sl(),
+        ))
+    ..registerFactory(() => NoteSearchBloc(searchNotes: sl()));
 }

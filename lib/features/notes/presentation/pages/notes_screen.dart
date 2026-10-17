@@ -1,17 +1,17 @@
 import 'package:noteswap/core/navigation/app_navigator.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart' hide SnackPosition;
+import 'package:noteswap/features/auth/presentation/current_user.dart';
+import 'package:noteswap/features/notes/domain/entities/note_entities.dart';
+import 'package:noteswap/features/notes/presentation/pages/all_notes_screen.dart';
+import 'package:noteswap/features/notes/presentation/pages/my_notes_screen.dart' show MyNotesScreen;
+import 'package:noteswap/features/notes/presentation/pages/note_details_screen.dart';
+import 'package:noteswap/features/notes/presentation/pages/search_results_screen.dart';
 import 'package:noteswap/features/notification_badge/presentation/bloc/notification_badge_bloc.dart';
 import 'package:noteswap/features/events/notifications/notifications_screen.dart';
+import 'package:noteswap/features/notes/presentation/bloc/notes_bloc.dart';
 
-import 'note_data.dart';
-import 'SearchResultsScreen.dart';
-import 'NoteDetailsScreen.dart';
-import 'MyNotesScreen.dart';
-import 'AllNotesScreen.dart';
-import 'noteswap_controller.dart';
+
 
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
@@ -30,12 +30,11 @@ class _NotesScreenState extends State<NotesScreen> {
   @override
   void initState() {
     super.initState();
-    Get.put(NoteswapController(), permanent: true).loadHome();
+    context.read<NotesBloc>().add(const NotesHomeRequested());
   }
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = Get.find<NoteswapController>();
     return Scaffold(
       backgroundColor: NotesScreen._background,
       resizeToAvoidBottomInset: true,
@@ -46,9 +45,9 @@ class _NotesScreenState extends State<NotesScreen> {
           physics: const BouncingScrollPhysics(),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
-            child: Obx(() {
-              final featured = ctrl.featuredNotes;
-              final recent = ctrl.recentNotes;
+            child: BlocBuilder<NotesBloc, NotesState>(builder: (context, notes) {
+              final featured = notes.featured;
+              final recent = notes.recent;
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -58,11 +57,13 @@ class _NotesScreenState extends State<NotesScreen> {
                   const SizedBox(height: 18),
                   const _SearchBar(),
                   const SizedBox(height: 24),
-                  if (ctrl.homeError.value != null)
+                  if (notes.homeError != null)
                     _HomeErrorBanner(
-                      onRetry: () => ctrl.loadHome(),
+                      onRetry: () => context
+                          .read<NotesBloc>()
+                          .add(const NotesHomeRequested()),
                     ),
-                  if (ctrl.homeError.value != null) const SizedBox(height: 16),
+                  if (notes.homeError != null) const SizedBox(height: 16),
                   _SectionHeader(
                     title: 'Featured Notes',
                     onViewAll: featured.isEmpty
@@ -74,7 +75,7 @@ class _NotesScreenState extends State<NotesScreen> {
                           ),
                   ),
                   const SizedBox(height: 12),
-                  if (ctrl.homeLoading.value)
+                  if (notes.homeLoading)
                     const _NotesLoadingPlaceholder()
                   else if (featured.isEmpty)
                     const _EmptyNotesCard()
@@ -94,7 +95,7 @@ class _NotesScreenState extends State<NotesScreen> {
                           ),
                   ),
                   const SizedBox(height: 10),
-                  if (ctrl.homeLoading.value)
+                  if (notes.homeLoading)
                     const _NotesLoadingPlaceholder()
                   else if (recent.isEmpty)
                     const _EmptyNotesCard()
@@ -224,10 +225,10 @@ class _Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final User? user = FirebaseAuth.instance.currentUser;
-    final String photoUrl = user?.photoURL ?? '';
-    final String name = user?.displayName?.trim() ?? '';
-    final String email = user?.email?.trim() ?? '';
+    final user = context.currentUser;
+    final String photoUrl = user?.imageURL ?? '';
+    final String name = user?.name.trim() ?? '';
+    final String email = user?.email.trim() ?? '';
 
     String initials = '';
     if (name.isNotEmpty) {

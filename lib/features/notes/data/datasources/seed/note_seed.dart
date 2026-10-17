@@ -1,24 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/painting.dart';
 
-class Note {
-  final String id;
-  final String title;
-  final String subject;
-  final String author;
-  final String uploadTime;
-  final int downloads;
-  final Color accent;
+import '../../../domain/entities/note_entities.dart';
 
-  const Note({
-    this.id = '',
-    required this.title,
-    required this.subject,
-    required this.author,
-    required this.uploadTime,
-    required this.downloads,
-    required this.accent,
-  });
-}
+/// Demo data used when `useHarcoded` is true (offline demo mode).
 
 const List<Note> featuredNotes = [
   Note(

@@ -2,7 +2,8 @@ import 'dart:io';
 
 import 'package:firebase_storage/firebase_storage.dart';
 
-import 'note_models.dart';
+import '../../domain/entities/note_inputs.dart';
+import '../models/note_mappers.dart';
 
 /// Result of a successful storage upload for a note.
 class UploadedNoteFiles {
@@ -20,6 +21,9 @@ class UploadedNoteFiles {
 ///
 /// One folder per user (created implicitly on first upload, reused later).
 class NoteStorageService {
+  final FirebaseStorage _storageClient;
+  NoteStorageService(this._storageClient);
+
   Future<UploadedNoteFiles> uploadNote({
     required NoteUploadData data,
     required String uid,
@@ -30,7 +34,7 @@ class NoteStorageService {
       final safeName = _sanitize(data.fileName);
       final folder = 'noteswap/notes/$uid-notes';
 
-      final fileRef = FirebaseStorage.instance
+      final fileRef = _storageClient
           .ref('$folder/${epoch}_$safeName');
       await fileRef.putFile(
         File(data.filePath),
@@ -43,7 +47,7 @@ class NoteStorageService {
       for (var i = 0; i < data.previewPaths.length; i++) {
         final path = data.previewPaths[i];
         final ext = path.split('.').last.toLowerCase();
-        final pRef = FirebaseStorage.instance.ref(
+        final pRef = _storageClient.ref(
           '$folder/previews/${epoch}_$safeName$i${ext.isEmpty ? '' : '.$ext'}',
         );
         await pRef.putFile(
@@ -81,7 +85,7 @@ class NoteStorageService {
       final path = pathFromDownloadUrl(url);
       if (path.isEmpty) continue;
       try {
-        await FirebaseStorage.instance.ref(path).delete();
+        await _storageClient.ref(path).delete();
       } catch (_) {
         // Best-effort cleanup.
       }

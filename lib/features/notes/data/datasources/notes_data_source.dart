@@ -1,17 +1,14 @@
-import '../my_notes_data.dart';
-import '../note_data.dart';
-import '../note_details_data.dart';
-import 'note_models.dart';
+import '../../domain/entities/note_entities.dart';
+import '../../domain/entities/note_inputs.dart';
 
-/// Abstraction over the noteswap data sources.
+/// Raw access to notes data (throws on failure).
 ///
 /// Two implementations exist:
-///  * [HardcodedNotesRepository] -> reads the demo seed files.
-///  * FirestoreNotesRepository  -> reads/writes Firestore + Firebase Storage.
+///  * [NotesHardcodedDataSource] -> the demo seed files (offline demo).
+///  * [NotesFirestoreDataSource]  -> Firestore + Firebase Storage.
 ///
-/// Pick the active one through `getNotesRepo()` in `notes_repo_factory.dart`,
-/// which honours the `useHarcoded` switch.
-abstract class NotesRepository {
+/// DI picks one with the `useHarcoded` switch.
+abstract interface class NotesDataSource {
   Future<List<Note>> getFeaturedNotes();
 
   Future<List<Note>> getRecentNotes();

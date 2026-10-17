@@ -1,54 +1,8 @@
-import 'package:flutter/material.dart';
-
-/// Input payload for uploading a note to the real backend.
-class NoteUploadData {
-  final String title;
-  final String subject;
-  final String courseCode;
-  final String semester;
-  final String description;
-  final num price;
-  final bool isFree;
-  final String fileName;
-  final String filePath;
-  final int fileSize;
-  final List<String> previewPaths;
-
-  const NoteUploadData({
-    required this.title,
-    required this.subject,
-    required this.courseCode,
-    required this.semester,
-    required this.description,
-    required this.price,
-    required this.isFree,
-    required this.fileName,
-    required this.filePath,
-    required this.fileSize,
-    this.previewPaths = const [],
-  });
-}
-
-/// Input payload for rating / reviewing a note.
-class ReviewDraft {
-  final String noteId;
-  final String userId;
-  final String userName;
-  final num rating;
-  final String text;
-
-  const ReviewDraft({
-    required this.noteId,
-    required this.userId,
-    required this.userName,
-    required this.rating,
-    required this.text,
-  });
-}
+import 'package:flutter/painting.dart';
 
 /// Thrown when a Firebase Storage upload fails (typically because the
-/// project's Storage credits have ended). The UI shows a "Fire storage
-/// credits ended" snackbar and stops the flow without writing Firestore.
+/// project's Storage credits have ended). The repository turns it into
+/// a StorageCreditFailure; nothing is written to Firestore.
 class StorageCreditException implements Exception {
   final String message;
   const StorageCreditException([this.message = 'Fire storage credits ended']);
@@ -57,8 +11,7 @@ class StorageCreditException implements Exception {
 }
 
 /// Thrown when the author tries to delete a note that already has buyers.
-/// The UI blocks the delete and shows a top "buys exists at this notes"
-/// snackbar.
+/// The repository turns it into a NoteHasBuyersFailure.
 class NoteHasBuyersException implements Exception {
   const NoteHasBuyersException();
 }
